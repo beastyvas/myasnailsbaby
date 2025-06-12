@@ -1,50 +1,45 @@
 import Stripe from 'stripe';
 import { buffer } from 'micro';
-import { supabase } from '@/utils/supabaseClient';
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const config = {
   api: {
-    bodyParser: false, // ✅ critical!
+    bodyParser: false,
   },
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-08-15',
-});
-
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).end('Method Not Allowed');
-  }
+  if (req.method === 'POST') {
+    const sig = req.headers['stripe-signature'];
+    let event;
 
-  const sig = req.headers['stripe-signature'];
+    try {
+      const buf = await buffer(req);
+      event = stripe.webhooks.constructEvent(
+        buf,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error('❌ Stripe webhook error:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
 
-  let event;
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const bookingId = session.metadata.booking_id;
 
-  try {
-    const buf = await buffer(req); // ✅ must pass raw body!
-    event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error('❌ Webhook error:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const bookingId = session.metadata?.bookingId;
-
-    if (bookingId) {
       const { error } = await supabase
         .from('bookings')
         .update({ paid: true })
         .eq('id', bookingId);
 
-      if (error) {
-        console.error('❌ Supabase update error:', error.message);
-        return res.status(500).send('Supabase update failed');
-      }
+      if (error) console.error('❌ Supabase update failed:', error.message);
     }
-  }
 
-  res.status(200).json({ received: true });
+    res.status(200).json({ received: true });
+  } else {
+    res.setHeader('Allow', 'POST');
+    res.status(405).end('Method Not Allowed');
+  }
 }
