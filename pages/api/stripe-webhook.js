@@ -8,6 +8,7 @@ export const config = {
   },
 };
 
+
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const sig = req.headers['stripe-signature'];
