@@ -4,9 +4,10 @@ import { supabase } from '@/utils/supabaseClient';
 
 export const config = {
   api: {
-    bodyParser: false, // Stripe requires raw body
+    bodyParser: false, // 🔐 this disables default parsing so we get raw body
   },
 };
+
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
