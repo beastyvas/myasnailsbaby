@@ -1,0 +1,204 @@
+import toast, { Toaster } from "react-hot-toast";
+import confetti from "canvas-confetti";
+import { useRef, useEffect, useState } from "react";
+import NailGallery from "@/components/NailGallery";
+import Link from "next/link";
+import { supabase } from "@/utils/supabaseClient";
+import { loadStripe } from '@stripe/stripe-js';
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
+export default function Home() {
+  const formRef = useRef();
+  const [availability, setAvailability] = useState([]);
+  const [selectedDate, setSelectedDate] = useState("");
+
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      const { data, error } = await supabase
+        .from("availability")
+        .select("*")
+        .order("date", { ascending: true });
+      if (!error) setAvailability(data);
+    };
+    fetchAvailability();
+  }, []);
+
+  const availableDates = [...new Set(availability.map((slot) => slot.date))];
+  const timeOptions = availability
+    .filter((slot) => slot.date === selectedDate)
+    .map((slot) => slot.time);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const form = formRef.current;
+    const data = new FormData(form);
+    const payload = {
+      name: data.get("name"),
+      instagram: data.get("instagram"),
+      service: data.get("service"),
+      artLevel: data.get("artLevel"),
+      date: data.get("date"),
+      time: data.get("time"),
+      notes: data.get("notes"),
+    };
+
+    try {
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+
+      if (res.ok && json.success) {
+        toast.success("Booking request submitted!", {
+          duration: 2000,
+          position: "bottom-center",
+        });
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+
+        const stripe = await stripePromise;
+        const checkoutRes = await fetch("/api/create-checkout-session", {
+          method: "POST",
+        });
+
+        const checkoutJson = await checkoutRes.json();
+        if (checkoutRes.ok && checkoutJson.url) {
+          window.location.href = checkoutJson.url;
+          return;
+        } else {
+          toast.error("Could not start payment session.");
+        }
+
+        await fetch("/api/send-text", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        setTimeout(() => {
+          form.reset();
+        }, 2200);
+      } else {
+        toast.error("Failed to send email.");
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      toast.error("Something went wrong.");
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-pink-50 p-4 sm:p-6 md:p-10 text-gray-800">
+      <Toaster />
+      <div className="max-w-2xl mx-auto">
+        <section className="text-center mb-8">
+          <img
+            src="/images/mya.png"
+            alt="Mya - Las Vegas Nail Tech"
+            className="w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-full mx-auto shadow-md mb-4"
+          />
+          <h2 className="text-2xl sm:text-3xl font-bold text-myaAccent">Hey babes 💋</h2>
+          <p className="text-sm sm:text-base mt-2 px-2">
+            I'm Mya — a Las Vegas nail tech serving up cute sets from Gel-X to acrylic.
+            Press-ons, structured manicures, & full glam designs available. DM or book below 💅✨
+          </p>
+        </section>
+
+        <NailGallery />
+
+        <section className="text-center mb-4 animate-fade-in">
+          <h2 className="text-heading font-semibold text-center mt-2 mb-2">Book Now ✨</h2>
+          <div className="flex flex-col items-center gap-2">
+            <a
+              href="https://instagram.com/myasnailsbaby"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center text-myaAccent hover:underline font-medium animate-pulse"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 1.5h8.5A5.25 5.25 0 0 1 21.5 8.75v6.5A5.25 5.25 0 0 1 16.25 20.5h-8.5A5.25 5.25 0 0 1 2.5 15.25v-6.5A5.25 5.25 0 0 1 7.75 3.5zM12 7.25A4.75 4.75 0 1 0 16.75 12 4.75 4.75 0 0 0 12 7.25zM12 8.75a3.25 3.25 0 1 1-3.25 3.25A3.25 3.25 0 0 1 12 8.75zm5.75-.5a1.25 1.25 0 1 1-1.25-1.25 1.25 1.25 0 0 1 1.25 1.25z" />
+              </svg>
+              Follow on Instagram
+            </a>
+            <a href="tel:7029818428" className="inline-flex items-center text-myaAccent hover:underline font-medium animate-pulse">
+              <span className="text-lg mr-1">📞</span> (702) 981-8428
+            </a>
+          </div>
+        </section>
+
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className="bg-white p-4 sm:p-6 rounded-xl shadow-md mt-4 w-full flex flex-col gap-4"
+        >
+          <input type="text" name="name" placeholder="Full Name" required className="w-full border p-2 rounded" />
+          <input type="text" name="instagram" placeholder="Instagram Handle" required className="w-full border p-2 rounded" />
+
+          <select name="service" required className="w-full border p-2 rounded">
+            <option value="">Select a Service</option>
+            <option value="Gel-X">Gel-X</option>
+            <option value="Acrylic">Acrylic</option>
+            <option value="Press-ons">Press-ons</option>
+            <option value="Manicure">Structured Manicure</option>
+          </select>
+
+          <select name="artLevel" className="w-full border p-2 rounded">
+            <option value="">Nail Art Level (Optional)</option>
+            <option value="Level 1">Level 1</option>
+            <option value="Level 2">Level 2</option>
+            <option value="Level 3">Level 3</option>
+            <option value="French Tips">French Tips</option>
+          </select>
+
+          <select
+            name="date"
+            required
+            className="w-full border p-2 rounded"
+            onChange={(e) => setSelectedDate(e.target.value)}
+          >
+            <option value="">Select a Date</option>
+            {availableDates.map((date) => (
+              <option key={date} value={date}>
+                {new Date(date).toLocaleDateString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </option>
+            ))}
+          </select>
+
+          <select
+            name="time"
+            required
+            className="w-full border p-2 rounded"
+            disabled={!selectedDate}
+          >
+            <option value="">Select a Time</option>
+            {timeOptions.map((time, idx) => (
+              <option key={idx} value={time}>
+                {time}
+              </option>
+            ))}
+          </select>
+
+          <textarea name="notes" placeholder="Nail inspo or any details" className="w-full border p-2 rounded" />
+
+          <label className="flex items-center space-x-2 text-sm">
+            <input type="checkbox" name="confirmPolicy" required />
+            <span>I understand a $20 deposit is required to book</span>
+          </label>
+
+          <button type="submit" className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 rounded-xl shadow-sm">
+            Submit Booking Request
+          </button>
+          <Link href="/dashboard" className="text-sm text-myaAccent hover:underline mt-4 block text-center">
+            Go to Dashboard
+          </Link>
+        </form>
+      </div>
+    </main>
+  );
+}
