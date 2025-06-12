@@ -1,10 +1,6 @@
-// pages/api/stripe-webhook.js
 import { buffer } from 'micro';
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY); // 👈 use service role key!
+import { supabase } from '@/utils/supabaseClient';
 
 export const config = {
   api: {
@@ -12,26 +8,26 @@ export const config = {
   },
 };
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end('Method not allowed');
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed');
+  }
 
   const sig = req.headers['stripe-signature'];
-  const rawBody = await buffer(req);
+  const buf = await buffer(req);
 
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      rawBody,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET // set in Stripe dashboard
-    );
+    event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error('Webhook Error:', err.message);
+    console.error('Webhook error:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // ✅ Handle successful checkout
+  // ✅ Handle the event
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const bookingId = session.metadata.booking_id;
@@ -43,10 +39,9 @@ export default async function handler(req, res) {
 
     if (error) {
       console.error('Supabase update failed:', error.message);
-      return res.status(500).send('Failed to update booking');
+    } else {
+      console.log(`✅ Booking ${bookingId} marked as paid.`);
     }
-
-    return res.status(200).json({ received: true });
   }
 
   res.status(200).json({ received: true });
