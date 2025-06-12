@@ -1,47 +1,48 @@
-import { buffer } from 'micro';
 import Stripe from 'stripe';
-import { supabase } from '@/utils/supabaseClient';
+import { buffer } from 'micro'; // ✅ required for raw body
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2024-08-15',
+});
 
 export const config = {
   api: {
-    bodyParser: false, // 🔐 this disables default parsing so we get raw body
+    bodyParser: false, // ✅ disables Next.js parsing
   },
 };
 
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
+    res.setHeader('Allow', 'POST');
+    return res.status(405).end('Method Not Allowed');
   }
 
-  const sig = req.headers['stripe-signature'];
-  const buf = await buffer(req);
-
   let event;
+  const sig = req.headers['stripe-signature'];
 
   try {
+    const buf = await buffer(req); // ✅ read raw body
     event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error('Webhook error:', err.message);
+    console.error('❌ Webhook error:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // ✅ Handle the event
+  // ✅ Handle checkout.session.completed
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const bookingId = session.metadata.booking_id;
+    const bookingId = session.metadata?.bookingId;
 
-    const { error } = await supabase
-      .from('bookings')
-      .update({ paid: true })
-      .eq('id', bookingId);
+    if (bookingId) {
+      const { data, error } = await supabase
+        .from('bookings')
+        .update({ paid: true })
+        .eq('id', bookingId);
 
-    if (error) {
-      console.error('Supabase update failed:', error.message);
-    } else {
-      console.log(`✅ Booking ${bookingId} marked as paid.`);
+      if (error) {
+        console.error('❌ Supabase error:', error.message);
+        return res.status(500).send('Failed to mark as paid');
+      }
     }
   }
 
