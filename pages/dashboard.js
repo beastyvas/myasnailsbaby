@@ -118,6 +118,24 @@ export default function Dashboard() {
 
   setBookings(upcoming);
 }
+ async function handleDeleteBooking(id) {
+  const confirm = window.confirm("Are you sure you want to delete this appointment?");
+  if (!confirm) return;
+
+  const { error } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("❌ Delete failed:", error.message);
+    alert("Could not delete appointment.");
+  } else {
+    alert("✅ Appointment deleted!");
+    fetchBookings(); // Refresh list
+  }
+}
+
 
 function convertTo24Hr(timeStr) {
   const [hourStr, modifier] = timeStr.match(/(\d+)(AM|PM)/i).slice(1, 3);
@@ -262,30 +280,42 @@ function convertTo24Hr(timeStr) {
         </div>
       </section>
 
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-2">Upcoming Appointments</h2>
-        <div className="bg-white p-4 rounded shadow-sm space-y-2">
-          {bookings.length === 0 ? (
-            <p>No upcoming appointments yet.</p>
-          ) : (
-            bookings.map((b) => (
-              <div key={`${b.date}-${b.time}-${b.name}`} className="border-b pb-2 mb-2">
-                <p className="font-medium">{b.name} • {b.service}</p>
-                <p className="text-sm text-gray-600">
-                  {b.date} @ {b.time}
-                </p>
-                <p className="text-sm">
-                  {b.paid ? (
-                    <span className="text-green-500">✔ Paid</span>
-                  ) : (
-                    <span className="text-red-500">✘ Not Paid</span>
-                  )}
-                </p>
-              </div>
-            ))
-          )}
+     <section className="mb-10">
+  <h2 className="text-lg font-semibold mb-2">Upcoming Appointments</h2>
+  <div className="bg-white p-4 rounded shadow-sm space-y-2">
+    {bookings.length === 0 ? (
+      <p>No upcoming appointments yet.</p>
+    ) : (
+      bookings.map((b) => (
+        <div
+          key={`${b.id}`} // safer to use booking id
+          className="border-b pb-2 mb-2"
+        >
+          <p className="font-medium">
+            {b.name} • {b.service}
+          </p>
+          <p className="text-sm text-gray-600">
+            {b.date} @ {b.time}
+          </p>
+          <p className="text-sm mb-1">
+            {b.paid ? (
+              <span className="text-green-500">✔ Paid</span>
+            ) : (
+              <span className="text-red-500">✘ Not Paid</span>
+            )}
+          </p>
+          <button
+  onClick={() => handleDeleteBooking(b.id)}
+  className="text-sm text-red-500 hover:underline"
+>
+  Delete Appointment
+</button>
+
         </div>
-      </section>
+      ))
+    )}
+  </div>
+</section>
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold mb-2">Availability Calendar 📅</h2>
@@ -367,16 +397,15 @@ function convertTo24Hr(timeStr) {
                 key={slot.id}
                 className="bg-pink-50 border border-pink-200 rounded-xl p-4 flex justify-between items-center shadow-sm"
               >
-                <div className="text-sm font-medium text-gray-800">
-{(() => {
-  const dateObj = new Date(`${slot.date}T00:00:00Z`);
-  return dateObj.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }) + ` @ ${slot.time}`;
-})()}
-
+               <div className="text-sm font-medium text-gray-800">
+  {(() => {
+    const dateObj = new Date(`${slot.date}T00:00:00`);
+    return dateObj.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    }) + ` @ ${slot.time}`;
+  })()}
 </div>
                 <button
   onClick={async () => {

@@ -1,25 +1,23 @@
-import twilio from "twilio";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
   const { name, date, time } = req.body;
 
-  try {
-    const client = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
+  const response = await fetch("https://textbelt.com/text", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      phone: "+17029818428", // Mya's number
+      message: `📅 New Booking: ${name} on ${date} at ${time}`,
+      key: process.env.TEXTBELT_API_KEY,
+    }),
+  });
 
-    const message = await client.messages.create({
-      body: `💅 New Booking: ${name} on ${date} at ${time}`,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: "+1-702-981-8428" // change this to Mya's real number
-    });
-
-    return res.status(200).json({ success: true, sid: message.sid });
-  } catch (err) {
-    console.error("Twilio error:", err.message);
-    return res.status(500).json({ success: false, error: err.message });
+  const data = await response.json();
+  if (!data.success) {
+    console.error("Textbelt error:", data.error);
+    return res.status(500).json({ success: false, error: data.error });
   }
+
+  res.status(200).json({ success: true });
 }

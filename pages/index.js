@@ -1,5 +1,5 @@
-import toast, { Toaster } from "react-hot-toast";
 import confetti from "canvas-confetti";
+import toast, { Toaster } from "react-hot-toast";
 import { useRef, useEffect, useState } from "react";
 import NailGallery from "@/components/NailGallery";
 import Link from "next/link";
@@ -58,6 +58,13 @@ export default function Home() {
         });
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
+        // 🔁 Send SMS to Mya after successful booking
+        await fetch("/api/send-text", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: payload.name, date: payload.date, time: payload.time }),
+        });
+
         const stripe = await stripePromise;
         const checkoutRes = await fetch("/api/create-checkout-session", {
           method: "POST",
@@ -70,12 +77,6 @@ export default function Home() {
         } else {
           toast.error("Could not start payment session.");
         }
-
-        await fetch("/api/send-text", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
 
         setTimeout(() => {
           form.reset();
