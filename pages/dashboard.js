@@ -150,6 +150,7 @@ const handleDeleteBooking = async (booking) => {
 };
 
 
+
 function convertTo24Hr(timeStr) {
   const [hourStr, modifier] = timeStr.match(/(\d+)(AM|PM)/i).slice(1, 3);
   let hour = parseInt(hourStr);
