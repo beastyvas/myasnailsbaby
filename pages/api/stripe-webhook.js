@@ -27,31 +27,23 @@ export default async function handler(req, res) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
- if (event.type === "checkout.session.completed") {
-  const session = event.data.object;
-  const booking_id = session.metadata?.booking_id;
+  // ✅ Update Supabase on successful payment
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const { booking_id } = session.metadata;
 
-  console.log("🔁 Webhook received. Booking ID:", booking_id);
+    const { error } = await supabase
+      .from("bookings")
+      .update({ paid: true })
+      .eq("id", booking_id);
 
-  if (!booking_id) {
-    console.error("❌ No booking ID found in metadata");
-    return res.status(400).send("Missing booking ID");
+    if (error) {
+      console.error("❌ Failed to update booking in Supabase:", error.message);
+      return res.status(500).send("Database update failed");
+    }
+
+    console.log("✅ Booking marked as paid:", booking_id);
   }
-
-  const { error } = await supabase
-  .from("bookings")
-  .update({ paid: true })
-  .eq("id", booking_id);
-
-  if (error) {
-    console.error("❌ Failed to update booking in Supabase:", error.message);
-    return res.status(500).send("Database update failed");
-  }
-
-  console.log("✅ Booking marked as paid:", booking_id);
-}
-
-
 
   return res.status(200).json({ received: true });
 }
