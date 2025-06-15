@@ -12,13 +12,14 @@ export default async function handler(req, res) {
       instagram = "",
       phone = "",
       service = "",
-      artLevel = "", // ✅ Use camelCase here
+      artLevel = "",
       date = "",
       time = "",
       notes = "",
+      returning = "",       // ✅ added
+      referral = ""         // ✅ added
     } = req.body;
 
-    // ✅ Send confirmation email
     const emailResponse = await resend.emails.send({
       from: "Mya's Nails <onboarding@resend.dev>",
       to: ["myasnailsbaby@gmail.com"],
@@ -29,10 +30,12 @@ export default async function handler(req, res) {
         <p><strong>Instagram:</strong> ${instagram}</p>
         ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""}
         <p><strong>Service:</strong> ${service}</p>
-        <p><strong>Art Level:</strong> ${artLevel}</p>
+       <p><strong>Art Level:</strong> ${artLevel}</p>
         <p><strong>Date:</strong> ${date}</p>
         <p><strong>Time:</strong> ${time}</p>
         <p><strong>Notes:</strong> ${notes}</p>
+        <p><strong>Returning Client:</strong> ${returning}</p>
+        ${referral ? `<p><strong>Referral:</strong> ${referral}</p>` : ""}
       `,
     });
 
@@ -41,19 +44,21 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: emailResponse.error.message });
     }
 
-    // ✅ Insert into Supabase
     const { error: dbError } = await supabase.from("bookings").insert([
-      {
-        name,
-        instagram,
-        service,
-        phone,
-        art_level: artLevel, // ✅ Insert using correct DB column
-        date,
-        time,
-        notes,
-      },
-    ]);
+  {
+    name,
+    instagram,
+    service,
+    phone,
+    art_level: artLevel, // ✅ CORRECT
+    date,
+    time,
+    notes,
+    returning,
+    referral,
+  },
+]);
+
 
     if (dbError) {
       console.error("Supabase insert error:", dbError.message);

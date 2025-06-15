@@ -7,10 +7,14 @@ import { supabase } from "@/utils/supabaseClient";
 import { loadStripe } from '@stripe/stripe-js';
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
+
+
 export default function Home() {
   const formRef = useRef();
   const [availability, setAvailability] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
+  const [isReturning, setIsReturning] = useState(false);
+
 
   useEffect(() => {
     const fetchAvailability = async () => {
@@ -34,13 +38,15 @@ export default function Home() {
     const data = new FormData(form);
     const payload = {
   name: data.get("name"),
-  phone: data.get("phone"), // ✅ Add this line
   instagram: data.get("instagram"),
+  phone: data.get("phone"),
   service: data.get("service"),
-  artLevel: data.get("artLevel"),
+  artLevel: data.get("artLevel"), // ✅ Must match form name
   date: data.get("date"),
   time: data.get("time"),
   notes: data.get("notes"),
+  returning: data.get("returning"),
+  referral: data.get("referral"),
 };
 
 
@@ -200,6 +206,27 @@ export default function Home() {
   required
   className="w-full border p-2 rounded"
 />
+<label className="block text-sm font-medium text-gray-700">Have you booked with Mya before?</label>
+<select
+  name="returning"
+  required
+  className="w-full border p-2 rounded"
+  onChange={(e) => setIsReturning(e.target.value === "yes")}
+>
+  <option value="">-- Select an Option --</option>
+  <option value="yes">Yes</option>
+  <option value="no">No</option>
+</select>
+
+{!isReturning && (
+  <input
+    type="text"
+    name="referral"
+    required
+    placeholder="Who referred you? (Instagram handle)"
+    className="w-full border p-2 rounded"
+  />
+)}
 
 
           <textarea name="notes" placeholder="Nail inspo or any details" className="w-full border p-2 rounded" />

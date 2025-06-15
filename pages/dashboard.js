@@ -12,7 +12,7 @@ export default function Dashboard() {
   const [newTime, setNewTime] = useState("");
   const [bookings, setBookings] = useState([]);
 
-  const correctPin = "0927";
+  const correctPin = "052224";
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -118,9 +118,9 @@ export default function Dashboard() {
 
   setBookings(upcoming);
 }
- async function handleDeleteBooking(id) {
-  const confirm = window.confirm("Are you sure you want to delete this appointment?");
-  if (!confirm) return;
+const handleDeleteBooking = async (id, phone) => {
+  const confirmed = window.confirm("Are you sure you want to cancel this appointment?");
+  if (!confirmed) return;
 
   const { error } = await supabase
     .from("bookings")
@@ -130,11 +130,19 @@ export default function Dashboard() {
   if (error) {
     console.error("❌ Delete failed:", error.message);
     alert("Could not delete appointment.");
-  } else {
-    alert("✅ Appointment deleted!");
-    fetchBookings(); // Refresh list
+    return;
   }
-}
+
+  // Send cancellation text to client
+  await fetch("/api/send-cancel-text", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone }),
+  });
+
+  alert("✅ Appointment canceled and client notified.");
+  fetchBookings(); // Refresh the list
+};
 
 
 function convertTo24Hr(timeStr) {
@@ -168,8 +176,8 @@ function convertTo24Hr(timeStr) {
         <form onSubmit={handleSubmit} className="flex flex-col items-center gap-2">
           <input
             type="password"
-            placeholder="4-digit PIN"
-            maxLength={4}
+            placeholder="6-digit PIN"
+            maxLength={6}
             value={pin}
             onChange={(e) => setPin(e.target.value)}
             className="p-2 border rounded text-center text-lg text-gray-800 placeholder-gray-500"
@@ -280,15 +288,16 @@ function convertTo24Hr(timeStr) {
         </div>
       </section>
 
-     <section className="mb-10">
+    <section className="mb-10">
   <h2 className="text-lg font-semibold mb-2">Upcoming Appointments</h2>
   <div className="bg-white p-4 rounded shadow-sm space-y-2">
     {bookings.length === 0 ? (
       <p>No upcoming appointments yet.</p>
     ) : (
+   
       bookings.map((b) => (
         <div
-          key={`${b.id}`} // safer to use booking id
+          key={`${b.id}`}
           className="border-b pb-2 mb-2"
         >
           <p className="font-medium">
@@ -297,6 +306,7 @@ function convertTo24Hr(timeStr) {
           <p className="text-sm text-gray-600">
             {b.date} @ {b.time}
           </p>
+
           <p className="text-sm mb-1">
             {b.paid ? (
               <span className="text-green-500">✔ Paid</span>
@@ -304,18 +314,33 @@ function convertTo24Hr(timeStr) {
               <span className="text-red-500">✘ Not Paid</span>
             )}
           </p>
-          <button
-  onClick={() => handleDeleteBooking(b.id)}
-  className="text-sm text-red-500 hover:underline"
->
-  Delete Appointment
-</button>
 
+          <p className="text-sm mb-1">
+            {(b.returning === "yes" || b.referral?.trim()) ? (
+              <span className="text-green-500">✅ Verified</span>
+            ) : (
+              <span className="text-red-500">❌ Unverified</span>
+            )}
+          </p>
+
+          {b.art_level && (
+            <p className="text-sm mb-1 text-purple-600">
+              🎨 Nail Art Level: {b.art_level}
+            </p>
+          )}
+
+          <button
+            onClick={() => handleDeleteBooking(b.id, b.phone)}
+            className="text-sm text-red-500 hover:underline"
+          >
+            Delete Appointment
+          </button>
         </div>
       ))
     )}
   </div>
 </section>
+
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold mb-2">Availability Calendar 📅</h2>
