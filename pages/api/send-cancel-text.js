@@ -1,5 +1,3 @@
-import textbelt from "textbelt";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
@@ -11,7 +9,7 @@ export default async function handler(req, res) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         phone,
-        message: `Hi! Your nail appointment with Mya on ${date} @ ${time} was canceled.`,
+        message: `Hey babes! Your nail appointment with Mya on ${date} @ ${time} was canceled. Please dm @myasnailsbaby if you believe this was an error!`,
         key: process.env.TEXTBELT_API_KEY,
       }),
     });
