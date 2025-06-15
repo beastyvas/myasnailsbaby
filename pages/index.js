@@ -1,3 +1,5 @@
+"use client";
+
 import confetti from "canvas-confetti";
 import toast, { Toaster } from "react-hot-toast";
 import { useRef, useEffect, useState } from "react";
