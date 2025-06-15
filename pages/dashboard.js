@@ -99,7 +99,9 @@ export default function Dashboard() {
     else setAvailability(data);
   }
 
-  async function fetchBookings() {
+ 
+
+async function fetchBookings() {
   const { data, error } = await supabase
     .from("bookings")
     .select("*")
@@ -125,20 +127,27 @@ const handleDeleteBooking = async (booking) => {
   const { id, name, phone, date, time } = booking;
 
   const { error } = await supabase.from("bookings").delete().eq("id", id);
-
   if (error) {
     console.error("❌ Delete failed:", error.message);
     alert("Could not delete appointment.");
     return;
   }
 
-  await fetch("/api/send-cancel-text", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, phone, date, time }),
-  });
-};
+  try {
+    await fetch("/api/send-cancel-text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, phone, date, time }),
+    });
 
+    alert("Appointment deleted and client informed!");
+    await fetchBookings(); // ✅ refresh dashboard
+  } catch (err) {
+    console.error("❌ Failed to send cancel text:", err);
+    alert("Deleted, but failed to notify client.");
+    await fetchBookings(); // still refresh
+  }
+};
 
 
 function convertTo24Hr(timeStr) {
