@@ -1,52 +1,53 @@
+// File: /pages/api/stripe-webhook.js
 import { buffer } from "micro";
 import Stripe from "stripe";
 import { supabase } from "@/utils/supabaseClient";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // ✅ VERY IMPORTANT
   },
 };
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2022-11-15",
+});
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
- const buf = await buffer(req);
-const sig = req.headers["stripe-signature"];
+  let event;
+  const sig = req.headers["stripe-signature"];
 
-let event;
-try {
-  event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
-} catch (err) {
-  console.error("Webhook signature error:", err.message);
-  return res.status(400).send(`Webhook Error: ${err.message}`);
-}
+  try {
+    const rawBody = await buffer(req);
+    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error("❌ Webhook signature error:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
 
-
-  // ✅ Handle session completion
+  // ✅ Confirm webhook type
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
+    const booking_id = session.metadata?.booking_id;
 
-    const bookingId = session.metadata?.booking_id;
-
-    if (!bookingId) {
-      console.error("❌ Missing booking_id in metadata");
+    if (!booking_id) {
+      console.error("❌ No booking ID in metadata");
       return res.status(400).send("Missing booking ID");
     }
 
     const { error } = await supabase
       .from("bookings")
       .update({ paid: true })
-      .eq("id", bookingId);
+      .eq("id", booking_id);
 
     if (error) {
-      console.error("❌ Supabase update failed:", error.message);
-      return res.status(500).send("Failed to update booking status");
+      console.error("❌ Failed to update booking:", error.message);
+      return res.status(500).send("Database update failed");
     }
 
-    console.log("✅ Booking marked as paid:", bookingId);
+    console.log("✅ Booking marked as paid:", booking_id);
   }
 
   return res.status(200).json({ received: true });
