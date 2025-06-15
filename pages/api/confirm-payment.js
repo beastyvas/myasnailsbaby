@@ -1,32 +1,36 @@
-// File: /pages/api/confirm-payment.js
+// File: pages/api/confirm-payment.js
 import Stripe from "stripe";
 import { supabase } from "@/utils/supabaseClient";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
+  const { session_id } = req.query;
+
+  if (!session_id) {
+    return res.status(400).json({ error: "Missing session_id" });
+  }
 
   try {
-    const { session_id } = req.body;
     const session = await stripe.checkout.sessions.retrieve(session_id);
+    const booking_id = session.metadata?.booking_id;
 
-    const bookingId = session?.metadata?.booking_id;
-    if (!bookingId) return res.status(400).json({ success: false, error: "No booking_id found." });
+    if (!booking_id) {
+      return res.status(400).json({ error: "Missing booking_id in metadata" });
+    }
 
     const { error } = await supabase
       .from("bookings")
       .update({ paid: true })
-      .eq("id", bookingId);
+      .eq("id", booking_id);
 
     if (error) {
-      console.error("Failed to mark paid:", error.message);
-      return res.status(500).json({ success: false });
+      throw new Error(error.message);
     }
 
-    res.status(200).json({ success: true });
+    return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Stripe session error:", err.message);
-    res.status(500).json({ success: false });
+    console.error("Confirm payment error:", err.message);
+    return res.status(500).json({ error: err.message });
   }
 }

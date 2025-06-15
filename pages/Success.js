@@ -1,6 +1,5 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/utils/supabaseClient";
 
 export default function SuccessPage() {
   const router = useRouter();
@@ -12,20 +11,14 @@ export default function SuccessPage() {
 
     const confirmPayment = async () => {
       try {
-        const res = await fetch(`/api/confirm-payment`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id }),
-        });
-
+        const res = await fetch(`/api/confirm-payment?session_id=${session_id}`);
         const json = await res.json();
-        if (json.success) {
-          setLoading(false);
-        } else {
-          throw new Error("Could not confirm payment.");
-        }
+
+        if (!res.ok) throw new Error(json.error || "Confirmation failed");
       } catch (err) {
-        console.error("Payment confirmation error:", err);
+        console.error("Failed to confirm payment:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -35,7 +28,7 @@ export default function SuccessPage() {
   return (
     <main className="min-h-screen flex items-center justify-center text-center p-6">
       {loading ? (
-        <p>Updating your booking...</p>
+        <p>Confirming your booking...</p>
       ) : (
         <div>
           <h1 className="text-2xl font-bold">Payment Successful! 🎉</h1>

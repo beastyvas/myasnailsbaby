@@ -79,7 +79,8 @@ export default function Home() {
       const checkoutRes = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: json.bookingId }),
+        body: JSON.stringify({ bookingId: json.bookingId })
+,
       });
 
       const checkoutJson = await checkoutRes.json();
