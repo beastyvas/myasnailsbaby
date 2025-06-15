@@ -33,14 +33,16 @@ export default function Home() {
     const form = formRef.current;
     const data = new FormData(form);
     const payload = {
-      name: data.get("name"),
-      instagram: data.get("instagram"),
-      service: data.get("service"),
-      artLevel: data.get("artLevel"),
-      date: data.get("date"),
-      time: data.get("time"),
-      notes: data.get("notes"),
-    };
+  name: data.get("name"),
+  phone: data.get("phone"), // ✅ Add this line
+  instagram: data.get("instagram"),
+  service: data.get("service"),
+  artLevel: data.get("artLevel"),
+  date: data.get("date"),
+  time: data.get("time"),
+  notes: data.get("notes"),
+};
+
 
     try {
       const res = await fetch("/api/send-email", {
@@ -160,15 +162,21 @@ export default function Home() {
             onChange={(e) => setSelectedDate(e.target.value)}
           >
             <option value="">Select a Date</option>
-            {availableDates.map((date) => (
-              <option key={date} value={date}>
-                {new Date(date).toLocaleDateString(undefined, {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </option>
-            ))}
+           {availableDates.map((date) => {
+  const [year, month, day] = date.split("-");
+  const localDate = new Date(+year, +month - 1, +day); // Months are 0-based
+
+  return (
+    <option key={date} value={date}>
+      {localDate.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      })}
+    </option>
+  );
+})}
+
           </select>
 
           <select
@@ -184,6 +192,15 @@ export default function Home() {
               </option>
             ))}
           </select>
+
+          <input
+  type="tel"
+  name="phone"
+  placeholder="Phone Number"
+  required
+  className="w-full border p-2 rounded"
+/>
+
 
           <textarea name="notes" placeholder="Nail inspo or any details" className="w-full border p-2 rounded" />
 
