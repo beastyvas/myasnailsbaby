@@ -26,10 +26,11 @@ export default async function handler(req, res) {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.origin}/success`,
-      cancel_url: `${req.headers.origin}/`,
+      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+cancel_url: `${req.headers.origin}/cancel`,
+
       metadata: {
-        bookingId,
+        booking_id: bookingId,
         instagram,
         date,
         time,
