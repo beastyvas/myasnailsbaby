@@ -118,14 +118,13 @@ export default function Dashboard() {
 
   setBookings(upcoming);
 }
-const handleDeleteBooking = async (id, phone) => {
+const handleDeleteBooking = async (booking) => {
   const confirmed = window.confirm("Are you sure you want to cancel this appointment?");
   if (!confirmed) return;
 
-  const { error } = await supabase
-    .from("bookings")
-    .delete()
-    .eq("id", id);
+  const { id, name, phone, date, time } = booking;
+
+  const { error } = await supabase.from("bookings").delete().eq("id", id);
 
   if (error) {
     console.error("❌ Delete failed:", error.message);
@@ -133,16 +132,13 @@ const handleDeleteBooking = async (id, phone) => {
     return;
   }
 
-  // Send cancellation text to client
   await fetch("/api/send-cancel-text", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone }),
+    body: JSON.stringify({ name, phone, date, time }),
   });
-
-  alert("✅ Appointment canceled and client notified.");
-  fetchBookings(); // Refresh the list
 };
+
 
 
 function convertTo24Hr(timeStr) {
@@ -330,11 +326,12 @@ function convertTo24Hr(timeStr) {
           )}
 
           <button
-            onClick={() => handleDeleteBooking(b.id, b.phone)}
-            className="text-sm text-red-500 hover:underline"
-          >
-            Delete Appointment
-          </button>
+  onClick={() => handleDeleteBooking(b)}
+  className="text-sm text-red-500 hover:underline"
+>
+  Delete Appointment
+</button>
+
         </div>
       ))
     )}
