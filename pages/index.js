@@ -8,7 +8,7 @@ import { loadStripe } from "@stripe/stripe-js";
 
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-export default function Home() {
+export default function Home() {}
   const formRef = useRef();
   const [availability, setAvailability] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
@@ -48,33 +48,61 @@ export default function Home() {
     };
 
     try {
-      const res = await fetch("/api/book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+  const res = await fetch("/api/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error("Booking failed");
-      }
+  const json = await res.json();
+  if (!res.ok || !json.success) {
+    throw new Error("Booking failed");
+  }
 
-      toast.success("Booking request submitted!", {
-        duration: 2000,
-        position: "bottom-center",
-      });
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+  toast.success("Booking request submitted!", {
+    duration: 2000,
+    position: "bottom-center",
+  });
+  confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
-      await fetch("/api/send-text", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: payload.name,
-          date: payload.date,
-          time: payload.time,
-        }),
-      });
+  // ✅ Get bookingId correctly from the same response
+  const { bookingId } = json;
 
+  // ✅ Create checkout session with booking ID
+  const stripe = await getStripe();
+  const checkoutRes = await fetch("/api/create-checkout-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      bookingId,
+      instagram: payload.instagram,
+      date: payload.date,
+      time: payload.time,
+    }),
+  });
+
+  // ✅ Optional: handle Stripe redirection here if needed
+  const { url } = await checkoutRes.json();
+  if (checkoutRes.ok && url) {
+    window.location.href = url;
+  } else {
+    toast.error("Could not start payment session.");
+  }
+
+  // ✅ Text Mya after booking
+  await fetch("/api/send-text", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: payload.name,
+      date: payload.date,
+      time: payload.time,
+    }),
+  });
+} catch (error) {
+  console.error("Booking error:", error);
+  toast.error("Something went wrong. Please try again.");
+}
       const stripe = await getStripe();
       const checkoutRes = await fetch("/api/create-checkout-session", {
         method: "POST",
@@ -93,12 +121,7 @@ export default function Home() {
       setTimeout(() => {
         form.reset();
       }, 2200);
-    } catch (error) {
-      console.error("Booking error:", error);
-      toast.error("Something went wrong. Please try again.");
-    }
-  };
-
+   
   return (
     <main className="min-h-screen bg-pink-50 p-4 sm:p-6 md:p-10 text-gray-800">
       <Toaster />

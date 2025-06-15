@@ -4,26 +4,28 @@ import { useEffect, useState } from "react";
 export default function SuccessPage() {
   const router = useRouter();
   const { session_id } = router.query;
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!session_id) return;
+  if (!session_id) return;
 
-    const confirmPayment = async () => {
-      try {
-        const res = await fetch(`/api/confirm-payment?session_id=${session_id}`);
-        const json = await res.json();
+  const confirmPayment = async () => {
+    const res = await fetch("/api/confirm-payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id }),
+    });
 
-        if (!res.ok) throw new Error(json.error || "Confirmation failed");
-      } catch (err) {
-        console.error("Failed to confirm payment:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    confirmPayment();
-  }, [session_id]);
+    if (res.ok) {
+      setLoading(false);
+    } else {
+      console.error("Payment confirm failed");
+    }
+  };
+  
+  confirmPayment();
+}, [session_id]);
 
   return (
     <main className="min-h-screen flex items-center justify-center text-center p-6">
