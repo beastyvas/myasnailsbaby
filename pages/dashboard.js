@@ -152,12 +152,18 @@ const handleDeleteBooking = async (booking) => {
 
 
 function convertTo24Hr(timeStr) {
-  const [hourStr, modifier] = timeStr.match(/(\d+)(AM|PM)/i).slice(1, 3);
+  if (!timeStr || typeof timeStr !== "string") return "00:00"; // fallback or skip
+
+  const match = timeStr.match(/(\d+)(AM|PM)/i);
+  if (!match) return "00:00";
+
+  const [hourStr, modifier] = match.slice(1, 3);
   let hour = parseInt(hourStr);
   if (modifier === "PM" && hour !== 12) hour += 12;
   if (modifier === "AM" && hour === 12) hour = 0;
-  return `${hour.toString().padStart(2, '0')}:00`;
+  return `${hour.toString().padStart(2, "0")}:00`;
 }
+
 
 
   async function handleDelete(item) {
@@ -174,6 +180,35 @@ function convertTo24Hr(timeStr) {
       setGallery((prev) => prev.filter((g) => g.id !== item.id));
     }
   }
+
+  const [selectedIds, setSelectedIds] = useState([]);
+
+function toggleSelected(id) {
+  setSelectedIds((prev) =>
+    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  );
+}
+
+async function handleDeleteSelected() {
+  const confirmDelete = confirm(
+    `Delete ${selectedIds.length} selected availability slot(s)?`
+  );
+  if (!confirmDelete) return;
+
+  const { error } = await supabase
+    .from("availability")
+    .delete()
+    .in("id", selectedIds);
+
+  if (error) {
+    console.error("Bulk delete error:", error.message);
+    alert("Failed to delete selected slots.");
+  } else {
+    setSelectedIds([]);
+    fetchAvailability();
+  }
+}
+
 
   if (!isVerified) {
     return (
@@ -294,56 +329,67 @@ function convertTo24Hr(timeStr) {
         </div>
       </section>
 
-    <section className="mb-10">
+    
+<section className="mb-10">
   <h2 className="text-lg font-semibold mb-2">Upcoming Appointments</h2>
   <div className="bg-white p-4 rounded shadow-sm space-y-2">
     {bookings.length === 0 ? (
       <p>No upcoming appointments yet.</p>
     ) : (
-   
-      bookings.map((b) => (
-        <div
-          key={`${b.id}`}
-          className="border-b pb-2 mb-2"
-        >
-          <p className="font-medium">
-            {b.name} • {b.service}
-          </p>
-          <p className="text-sm text-gray-600">
-            {b.date} @ {b.time}
-          </p>
+      bookings.map((b) => {
+        const isVerified = b.returning === "yes";
 
-          <p className="text-sm mb-1">
-            {b.paid ? (
-              <span className="text-green-500">✔ Paid</span>
-            ) : (
-              <span className="text-red-500">✘ Not Paid</span>
-            )}
-          </p>
-
-          <p className="text-sm mb-1">
-            {(b.returning === "yes" || b.referral?.trim()) ? (
-              <span className="text-green-500">✅ Verified</span>
-            ) : (
-              <span className="text-red-500">❌ Unverified</span>
-            )}
-          </p>
-
-          {b.art_level && (
-            <p className="text-sm mb-1 text-purple-600">
-              🎨 Nail Art Level: {b.art_level}
+        return (
+          <div key={b.id} className="border-b pb-2 mb-2">
+            <p className="font-medium">
+              {b.name} • {b.service}
             </p>
-          )}
 
-          <button
-  onClick={() => handleDeleteBooking(b)}
-  className="text-sm text-red-500 hover:underline"
->
-  Delete Appointment
-</button>
+            <p className="text-sm text-gray-600">
+              {b.date} @ {b.time}
+            </p>
 
-        </div>
-      ))
+            <p className="text-sm text-gray-600">
+              📸 @{b.instagram}
+            </p>
+
+            <p className="text-sm mb-1">
+              {b.paid ? (
+                <span className="text-green-500">✔ Paid</span>
+              ) : (
+                <span className="text-red-500">✘ Not Paid</span>
+              )}
+            </p>
+
+            <p className="text-sm mb-1">
+              {isVerified ? (
+                <span className="text-green-500">✅ Verified</span>
+              ) : (
+                <span className="text-red-500">❌ Not Verified</span>
+              )}
+            </p>
+
+            {!isVerified && b.referral?.trim() && (
+              <p className="text-sm text-gray-600 italic mb-1">
+                Referred by: {b.referral}
+              </p>
+            )}
+
+            {b.art_level && (
+              <p className="text-sm mb-1 text-purple-600">
+                🎨 Nail Art Level: {b.art_level}
+              </p>
+            )}
+
+            <button
+              onClick={() => handleDeleteBooking(b)}
+              className="text-sm text-red-500 hover:underline"
+            >
+              Delete Appointment
+            </button>
+          </div>
+        );
+      })
     )}
   </div>
 </section>
@@ -423,47 +469,68 @@ function convertTo24Hr(timeStr) {
   Auto-Generate Next 14 Days 🗓
 </button>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availability.map((slot) => (
-              <div
-                key={slot.id}
-                className="bg-pink-50 border border-pink-200 rounded-xl p-4 flex justify-between items-center shadow-sm"
-              >
-               <div className="text-sm font-medium text-gray-800">
-  {(() => {
-    const dateObj = new Date(`${slot.date}T00:00:00`);
-    return dateObj.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    }) + ` @ ${slot.time}`;
-  })()}
+          {selectedIds.length > 0 && (
+  <button
+    onClick={handleDeleteSelected}
+    className="bg-red-500 text-white px-4 py-2 rounded shadow-sm mb-3"
+  >
+    Delete Selected ({selectedIds.length})
+  </button>
+)}
+
+<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {availability.map((slot) => (
+    <div
+      key={slot.id}
+      className="bg-pink-50 border border-pink-200 rounded-xl p-4 flex justify-between items-center shadow-sm"
+    >
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={selectedIds.includes(slot.id)}
+          onChange={() => toggleSelected(slot.id)}
+        />
+        <div className="text-sm font-medium text-gray-800">
+          {(() => {
+            const dateObj = new Date(`${slot.date}T00:00:00`);
+            return (
+              dateObj.toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              }) + ` @ ${slot.time}`
+            );
+          })()}
+        </div>
+      </div>
+
+      <button
+        onClick={async () => {
+          const confirmDelete = confirm(
+            "Are you sure you want to delete this slot?"
+          );
+          if (!confirmDelete) return;
+
+          const { error } = await supabase
+            .from("availability")
+            .delete()
+            .eq("id", slot.id);
+
+          if (error) {
+            console.error("Delete error:", error.message);
+            alert("Failed to delete slot.");
+          } else {
+            fetchAvailability();
+          }
+        }}
+        className="text-xs text-red-500 hover:underline"
+      >
+        Delete
+      </button>
+    </div>
+  ))}
 </div>
-                <button
-  onClick={async () => {
-    const confirmDelete = confirm("Are you sure you want to delete this slot?");
-    if (!confirmDelete) return;("availability slot deleted!")
 
-    const { error } = await supabase
-      .from("availability")
-      .delete()
-      .eq("id", slot.id);
-
-    if (error) {
-      console.error("Delete error:", error.message);
-      alert("Failed to delete slot.");
-    } else {
-      fetchAvailability();
-    }
-  }}
-  className="text-xs text-red-500 hover:underline"
->
-  Delete
-</button>
-
-              </div>
-            ))}
-          </div>
         </div>
       </section>
     </main>

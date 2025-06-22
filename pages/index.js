@@ -16,21 +16,42 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState("");
   const [isReturning, setIsReturning] = useState(false);
 
-  useEffect(() => {
-    const fetchAvailability = async () => {
-      const { data, error } = await supabase
-        .from("availability")
-        .select("*")
-        .order("date", { ascending: true });
-      if (!error) setAvailability(data);
-    };
-    fetchAvailability();
-  }, []);
+ useEffect(() => {
+  const fetchAvailability = async () => {
+    // Get available time slots
+    const { data: availabilityData, error: availabilityError } = await supabase
+      .from("availability")
+      .select("*");
 
-  const availableDates = [...new Set(availability.map((slot) => slot.date))];
-  const timeOptions = availability
-    .filter((slot) => slot.date === selectedDate)
-    .map((slot) => slot.time);
+    // Get booked appointments
+    const { data: bookingsData, error: bookingsError } = await supabase
+      .from("bookings")
+      .select("date, time");
+
+    if (availabilityError || bookingsError) {
+      console.error("Fetch error:", availabilityError || bookingsError);
+      return;
+    }
+
+    // Filter out times that are already booked
+    const filtered = availabilityData.filter((slot) => {
+      return !bookingsData.some(
+        (b) => b.date === slot.date && b.time === slot.time
+      );
+    });
+
+    setAvailability(filtered);
+  };
+
+  fetchAvailability();
+}, []);
+
+const availableDates = [...new Set(availability.map((slot) => slot.date))];
+
+const timeOptions = availability
+  .filter((slot) => slot.date === selectedDate)
+  .map((slot) => slot.time);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,60 +71,45 @@ export default function Home() {
     };
 
     try {
-      const res = await fetch("/api/book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+  const res = await fetch("/api/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error("Booking failed");
+  const json = await res.json();
+  if (!res.ok || !json.success) throw new Error("Booking failed");
 
-      toast.success("Booking request submitted!", {
-        duration: 2000,
-        position: "bottom-center",
-      });
+  toast.success("Booking request submitted!", {
+    duration: 2000,
+    position: "bottom-center",
+  });
 
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+  confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
-      const { bookingId } = json;
+  const { bookingMetadata } = json;
 
-      const stripe = await getStripe();
-      const checkoutRes = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId,
-          instagram: payload.instagram,
-          date: payload.date,
-          time: payload.time,
-        }),
-      });
+  const stripe = await getStripe();
+  const checkoutRes = await fetch("/api/create-checkout-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      bookingMetadata,
+    }),
+  });
 
-      const { url } = await checkoutRes.json();
-      if (checkoutRes.ok && url) {
-        window.location.href = url;
-      } else {
-        toast.error("Could not start payment session.");
-      }
-
-      await fetch("/api/send-text", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: payload.name,
-          date: payload.date,
-          time: payload.time,
-        }),
-      });
-
-      setTimeout(() => form.reset(), 2200);
-    } catch (error) {
-      console.error("Booking error:", error);
-      toast.error("Something went wrong. Please try again.");
-    }
-  };
-
+  const checkoutJson = await checkoutRes.json();
+  if (checkoutRes.ok && checkoutJson.url) {
+    window.location.href = checkoutJson.url;
+  } else {
+    toast.error("Could not start payment session.");
+  }
+} catch (error) {
+  console.error("Booking error:", error);
+  toast.error("Something went wrong. Please try again.");
+}
+};
+  
   return (
     <main className="min-h-screen bg-pink-50 p-4 sm:p-6 md:p-10 text-gray-800">
       <Toaster />
