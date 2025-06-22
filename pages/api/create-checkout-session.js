@@ -29,12 +29,20 @@ export default async function handler(req, res) {
   mode: "payment",
   success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
   cancel_url: `${req.headers.origin}/cancel`,
-  metadata: {
-    booking_id: bookingId, // Optional: “TEMP_ID_ONLY_FOR_STRIPE”
-    ...bookingMetadata,
-  },
+   metadata: {
+    booking_id: bookingId,
+    name: bookingMetadata.name,
+    instagram: bookingMetadata.instagram,
+    phone: bookingMetadata.phone,
+    service: bookingMetadata.service,
+    artLevel: bookingMetadata.artLevel, // ✅ watch the casing!
+    date: bookingMetadata.date,
+    time: bookingMetadata.time,
+    notes: bookingMetadata.notes,
+    returning: bookingMetadata.returning,
+    referral: bookingMetadata.referral
+  }
 });
-
 
     return res.status(200).json({ url: session.url });
   } catch (error) {
