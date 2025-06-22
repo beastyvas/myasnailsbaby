@@ -29,19 +29,20 @@ export default async function handler(req, res) {
   mode: "payment",
   success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
   cancel_url: `${req.headers.origin}/cancel`,
-   metadata: {
-    booking_id: bookingId,
-    name: bookingMetadata.name,
-    instagram: bookingMetadata.instagram,
-    phone: bookingMetadata.phone,
-    service: bookingMetadata.service,
-    artLevel: bookingMetadata.artLevel, // ✅ watch the casing!
-    date: bookingMetadata.date,
-    time: bookingMetadata.time,
-    notes: bookingMetadata.notes,
-    returning: bookingMetadata.returning,
-    referral: bookingMetadata.referral
-  }
+  metadata: {
+  booking_id: String(bookingId),
+  name: String(bookingMetadata.name || ""),
+  instagram: String(bookingMetadata.instagram || ""),
+  phone: String(bookingMetadata.phone || ""),
+  service: String(bookingMetadata.service || ""),
+  artLevel: String(bookingMetadata.artLevel || ""),
+  date: String(bookingMetadata.date || ""),
+  time: String(bookingMetadata.time || ""),
+  notes: String(bookingMetadata.notes || ""),
+  returning: String(bookingMetadata.returning || ""),
+  referral: String(bookingMetadata.referral || ""),
+}
+
 });
 
     return res.status(200).json({ url: session.url });
