@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       return res.status(400).send("Invalid metadata");
     }
 
-    const {
+ const {
   booking_id,
   name,
   instagram,
@@ -50,20 +50,22 @@ export default async function handler(req, res) {
   referral
 } = session.metadata || {};
 
-const { error } = await supabase.from("bookings").update({
-  name,
-  instagram,
-  phone,
-  service,
-  art_level: artLevel,      // ✅ key fix here
-  date,
-  time,
-  notes,
-  returning,
-  referral,
-  paid: true,
-})
-.eq("id", booking_id);
+const { error } = await supabase.from("bookings").insert([
+  {
+    id: booking_id,           // ✅ explicitly insert the correct ID
+    name,
+    instagram,
+    phone,
+    service,
+    art_level: artLevel,
+    date,
+    time,
+    notes,
+    returning,
+    referral,
+    paid: true,
+  }
+]);
 
 
     if (error) {
