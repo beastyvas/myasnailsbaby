@@ -88,53 +88,41 @@ const timeOptions = availability
     referral,
   };
 
-  try {
-    const res = await fetch("/api/book", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+ try {
+  const res = await fetch("/api/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
 
-    const json = await res.json();
-    if (!res.ok || !json.success) throw new Error("Booking failed");
+  const json = await res.json();
+  if (!res.ok || !json.success) throw new Error("Booking failed");
 
-    toast.success("Booking request submitted!", {
-      duration: 2000,
-      position: "bottom-center",
-    });
+  toast.success("Booking request submitted!", {
+    duration: 2000,
+    position: "bottom-center",
+  });
 
-    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+  confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
-    const bookingMetadata = {
-      name,
-      instagram,
-      phone,
-      service,
-      artLevel,
-      date,
-      time,
-      notes,
-      returning,
-      referral,
-    };
+  const { bookingId, bookingMetadata } = json;
 
-    const stripe = await getStripe();
-    const checkoutRes = await fetch("/api/create-checkout-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        bookingId,
-        bookingMetadata,
-      }),
-    });
+  const stripe = await getStripe();
+  const checkoutRes = await fetch("/api/create-checkout-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bookingId, bookingMetadata }),
+  });
 
-    const checkoutData = await checkoutRes.json();
-    window.location.href = checkoutData.url;
+  const { url } = await checkoutRes.json();
+  if (!checkoutRes.ok || !url) throw new Error("Stripe checkout failed");
 
-  } catch (err) {
-    console.error(err);
-    toast.error("Something went wrong during checkout.");
-  }
+  window.location.href = url;
+} catch (err) {
+  console.error("Error during booking:", err.message);
+  toast.error("Something went wrong. Please try again.");
+}
+
 };
 
   return (

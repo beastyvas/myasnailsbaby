@@ -20,21 +20,22 @@ export default async function handler(req, res) {
     const bookingId = uuidv4(); // generate unique ID for use in webhook insert
 
     return res.status(200).json({
-      success: true,
-      bookingId,
-      bookingMetadata: {
-        name,
-        instagram,
-        phone,
-        service,
-        artLevel,
-        date,
-        time,
-        notes,
-        returning,
-        referral,
-      },
-    });
+  success: true,
+  bookingId,  // ← important
+  bookingMetadata: {
+    name,
+    instagram,
+    phone,
+    service,
+    artLevel,
+    date,
+    time,
+    notes,
+    returning,
+    referral,
+  },
+});
+
 
   } catch (err) {
     console.error("Unexpected error in book.js:", err.message);
