@@ -31,49 +31,50 @@ export default async function handler(req, res) {
     const session = event.data.object;
     const metadata = session.metadata;
 
-    if (!metadata || !metadata.booking_id) {
-      console.error("❌ Missing metadata or booking_id");
+    console.log("📬 Webhook received with metadata:", metadata);
+
+    if (!metadata || typeof metadata.booking_id !== "string" || metadata.booking_id.length < 10) {
+      console.error("❌ Invalid metadata or missing booking_id:", metadata);
       return res.status(400).send("Invalid metadata");
     }
 
- const {
-  booking_id,
-  name,
-  instagram,
-  phone,
-  service,
-  artLevel,
-  date,
-  time,
-  notes,
-  returning,
-  referral
-} = session.metadata || {};
+    const {
+      booking_id,
+      name,
+      instagram,
+      phone,
+      service,
+      artLevel,
+      date,
+      time,
+      notes,
+      returning,
+      referral
+    } = metadata;
 
-const { error } = await supabase.from("bookings").insert([
-  {
-    id: booking_id,           // ✅ explicitly insert the correct ID
-    name,
-    instagram,
-    phone,
-    service,
-    art_level: artLevel,
-    date,
-    time,
-    notes,
-    returning,
-    referral,
-    paid: true,
-  }
-]);
-
+    const { error } = await supabase.from("bookings").insert([
+      {
+        id: booking_id,
+        name,
+        instagram,
+        phone,
+        service,
+        art_level: artLevel,
+        date,
+        time,
+        notes,
+        returning,
+        referral,
+        paid: true,
+      }
+    ]);
 
     if (error) {
-      console.error("❌ Supabase update error:", error.message);
-      return res.status(500).send("Supabase update failed");
+      console.error("❌ Supabase insert error:", error.message);
+      return res.status(500).send("Supabase insert failed");
     }
 
-    // ✅ Send SMS to Mya
+    // Optional: Send SMS
     try {
       await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/send-text`, {
         method: "POST",
@@ -81,7 +82,7 @@ const { error } = await supabase.from("bookings").insert([
         body: JSON.stringify({ name, date, time }),
       });
 
-      console.log("✅ Booking updated & SMS sent");
+      console.log("✅ Booking inserted & SMS sent");
     } catch (smsErr) {
       console.error("⚠️ SMS sending failed:", smsErr.message);
     }

@@ -6,23 +6,17 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   try {
-    const { bookingId, bookingMetadata } = req.body;
+    const {
+      bookingId,
+      bookingMetadata
+    } = req.body;
 
-    const metadata = {
-      booking_id: String(bookingId ?? ""),
-      name: String(bookingMetadata?.name ?? ""),
-      instagram: String(bookingMetadata?.instagram ?? ""),
-      phone: String(bookingMetadata?.phone ?? ""),
-      service: String(bookingMetadata?.service ?? ""),
-      artLevel: String(bookingMetadata?.artLevel ?? ""),
-      date: String(bookingMetadata?.date ?? ""),
-      time: String(bookingMetadata?.time ?? ""),
-      notes: String(bookingMetadata?.notes ?? ""),
-      returning: String(bookingMetadata?.returning ?? ""),
-      referral: String(bookingMetadata?.referral ?? "")
-    };
+    console.log("📦 Creating Stripe Checkout:", { bookingId, bookingMetadata });
 
-    console.log("🧪 Stripe metadata payload:", metadata);
+    if (!bookingId || typeof bookingId !== "string" || bookingId.length < 10) {
+      console.error("❌ Invalid or missing bookingId");
+      return res.status(400).json({ error: "Missing bookingId" });
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -42,12 +36,24 @@ export default async function handler(req, res) {
       mode: "payment",
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel`,
-      metadata,
+      metadata: {
+        booking_id: bookingId,
+        name: bookingMetadata.name,
+        instagram: bookingMetadata.instagram,
+        phone: bookingMetadata.phone,
+        service: bookingMetadata.service,
+        artLevel: bookingMetadata.artLevel,
+        date: bookingMetadata.date,
+        time: bookingMetadata.time,
+        notes: bookingMetadata.notes,
+        returning: bookingMetadata.returning,
+        referral: bookingMetadata.referral,
+      }
     });
 
     return res.status(200).json({ url: session.url });
   } catch (error) {
-    console.error("Stripe error:", error.message);
+    console.error("❌ Stripe session error:", error.message);
     return res.status(500).json({ error: error.message });
   }
 }
