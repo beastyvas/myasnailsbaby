@@ -1,7 +1,7 @@
-import { supabase } from "@/lib/supabase"; // or wherever your client is
+// File: /pages/api/book.js
+import { supabase } from "@/lib/supabase";
 import { Resend } from "resend";
 import { v4 as uuidv4 } from "uuid";
-
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -22,12 +22,11 @@ export default async function handler(req, res) {
       referral = "",
     } = req.body;
 
-    const bookingId = uuidv4(); // ✅ Unique ID
+    const bookingId = uuidv4();
 
-    // ✅ INSERT into Supabase
     const { error } = await supabase.from("bookings").insert([
       {
-        id: bookingId, // your table has an "id" column
+        id: bookingId,
         name,
         instagram,
         phone,
@@ -38,7 +37,7 @@ export default async function handler(req, res) {
         notes,
         returning,
         referral,
-        paid: false, // default
+        paid: false,
       },
     ]);
 
@@ -47,16 +46,15 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: "DB insert failed" });
     }
 
-    // ✅ Return data to trigger Stripe session
     return res.status(200).json({
       success: true,
-      bookingId, // now a real ID
+      bookingId,
       bookingMetadata: {
         name,
         instagram,
         phone,
         service,
-        artLevel, // use camelCase here (Stripe expects it)
+        artLevel,
         date,
         time,
         notes,
