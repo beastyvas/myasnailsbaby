@@ -7,6 +7,9 @@ import NailGallery from "@/components/NailGallery";
 import Link from "next/link";
 import { supabase } from "@/utils/supabaseClient";
 import { loadStripe } from "@stripe/stripe-js";
+import { v4 as uuidv4 } from "uuid"; // Only once at the top if not already there
+
+
 
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
@@ -53,63 +56,87 @@ const timeOptions = availability
   .map((slot) => slot.time);
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const form = formRef.current;
-    const data = new FormData(form);
-    const payload = {
-      name: data.get("name"),
-      instagram: data.get("instagram"),
-      phone: data.get("phone"),
-      service: data.get("service"),
-      artLevel: data.get("artLevel"),
-      date: data.get("date"),
-      time: data.get("time"),
-      notes: data.get("notes"),
-      returning: data.get("returning"),
-      referral: data.get("referral"),
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  const form = formRef.current;
+  const data = new FormData(form);
+
+  const name = data.get("name");
+  const instagram = data.get("instagram");
+  const phone = data.get("phone");
+  const service = data.get("service");
+  const artLevel = data.get("artLevel");
+  const date = data.get("date");
+  const time = data.get("time");
+  const notes = data.get("notes");
+  const returning = data.get("returning");
+  const referral = data.get("referral");
+
+  const bookingId = uuidv4(); // ✅ Generate unique booking ID
+
+  const payload = {
+    id: bookingId, // send this to /api/book
+    name,
+    instagram,
+    phone,
+    service,
+    artLevel,
+    date,
+    time,
+    notes,
+    returning,
+    referral,
+  };
+
+  try {
+    const res = await fetch("/api/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error("Booking failed");
+
+    toast.success("Booking request submitted!", {
+      duration: 2000,
+      position: "bottom-center",
+    });
+
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+
+    const bookingMetadata = {
+      name,
+      instagram,
+      phone,
+      service,
+      artLevel,
+      date,
+      time,
+      notes,
+      returning,
+      referral,
     };
 
-    try {
-  const res = await fetch("/api/book", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+    const stripe = await getStripe();
+    const checkoutRes = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bookingId,
+        bookingMetadata,
+      }),
+    });
 
-  const json = await res.json();
-  if (!res.ok || !json.success) throw new Error("Booking failed");
+    const checkoutData = await checkoutRes.json();
+    window.location.href = checkoutData.url;
 
-  toast.success("Booking request submitted!", {
-    duration: 2000,
-    position: "bottom-center",
-  });
-
-  confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-
-  const { bookingMetadata } = json;
-
-  const stripe = await getStripe();
-  const checkoutRes = await fetch("/api/create-checkout-session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      bookingMetadata,
-    }),
-  });
-
-  const checkoutJson = await checkoutRes.json();
-  if (checkoutRes.ok && checkoutJson.url) {
-    window.location.href = checkoutJson.url;
-  } else {
-    toast.error("Could not start payment session.");
+  } catch (err) {
+    console.error(err);
+    toast.error("Something went wrong during checkout.");
   }
-} catch (error) {
-  console.error("Booking error:", error);
-  toast.error("Something went wrong. Please try again.");
-}
 };
-  
+
   return (
     <main className="min-h-screen bg-pink-50 p-4 sm:p-6 md:p-10 text-gray-800">
       <Toaster />
