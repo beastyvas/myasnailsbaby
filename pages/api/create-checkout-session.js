@@ -6,16 +6,17 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   try {
-    const {
-      bookingId,
-      bookingMetadata
-    } = req.body;
+    const { bookingMetadata } = req.body;
 
-    console.log("📦 Creating Stripe Checkout:", { bookingId, bookingMetadata });
+    console.log("📦 Creating Stripe Checkout with metadata:", bookingMetadata);
 
-    if (!bookingId || typeof bookingId !== "string" || bookingId.length < 10) {
-      console.error("❌ Invalid or missing bookingId");
-      return res.status(400).json({ error: "Missing bookingId" });
+    if (
+      !bookingMetadata?.booking_id ||
+      typeof bookingMetadata.booking_id !== "string" ||
+      bookingMetadata.booking_id.length < 10
+    ) {
+      console.error("❌ Invalid or missing booking_id in metadata");
+      return res.status(400).json({ error: "Missing or invalid booking_id" });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel`,
       metadata: {
-        booking_id: bookingId,
+        booking_id: bookingMetadata.booking_id,
         name: bookingMetadata.name,
         instagram: bookingMetadata.instagram,
         phone: bookingMetadata.phone,
@@ -48,7 +49,7 @@ export default async function handler(req, res) {
         notes: bookingMetadata.notes,
         returning: bookingMetadata.returning,
         referral: bookingMetadata.referral,
-      }
+      },
     });
 
     return res.status(200).json({ url: session.url });
