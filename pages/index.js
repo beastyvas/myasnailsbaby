@@ -100,20 +100,19 @@ const timeOptions = availability
     if (!res.ok || !json.success) throw new Error("Booking failed");
 
     // 2️⃣ Create Stripe Checkout session with full metadata
-    const bookingMetadata = {
-      booking_id: bookingId, // ✅ FIXED! Send with underscore
-      name,
-      instagram,
-      phone,
-      service,
-      artLevel,
-      date,
-      time,
-      notes,
-      returning,
-      referral,
-    };
-
+   const bookingMetadata = {
+  booking_id: bookingId, // ✅ make sure it's included
+  name,
+  instagram,
+  phone,
+  service,
+  artLevel,
+  date,
+  time,
+  notes,
+  returning,
+  referral,
+};
     const stripeRes = await fetch("/api/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
