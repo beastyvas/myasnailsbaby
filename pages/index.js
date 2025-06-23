@@ -75,7 +75,7 @@ const timeOptions = availability
   const bookingId = uuidv4(); // ✅ Generate unique booking ID
 
   const payload = {
-    id: bookingId, // send this to /api/book
+    id: bookingId,
     name,
     instagram,
     phone,
@@ -88,52 +88,56 @@ const timeOptions = availability
     referral,
   };
 
- try {
- const res = await fetch("/api/book", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-});
+  try {
+    // 1️⃣ Insert into Supabase bookings table
+    const res = await fetch("/api/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-const json = await res.json();
-if (!res.ok || !json.success) throw new Error("Booking failed");
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error("Booking failed");
 
-const bookingId = json.bookingId; // ✅ NEW
-if (!bookingId) throw new Error("Booking ID missing from response");
+    // 2️⃣ Create Stripe Checkout session with full metadata
+    const bookingMetadata = {
+      booking_id: bookingId, // ✅ FIXED! Send with underscore
+      name,
+      instagram,
+      phone,
+      service,
+      artLevel,
+      date,
+      time,
+      notes,
+      returning,
+      referral,
+    };
 
-const bookingMetadata = {
-  name,
-  instagram,
-  phone,
-  service,
-  artLevel,
-  date,
-  time,
-  notes,
-  returning,
-  referral,
+    const stripeRes = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingMetadata }),
+    });
+
+    const stripeJson = await stripeRes.json();
+    if (!stripeRes.ok) throw new Error(stripeJson.error || "Stripe checkout failed");
+
+    toast.success("Booking request submitted!", {
+      duration: 2000,
+      position: "bottom-center",
+    });
+
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+
+    // 3️⃣ Redirect to Stripe Checkout
+    window.location.href = stripeJson.url;
+  } catch (err) {
+    console.error("Error during booking:", err.message);
+    toast.error("Something went wrong. Please try again.");
+  }
 };
 
-const stripeRes = await fetch("/api/create-checkout-session", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    bookingId,
-    bookingMetadata,
-  }),
-});
-
-const stripeJson = await stripeRes.json();
-if (!stripeRes.ok) throw new Error(stripeJson.error || "Stripe checkout failed");
-
-window.location.href = stripeJson.url;
-
-} catch (err) {
-  console.error("Error during booking:", err.message);
-  toast.error("Something went wrong. Please try again.");
-}
-
-};
 
   return (
     <main className="min-h-screen bg-pink-50 p-4 sm:p-6 md:p-10 text-gray-800">
