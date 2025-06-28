@@ -412,25 +412,40 @@ async function handleDeleteSelected() {
               className="border p-2 rounded w-full"
             />
             <button
-              onClick={async () => {
-                if (!newDate || !newTime) return alert("Fill both fields!");
-                const { error } = await supabase
-                  .from("availability")
-                  .insert({ date: newDate, time: newTime });
-                if (error) return alert("Insert failed.");
-                setNewDate("");
-                setNewTime("");
-                fetchAvailability();
-              }}
-              className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded"
-            >
-              Add Slot
-            </button>
+  onClick={async () => {
+    if (!newDate || !newTime) return alert("Fill both fields!");
+
+    // Convert 24-hour time to 12-hour format with AM/PM
+    const [hourStr, minuteStr] = newTime.split(":");
+    const hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    const formattedTime =
+      minute === 0
+        ? `${hour12}${suffix}`
+        : `${hour12}:${minuteStr}${suffix}`; // for things like 1:30PM
+
+    const { error } = await supabase
+      .from("availability")
+      .insert({ date: newDate, time: formattedTime });
+
+    if (error) return alert("Insert failed.");
+    setNewDate("");
+    setNewTime("");
+    fetchAvailability();
+  }}
+  className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded"
+>
+  Add Slot
+</button>
+
           </div>
 <button
   onClick={async () => {
-    const weekdayTimes = ["10AM", "12PM", "2PM"];
-    const saturdayTimes = ["1PM", "3PM", "5PM", "7PM"];
+    const weekdayTimes = ["8AM", "10AM", "12PM", "2PM"];
+    const mondayTimes = ["1PM", "3PM", "5PM", "7PM"];
+    const saturdayTimes = ["8AM", "10AM", "12AM", "2PM"];
     const inserts = [];
 
     const baseDate = new Date();
@@ -439,14 +454,22 @@ async function handleDeleteSelected() {
       const date = new Date(baseDate);
       date.setDate(baseDate.getDate() + i);
 
-      const day = date.getDay(); // 0 = Sunday
+      const day = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
       if (day === 0) {
         console.log("🛑 Skipping Sunday:", date.toDateString());
         continue;
       }
 
       const formattedDate = date.toISOString().split("T")[0];
-      const times = day === 6 ? saturdayTimes : weekdayTimes;
+      let times;
+
+      if (day === 1) {
+        times = mondayTimes;
+      } else if (day === 6) {
+        times = saturdayTimes;
+      } else {
+        times = weekdayTimes;
+      }
 
       times.forEach((time) => {
         inserts.push({ date: formattedDate, time });
@@ -460,7 +483,7 @@ async function handleDeleteSelected() {
       console.error("Insert error:", error.message);
       alert("Insert failed ❌");
     } else {
-      alert("✅ 1-week schedule generated!");
+      alert("✅ 2-week schedule generated!");
       fetchAvailability();
     }
   }}
@@ -469,7 +492,7 @@ async function handleDeleteSelected() {
   Auto-Generate Next 14 Days 🗓
 </button>
 
-          {selectedIds.length > 0 && (
+{selectedIds.length > 0 && (
   <button
     onClick={handleDeleteSelected}
     className="bg-red-500 text-white px-4 py-2 rounded shadow-sm mb-3"
@@ -502,7 +525,8 @@ async function handleDeleteSelected() {
             );
           })()}
         </div>
-      </div>
+  </div>
+
 
       <button
         onClick={async () => {

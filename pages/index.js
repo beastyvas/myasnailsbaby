@@ -153,7 +153,7 @@ const timeOptions = availability
           <h2 className="text-2xl sm:text-3xl font-bold text-myaAccent">Hey babes 💋</h2>
           <p className="text-sm sm:text-base mt-2 px-2">
             I'm Mya — a Las Vegas nail tech serving up cute sets from Gel-X to acrylic.
-            Press-ons, structured manicures, & full glam designs available. DM or book below 💅✨
+            Press-ons, structured manicures, & Full glam designs available. DM or book below 💅✨
           </p>
         </section>
 
@@ -171,7 +171,7 @@ const timeOptions = availability
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 1.5h8.5A5.25 5.25 0 0 1 21.5 8.75v6.5A5.25 5.25 0 0 1 16.25 20.5h-8.5A5.25 5.25 0 0 1 2.5 15.25v-6.5A5.25 5.25 0 0 1 7.75 3.5zM12 7.25A4.75 4.75 0 1 0 16.75 12 4.75 4.75 0 0 0 12 7.25zM12 8.75a3.25 3.25 0 1 1-3.25 3.25A3.25 3.25 0 0 1 12 8.75zm5.75-.5a1.25 1.25 0 1 1-1.25-1.25 1.25 1.25 0 0 1 1.25 1.25z" />
               </svg>
-              Follow on Instagram
+              Follow me on Instagram!
             </a>
             <a href="tel:7029818428" className="inline-flex items-center text-myaAccent hover:underline font-medium animate-pulse">
               <span className="text-lg mr-1">📞</span> (702) 981-8428
@@ -191,8 +191,7 @@ const timeOptions = availability
             <option value="">Select a Service</option>
             <option value="Gel-X">Gel-X</option>
             <option value="Acrylic">Acrylic</option>
-            <option value="Press-ons">Press-ons</option>
-            <option value="Manicure">Structured Manicure</option>
+            <option value="Manicure">Gel Manicure</option>
           </select>
 
           <select name="artLevel" className="w-full border p-2 rounded">
