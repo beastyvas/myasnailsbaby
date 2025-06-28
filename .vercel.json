@@ -1,0 +1,12 @@
+{
+  "routes": [
+    {
+      "src": "/api/stripe-webhook",
+      "methods": ["POST"],
+      "headers": {
+        "Cache-Control": "no-store"
+      },
+      "continue": true
+    }
+  ]
+}
