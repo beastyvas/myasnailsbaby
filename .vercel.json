@@ -6,7 +6,7 @@
       "headers": {
         "Cache-Control": "no-store"
       },
-      "continue": true,
+      "dest": "/api/stripe-webhook",
       "override": true
     }
   ]
