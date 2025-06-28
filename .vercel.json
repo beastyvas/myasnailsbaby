@@ -6,7 +6,8 @@
       "headers": {
         "Cache-Control": "no-store"
       },
-      "continue": true
+      "continue": true,
+      "override": true
     }
   ]
 }
