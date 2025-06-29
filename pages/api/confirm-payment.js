@@ -1,13 +1,22 @@
 import { supabase } from "@/utils/supabaseClient";
 import { Resend } from "resend";
+import Stripe from "stripe";
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
   try {
-    const metadata = req.body || {};
+    const { session_id } = req.body;
+
+    if (!session_id) {
+      return res.status(400).json({ error: "Missing session_id" });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    const metadata = session.metadata || {};
 
     const {
       name = "N/A",
@@ -15,9 +24,9 @@ export default async function handler(req, res) {
       phone = "",
       service = "N/A",
       artLevel = "N/A",
-      date = "N/A",
-      time = "N/A",
-      Length = "N/A",
+      date = null,
+      time = null,
+      length = "N/A",
       notes = "",
       returning = "N/A",
       referral = "",
@@ -25,7 +34,6 @@ export default async function handler(req, res) {
 
     console.log("📨 Confirm-payment metadata:", metadata);
 
-    // Insert into Supabase
     const { data, error } = await supabase
       .from("bookings")
       .insert([
@@ -35,7 +43,7 @@ export default async function handler(req, res) {
           phone,
           service,
           art_level: artLevel,
-          Length, // ensure this matches your Supabase field name
+          length, // lowercase here to match Supabase
           date,
           time,
           notes,
@@ -52,7 +60,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: error.message });
     }
 
-    // Send email to Mya
     try {
       await resend.emails.send({
         from: "Mya's Nails <onboarding@resend.dev>",
@@ -65,7 +72,7 @@ export default async function handler(req, res) {
           ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""}
           <p><strong>Service:</strong> ${service}</p>
           <p><strong>Art Level:</strong> ${artLevel}</p>
-          <p><strong>Length:</strong> ${Length}</p>
+          <p><strong>Length:</strong> ${length}</p>
           <p><strong>Date:</strong> ${date}</p>
           <p><strong>Time:</strong> ${time}</p>
           <p><strong>Notes:</strong> ${notes}</p>
@@ -77,7 +84,7 @@ export default async function handler(req, res) {
       console.error("❌ Email send failed:", emailErr.message);
     }
 
-    // Send SMS to client if phone is valid
+    // SMS to client
     if (phone && phone.length >= 10) {
       try {
         const smsRes = await fetch("https://textbelt.com/text", {
@@ -85,7 +92,7 @@ export default async function handler(req, res) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             phone: phone.startsWith("+1") ? phone : `+1${phone}`,
-            message: `Hey love! 📅 Your appointment with Mya is confirmed for ${date} at ${time}. Thank you for booking and please dm me @myasnailsbaby if you have any questions or concerns! 💅`,
+            message: `Hey love! 📅 Your appointment with Mya is confirmed for ${date} at ${time}. Please DM @myasnailsbaby if you have questions! 💅`,
             key: process.env.TEXTBELT_API_KEY,
           }),
         });
