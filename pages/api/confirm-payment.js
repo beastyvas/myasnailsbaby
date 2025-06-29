@@ -1,4 +1,3 @@
-// File: /pages/api/confirm-payment.js
 import { supabase } from "@/utils/supabaseClient";
 import { Resend } from "resend";
 
@@ -24,10 +23,9 @@ export default async function handler(req, res) {
       referral = "",
     } = metadata;
 
-    // ✅ Log metadata for debugging
     console.log("📨 Confirm-payment metadata:", metadata);
 
-    // Insert appointment into Supabase
+    // Insert into Supabase
     const { data, error } = await supabase
       .from("bookings")
       .insert([
@@ -37,10 +35,10 @@ export default async function handler(req, res) {
           phone,
           service,
           art_level: artLevel,
+          Length, // ensure this matches your Supabase field name
           date,
           time,
           notes,
-          Length,
           paid: true,
           returning,
           referral,
@@ -54,38 +52,51 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: error.message });
     }
 
-    // Send email notification to Mya
-    await resend.emails.send({
-      from: "Mya's Nails <onboarding@resend.dev>",
-      to: ["myasnailsbaby@gmail.com"],
-      subject: "New Booking Request 💅",
-      html: `
-        <h2>New Booking Request!</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Instagram:</strong> ${instagram}</p>
-        ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""}
-        <p><strong>Service:</strong> ${service}</p>
-        <p><strong>Art Level:</strong> ${artLevel}</p>
-        <p><strong>Length:</strong> ${Length}</p>
-        <p><strong>Date:</strong> ${date}</p>
-        <p><strong>Time:</strong> ${time}</p>
-        <p><strong>Notes:</strong> ${notes}</p>
-        <p><strong>Returning Client:</strong> ${returning}</p>
-        ${referral ? `<p><strong>Referral:</strong> ${referral}</p>` : ""}
-      `,
-    });
-
-    // Send SMS to client if phone provided
-    if (phone) {
-      await fetch("https://textbelt.com/text", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          phone,
-          message: `Hey love! You're booked ✨! Your nail appointment is confirmed for ${date} at ${time} 💅 you will receive a reminder text the day before your appointment including policies and address! Please dm me @myasnailsbaby if you have any questions or concerns!`,
-          key: process.env.TEXTBELT_API_KEY,
-        }),
+    // Send email to Mya
+    try {
+      await resend.emails.send({
+        from: "Mya's Nails <onboarding@resend.dev>",
+        to: ["myasnailsbaby@gmail.com"],
+        subject: "New Booking Request 💅",
+        html: `
+          <h2>New Booking Request!</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Instagram:</strong> ${instagram}</p>
+          ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""}
+          <p><strong>Service:</strong> ${service}</p>
+          <p><strong>Art Level:</strong> ${artLevel}</p>
+          <p><strong>Length:</strong> ${Length}</p>
+          <p><strong>Date:</strong> ${date}</p>
+          <p><strong>Time:</strong> ${time}</p>
+          <p><strong>Notes:</strong> ${notes}</p>
+          <p><strong>Returning Client:</strong> ${returning}</p>
+          ${referral ? `<p><strong>Referral:</strong> ${referral}</p>` : ""}
+        `,
       });
+    } catch (emailErr) {
+      console.error("❌ Email send failed:", emailErr.message);
+    }
+
+    // Send SMS to client if phone is valid
+    if (phone && phone.length >= 10) {
+      try {
+        const smsRes = await fetch("https://textbelt.com/text", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: phone.startsWith("+1") ? phone : `+1${phone}`,
+            message: `Hey love! 📅 Your appointment with Mya is confirmed for ${date} at ${time}. Thank you for booking and please dm me @myasnailsbaby if you have any questions or concerns! 💅`,
+            key: process.env.TEXTBELT_API_KEY,
+          }),
+        });
+
+        const smsResult = await smsRes.json();
+        if (!smsResult.success) {
+          console.error("❌ Textbelt failed:", smsResult);
+        }
+      } catch (smsErr) {
+        console.error("❌ SMS send error:", smsErr.message);
+      }
     }
 
     return res.status(200).json({ success: true, bookingId: data.id });
