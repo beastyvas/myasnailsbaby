@@ -34,6 +34,36 @@ export default function Dashboard() {
     reader.onloadend = () => setPreview(reader.result);
     reader.readAsDataURL(file);
   }
+const [bio, setBio] = useState("");
+const [saving, setSaving] = useState(false);
+
+useEffect(() => {
+  const fetchBio = async () => {
+    const { data, error } = await supabase.from("settings").select("bio").single();
+    if (error) {
+      console.error("Error fetching bio:", error.message);
+    } else {
+      setBio(data.bio || "");
+    }
+  };
+
+  fetchBio();
+}, []);
+
+const saveBio = async () => {
+  setSaving(true);
+  const { error } = await supabase
+    .from("settings")
+    .update({ bio })
+    .eq("id", "c5d1931e-8603-4f6e-ac4e-e6cf6bd839a9"); // ✅ match your Supabase row
+  setSaving(false);
+  if (error) {
+    alert("Failed to save bio.");
+    console.error("Bio update error:", error.message);
+  } else {
+    alert("Bio updated!");
+  }
+};
 
   function dataURLtoFile(dataUrl, filename) {
     const arr = dataUrl.split(",");
@@ -234,9 +264,29 @@ async function handleDeleteSelected() {
     );
   }
 
+ 
+
   return (
     <main className="min-h-screen bg-pink-50 text-gray-800 p-6">
       <h1 className="text-2xl font-bold text-center mb-6">Mya's Dashboard 💅</h1>
+
+      <section className="mb-10">
+        <h2 className="text-lg font-semibold mb-2">Edit Bio ✏️</h2>
+        <textarea
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          rows={4}
+          className="w-full border p-2 rounded mb-2"
+          placeholder="Enter new booking bio here..."
+        />
+        <button
+          onClick={saveBio}
+          disabled={saving}
+          className="bg-pink-600 text-white px-4 py-2 rounded shadow-sm"
+        >
+          {saving ? "Saving..." : "Save Bio"}
+        </button>
+      </section>
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold mb-2">Gallery Upload</h2>
@@ -450,7 +500,7 @@ async function handleDeleteSelected() {
 
     const baseDate = new Date();
 
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 30; i++) {
       const date = new Date(baseDate);
       date.setDate(baseDate.getDate() + i);
 
@@ -489,7 +539,7 @@ async function handleDeleteSelected() {
   }}
   className="bg-pink-100 hover:bg-pink-200 text-pink-700 font-medium px-3 py-2 rounded shadow-sm text-sm mt-2"
 >
-  Auto-Generate Next 14 Days 🗓
+  Auto-Generate Next 30 Days 🗓
 </button>
 
 {selectedIds.length > 0 && (
@@ -559,4 +609,4 @@ async function handleDeleteSelected() {
       </section>
     </main>
   );
-}
+ }

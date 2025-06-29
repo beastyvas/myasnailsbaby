@@ -49,6 +49,17 @@ export default function Home() {
   fetchAvailability();
 }, []);
 
+const [bioText, setBioText] = useState("");
+
+useEffect(() => {
+  const fetchBio = async () => {
+    const { data, error } = await supabase.from("settings").select("bio").single();
+    if (!error && data) setBioText(data.bio || "");
+  };
+  fetchBio();
+}, []);
+
+
 const availableDates = [...new Set(availability.map((slot) => slot.date))];
 
 const timeOptions = availability
@@ -151,10 +162,10 @@ const timeOptions = availability
             className="w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-full mx-auto shadow-md mb-4"
           />
           <h2 className="text-2xl sm:text-3xl font-bold text-myaAccent">Hey babes 💋</h2>
-          <p className="text-sm sm:text-base mt-2 px-2">
-            I'm Mya — a Las Vegas nail tech serving up cute sets from Gel-X to acrylic.
-            Press-ons, structured manicures, & Full glam designs available. DM or book below 💅✨
-          </p>
+         <p className="text-sm sm:text-base mt-2 px-2 whitespace-pre-wrap">
+  {bioText || "Loading bio..."}
+</p>
+
         </section>
 
         <NailGallery />
@@ -192,14 +203,24 @@ const timeOptions = availability
             <option value="Gel-X">Gel-X</option>
             <option value="Acrylic">Acrylic</option>
             <option value="Manicure">Gel Manicure</option>
+            <option value="Manicure">Hard gel</option>
+            <option value="Manicure">Builder Gel Manicure</option>
           </select>
 
           <select name="artLevel" className="w-full border p-2 rounded">
-            <option value="">Nail Art Level (Optional)</option>
+            <option value="">Nail Art Level </option>
             <option value="Level 1">Level 1</option>
             <option value="Level 2">Level 2</option>
             <option value="Level 3">Level 3</option>
             <option value="French Tips">French Tips</option>
+          </select>
+
+<select name="Length" className="w-full border p-2 rounded">
+            <option value="">Nail Length </option>
+            <option value="Small/Xtra Small">Small/Xtra Small</option>
+            <option value="Medium">Medium</option>
+            <option value="Large">Large</option>
+            <option value="XL/XXL">XL/XXL</option>
           </select>
 
           <select

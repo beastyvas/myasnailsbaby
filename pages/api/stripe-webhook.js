@@ -9,12 +9,15 @@ export const config = {
   },
 };
 
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2022-11-15",
 });
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
+  if (req.method !== 'POST') {
+    return res.status(405).end('Method Not Allowed');
+  }
 
   let event;
   const sig = req.headers["stripe-signature"];

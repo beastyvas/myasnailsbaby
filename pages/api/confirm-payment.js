@@ -8,42 +8,51 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
   try {
-    const {
-      name,
-      instagram,
-      phone,
-      service,
-      artLevel,
-      date,
-      time,
-      notes,
-      returning,
-      referral,
-    } = req.body;
+    const metadata = req.body || {};
 
-    // Insert appointment into Supabase (paid: true by default)
-    const { data, error } = await supabase.from("bookings").insert([
-      {
-        name,
-        instagram,
-        phone,
-        service,
-        art_level: artLevel,
-        date,
-        time,
-        notes,
-        paid: true,
-        returning,
-        referral,
-      },
-    ]).select().single();
+    const {
+      name = "N/A",
+      instagram = "N/A",
+      phone = "",
+      service = "N/A",
+      artLevel = "N/A",
+      date = "N/A",
+      time = "N/A",
+      notes = "",
+      returning = "N/A",
+      referral = "",
+    } = metadata;
+
+    // ✅ Log metadata for debugging
+    console.log("📨 Confirm-payment metadata:", metadata);
+
+    // Insert appointment into Supabase
+    const { data, error } = await supabase
+      .from("bookings")
+      .insert([
+        {
+          name,
+          instagram,
+          phone,
+          service,
+          art_level: artLevel,
+          date,
+          time,
+          notes,
+          paid: true,
+          returning,
+          referral,
+        },
+      ])
+      .select()
+      .single();
 
     if (error) {
       console.error("❌ Supabase insert failed:", error.message);
       return res.status(500).json({ success: false, error: error.message });
     }
 
-    // Send email only after successful payment and DB insert
+    // Send email notification
     await resend.emails.send({
       from: "Mya's Nails <onboarding@resend.dev>",
       to: ["myasnailsbaby@gmail.com"],
