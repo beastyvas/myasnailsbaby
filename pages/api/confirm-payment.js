@@ -18,6 +18,7 @@ export default async function handler(req, res) {
       artLevel = "N/A",
       date = "N/A",
       time = "N/A",
+      Length = "N/A",
       notes = "",
       returning = "N/A",
       referral = "",
@@ -39,6 +40,7 @@ export default async function handler(req, res) {
           date,
           time,
           notes,
+          Length,
           paid: true,
           returning,
           referral,
@@ -52,7 +54,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: error.message });
     }
 
-    // Send email notification
+    // Send email notification to Mya
     await resend.emails.send({
       from: "Mya's Nails <onboarding@resend.dev>",
       to: ["myasnailsbaby@gmail.com"],
@@ -64,6 +66,7 @@ export default async function handler(req, res) {
         ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""}
         <p><strong>Service:</strong> ${service}</p>
         <p><strong>Art Level:</strong> ${artLevel}</p>
+        <p><strong>Length:</strong> ${Length}</p>
         <p><strong>Date:</strong> ${date}</p>
         <p><strong>Time:</strong> ${time}</p>
         <p><strong>Notes:</strong> ${notes}</p>
@@ -71,6 +74,19 @@ export default async function handler(req, res) {
         ${referral ? `<p><strong>Referral:</strong> ${referral}</p>` : ""}
       `,
     });
+
+    // Send SMS to client if phone provided
+    if (phone) {
+      await fetch("https://textbelt.com/text", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          phone,
+          message: `Hey love! You're booked ✨! Your nail appointment is confirmed for ${date} at ${time} 💅 you will receive a reminder text the day before your appointment including policies and address! Please dm me @myasnailsbaby if you have any questions or concerns!`,
+          key: process.env.TEXTBELT_API_KEY,
+        }),
+      });
+    }
 
     return res.status(200).json({ success: true, bookingId: data.id });
   } catch (err) {
