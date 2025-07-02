@@ -79,6 +79,7 @@ const timeOptions = availability
   const artLevel = data.get("artLevel");
   const date = data.get("date");
   const time = data.get("time");
+  const length = data.get("Length");
   const notes = data.get("notes");
   const returning = data.get("returning");
   const referral = data.get("referral");
@@ -94,6 +95,7 @@ const timeOptions = availability
     artLevel,
     date,
     time,
+    length,
     notes,
     returning,
     referral,
@@ -120,6 +122,7 @@ const timeOptions = availability
   artLevel,
   date,
   time,
+  length,
   notes,
   returning,
   referral,
@@ -200,6 +203,8 @@ const timeOptions = availability
 
           <select name="service" required className="w-full border p-2 rounded">
             <option value="">Select a Service</option>
+            <option value="Foreign soak off">Foreign soak off</option>
+            <option value="Soak off">Soak off</option>
             <option value="Gel-X">Gel-X</option>
             <option value="Acrylic">Acrylic</option>
             <option value="Manicure">Gel Manicure</option>
@@ -209,6 +214,7 @@ const timeOptions = availability
 
           <select name="artLevel" className="w-full border p-2 rounded">
             <option value="">Nail Art Level </option>
+            <option value="N/A">N/A</option>
             <option value="Level 1">Level 1</option>
             <option value="Level 2">Level 2</option>
             <option value="Level 3">Level 3</option>
@@ -217,6 +223,7 @@ const timeOptions = availability
 
 <select name="Length" className="w-full border p-2 rounded">
             <option value="">Nail Length </option>
+            <option value="N/A">N/A</option>
             <option value="Small/Xtra Small">Small/Xtra Small</option>
             <option value="Medium">Medium</option>
             <option value="Large">Large</option>
