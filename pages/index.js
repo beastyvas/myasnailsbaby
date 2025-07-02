@@ -203,8 +203,8 @@ const timeOptions = availability
 
           <select name="service" required className="w-full border p-2 rounded">
             <option value="">Select a Service</option>
-            <option value="Foreign soak off">Foreign soak off</option>
-            <option value="Soak off">Soak off</option>
+            <option value="Foreign soak off">Foreign soak-off</option>
+            <option value="Soak off">Soak-off</option>
             <option value="Gel-X">Gel-X</option>
             <option value="Acrylic">Acrylic</option>
             <option value="Manicure">Gel Manicure</option>
