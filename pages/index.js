@@ -231,7 +231,7 @@ const timeOptions = availability
   onChange={(e) => setSoakoff(e.target.value)}
   required
 >
-  <option value="">Select a Soakoff option</option>
+   <select name="Select a Soakoff option" className="w-full border p-2 rounded"></select>
   <option value="none">No Soak-Off</option>
   <option value="soak-off">Soak-Off</option>
   <option value="foreign">Foreign Soak-Off</option>
