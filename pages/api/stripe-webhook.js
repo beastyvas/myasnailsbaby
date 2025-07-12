@@ -66,6 +66,7 @@ export default async function handler(req, res) {
       artLevel,
       notes,
       length,
+      soakoff,
       returning,
       referral,
     } = metadata;
@@ -99,6 +100,7 @@ export default async function handler(req, res) {
           date: safeDate,
           time: safeTime,
           notes,
+          soakoff,
           paid: true,
           returning,
           referral,
