@@ -48,6 +48,15 @@ export default async function handler(req, res) {
       return res.status(400).send("Invalid metadata");
     }
 
+    // 🧼 Sanitize date & time
+    const safeDate = metadata.date?.trim() || null;
+    const safeTime = metadata.time?.trim() || null;
+
+    if (!safeDate || !safeTime) {
+      console.error("❌ Missing or invalid date/time:", { safeDate, safeTime });
+      return res.status(400).send("Missing date/time");
+    }
+
     const {
       booking_id,
       name,
@@ -55,8 +64,6 @@ export default async function handler(req, res) {
       phone,
       service,
       artLevel,
-      date,
-      time,
       notes,
       length,
       returning,
@@ -68,8 +75,8 @@ export default async function handler(req, res) {
       .from("bookings")
       .select("id")
       .eq("phone", phone)
-      .eq("date", date)
-      .eq("time", time);
+      .eq("date", safeDate)
+      .eq("time", safeTime);
 
     if (existing && existing.length > 0) {
       console.log("⚠️ Booking already exists, skipping insert");
@@ -78,7 +85,7 @@ export default async function handler(req, res) {
         .json({ success: true, bookingId: existing[0].id });
     }
 
-    // Insert booking
+    // Insert sanitized booking
     const { data, error } = await supabase
       .from("bookings")
       .insert([
@@ -89,8 +96,8 @@ export default async function handler(req, res) {
           service,
           art_level: artLevel,
           length,
-          date,
-          time,
+          date: safeDate,
+          time: safeTime,
           notes,
           paid: true,
           returning,
@@ -110,7 +117,7 @@ export default async function handler(req, res) {
       await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/send-text`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, date, time }),
+        body: JSON.stringify({ name, date: safeDate, time: safeTime }),
       });
 
       console.log("✅ Booking inserted & SMS sent");
