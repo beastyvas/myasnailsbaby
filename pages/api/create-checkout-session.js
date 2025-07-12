@@ -44,6 +44,7 @@ export default async function handler(req, res) {
         phone: bookingMetadata.phone,
         service: bookingMetadata.service,
         artLevel: bookingMetadata.artLevel,
+        length: bookingMetadata.length,
         date: bookingMetadata.date,
         time: bookingMetadata.time,
         notes: bookingMetadata.notes,

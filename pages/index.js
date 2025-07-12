@@ -8,6 +8,9 @@ import Link from "next/link";
 import { supabase } from "@/utils/supabaseClient";
 import { loadStripe } from "@stripe/stripe-js";
 import { v4 as uuidv4 } from "uuid"; // Only once at the top if not already there
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+
 
 
 
@@ -230,42 +233,35 @@ const timeOptions = availability
             <option value="XL/XXL">XL/XXL</option>
           </select>
 
-          <select
-            name="date"
-            required
-            className="w-full border p-2 rounded"
-            onChange={(e) => setSelectedDate(e.target.value)}
-          >
-            <option value="">Select a Date</option>
-            {availableDates.map((date) => {
-              const [year, month, day] = date.split("-");
-              const localDate = new Date(+year, +month - 1, +day);
-              return (
-                <option key={date} value={date}>
-                  {localDate.toLocaleDateString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </option>
-              );
-            })}
-          </select>
+        
+{/* 📅 Date Picker Calendar */}
+<Calendar
+  value={selectedDate ? new Date(selectedDate) : null}
+  onChange={(date) => {
+    const isoDate = date.toISOString().split("T")[0];
+    setSelectedDate(isoDate);
+  }}
+  tileDisabled={({ date }) => {
+    const iso = date.toISOString().split("T")[0];
+    return !availableDates.includes(iso);
+  }}
+  className="w-full border rounded p-2 mb-4"
+/>
 
-          <select
-            name="time"
-            required
-            className="w-full border p-2 rounded"
-            disabled={!selectedDate}
-          >
-            <option value="">Select a Time</option>
-            {timeOptions.map((time, idx) => (
-              <option key={idx} value={time}>
-                {time}
-              </option>
-            ))}
-          </select>
-
+{/* ⏰ Time Slot Dropdown */}
+<select
+  name="time"
+  required
+  className="w-full border p-2 rounded"
+  disabled={!selectedDate}
+>
+  <option value="">Select a Time</option>
+  {timeOptions.map((time, idx) => (
+    <option key={idx} value={time}>
+      {time}
+    </option>
+  ))}
+</select>
           <input
             type="tel"
             name="phone"

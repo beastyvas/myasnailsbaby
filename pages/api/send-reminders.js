@@ -1,4 +1,3 @@
-// File: pages/api/send-reminders.js
 import { supabase } from "@/utils/supabaseClient";
 
 export default async function handler(req, res) {
@@ -10,8 +9,9 @@ export default async function handler(req, res) {
 
   const { data: bookings, error } = await supabase
     .from("bookings")
-    .select("name, phone, date, time")
-    .eq("date", dateStr);
+    .select("id, name, phone, date, time")
+    .eq("date", dateStr)
+    .eq("reminder_sent", false);
 
   if (error) {
     console.error("Error fetching bookings:", error);
@@ -38,7 +38,13 @@ See you soon! 💖`,
     });
 
     const result = await response.json();
-    if (!result.success) {
+
+    if (result.success) {
+      await supabase
+        .from("bookings")
+        .update({ reminder_sent: true })
+        .eq("id", b.id);
+    } else {
       console.error(`Failed to send reminder to ${b.phone}:`, result.error);
     }
   });

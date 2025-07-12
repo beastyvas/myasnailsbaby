@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+
+
 
 export default function Dashboard() {
   const [pin, setPin] = useState("");
@@ -25,6 +29,7 @@ export default function Dashboard() {
       alert("Wrong pin babe 💅");
     }
   }
+const [selectedDate, setSelectedDate] = useState(null);
 
   function handleFileChange(e) {
     const file = e.target.files[0];
@@ -403,6 +408,9 @@ async function handleDeleteSelected() {
               📸 @{b.instagram}
             </p>
 
+            <p className="text-sm text-gray-600">
+               Length:{b.length}</p>
+
             <p className="text-sm mb-1">
               {b.paid ? (
                 <span className="text-green-500">✔ Paid</span>
@@ -446,167 +454,174 @@ async function handleDeleteSelected() {
 
 
       <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-2">Availability Calendar 📅</h2>
-        <div className="bg-white p-4 rounded shadow space-y-4">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="date"
-              value={newDate}
-              onChange={(e) => setNewDate(e.target.value)}
-              className="border p-2 rounded w-full"
-            />
-            <input
-              type="time"
-              value={newTime}
-              onChange={(e) => setNewTime(e.target.value)}
-              className="border p-2 rounded w-full"
-            />
-            <button
-  onClick={async () => {
-    if (!newDate || !newTime) return alert("Fill both fields!");
+  <h2 className="text-lg font-semibold mb-2">Availability Calendar 📅</h2>
+  <div className="bg-white p-4 rounded shadow space-y-4">
 
-    // Convert 24-hour time to 12-hour format with AM/PM
-    const [hourStr, minuteStr] = newTime.split(":");
-    const hour = parseInt(hourStr, 10);
-    const minute = parseInt(minuteStr, 10);
-    const suffix = hour >= 12 ? "PM" : "AM";
-    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-    const formattedTime =
-      minute === 0
-        ? `${hour12}${suffix}`
-        : `${hour12}:${minuteStr}${suffix}`; // for things like 1:30PM
-
-    const { error } = await supabase
-      .from("availability")
-      .insert({ date: newDate, time: formattedTime });
-
-    if (error) return alert("Insert failed.");
-    setNewDate("");
-    setNewTime("");
-    fetchAvailability();
-  }}
-  className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded"
->
-  Add Slot
-</button>
-
-          </div>
-<button
-  onClick={async () => {
-    const weekdayTimes = ["8AM", "10AM", "12PM", "2PM"];
-    const mondayTimes = ["1PM", "3PM", "5PM", "7PM"];
-    const saturdayTimes = ["8AM", "10AM", "12AM", "2PM"];
-    const inserts = [];
-
-    const baseDate = new Date();
-
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(baseDate);
-      date.setDate(baseDate.getDate() + i);
-
-      const day = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-      if (day === 0) {
-        console.log("🛑 Skipping Sunday:", date.toDateString());
-        continue;
-      }
-
-      const formattedDate = date.toISOString().split("T")[0];
-      let times;
-
-      if (day === 1) {
-        times = mondayTimes;
-      } else if (day === 6) {
-        times = saturdayTimes;
-      } else {
-        times = weekdayTimes;
-      }
-
-      times.forEach((time) => {
-        inserts.push({ date: formattedDate, time });
-      });
-    }
-
-    console.log("✅ Final inserts:", inserts);
-
-    const { error } = await supabase.from("availability").insert(inserts);
-    if (error) {
-      console.error("Insert error:", error.message);
-      alert("Insert failed ❌");
-    } else {
-      alert("✅ 2-week schedule generated!");
-      fetchAvailability();
-    }
-  }}
-  className="bg-pink-100 hover:bg-pink-200 text-pink-700 font-medium px-3 py-2 rounded shadow-sm text-sm mt-2"
->
-  Auto-Generate Next 30 Days 🗓
-</button>
-
-{selectedIds.length > 0 && (
-  <button
-    onClick={handleDeleteSelected}
-    className="bg-red-500 text-white px-4 py-2 rounded shadow-sm mb-3"
-  >
-    Delete Selected ({selectedIds.length})
-  </button>
-)}
-
-<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-  {availability.map((slot) => (
-    <div
-      key={slot.id}
-      className="bg-pink-50 border border-pink-200 rounded-xl p-4 flex justify-between items-center shadow-sm"
-    >
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={selectedIds.includes(slot.id)}
-          onChange={() => toggleSelected(slot.id)}
-        />
-        <div className="text-sm font-medium text-gray-800">
-          {(() => {
-            const dateObj = new Date(`${slot.date}T00:00:00`);
-            return (
-              dateObj.toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-              }) + ` @ ${slot.time}`
-            );
-          })()}
-        </div>
-  </div>
-
-
+    {/* ➕ Manual Add Slot */}
+    <div className="flex flex-col sm:flex-row gap-2">
+      <input
+        type="date"
+        value={newDate}
+        onChange={(e) => setNewDate(e.target.value)}
+        className="border p-2 rounded w-full"
+      />
+      <input
+        type="time"
+        value={newTime}
+        onChange={(e) => setNewTime(e.target.value)}
+        className="border p-2 rounded w-full"
+      />
       <button
         onClick={async () => {
-          const confirmDelete = confirm(
-            "Are you sure you want to delete this slot?"
-          );
-          if (!confirmDelete) return;
+          if (!newDate || !newTime) return alert("Fill both fields!");
+          const [hourStr, minuteStr] = newTime.split(":");
+          const hour = parseInt(hourStr, 10);
+          const minute = parseInt(minuteStr, 10);
+          const suffix = hour >= 12 ? "PM" : "AM";
+          const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+          const formattedTime =
+            minute === 0
+              ? `${hour12}${suffix}`
+              : `${hour12}:${minuteStr}${suffix}`;
 
           const { error } = await supabase
             .from("availability")
-            .delete()
-            .eq("id", slot.id);
+            .insert({ date: newDate, time: formattedTime });
 
-          if (error) {
-            console.error("Delete error:", error.message);
-            alert("Failed to delete slot.");
-          } else {
-            fetchAvailability();
-          }
+          if (error) return alert("Insert failed.");
+          setNewDate("");
+          setNewTime("");
+          fetchAvailability();
         }}
-        className="text-xs text-red-500 hover:underline"
+        className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded"
       >
-        Delete
+        Add Slot
       </button>
     </div>
-  ))}
-</div>
 
+    {/* ⚡ Auto-Generate Slots */}
+    <button
+      onClick={async () => {
+        const weekdayTimes = ["8AM", "10AM", "12PM", "2PM"];
+        const mondayTimes = ["1PM", "3PM", "5PM", "7PM"];
+        const saturdayTimes = ["8AM", "10AM", "12AM", "2PM"];
+        const inserts = [];
+        const baseDate = new Date();
+
+        for (let i = 0; i < 30; i++) {
+          const date = new Date(baseDate);
+          date.setDate(baseDate.getDate() + i);
+          const day = date.getDay();
+          if (day === 0) continue; // Skip Sunday
+          const formattedDate = date.toISOString().split("T")[0];
+          const times = day === 1
+            ? mondayTimes
+            : day === 6
+            ? saturdayTimes
+            : weekdayTimes;
+
+          times.forEach((time) => inserts.push({ date: formattedDate, time }));
+        }
+
+        const { error } = await supabase.from("availability").insert(inserts);
+        if (error) {
+          console.error("Insert error:", error.message);
+          alert("Insert failed ❌");
+        } else {
+          alert("✅ 2-week schedule generated!");
+          fetchAvailability();
+        }
+      }}
+      className="bg-pink-100 hover:bg-pink-200 text-pink-700 font-medium px-3 py-2 rounded shadow-sm text-sm mt-2"
+    >
+      Auto-Generate Next 30 Days 🗓
+    </button>
+
+    {/* 🗑️ Delete Selected */}
+    {selectedIds.length > 0 && (
+      <button
+        onClick={handleDeleteSelected}
+        className="bg-red-500 text-white px-4 py-2 rounded shadow-sm mb-3"
+      >
+        Delete Selected ({selectedIds.length})
+      </button>
+    )}
+
+    {/* 📆 Calendar View */}
+    <Calendar
+      value={selectedDate}
+      onChange={setSelectedDate}
+      tileClassName={({ date }) => {
+        const iso = date.toISOString().split("T")[0];
+        const isAvailable = availability.some((slot) => slot.date === iso);
+        return isAvailable ? "bg-pink-100 font-semibold rounded-full" : null;
+      }}
+      className="rounded border"
+    />
+
+    {/* ⏰ Time Slots Display */}
+    {selectedDate && (
+      <div className="mt-4 space-y-2">
+        <h3 className="font-semibold text-gray-700">
+          Available Times on{" "}
+          {selectedDate.toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+          })}
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {availability
+            .filter(
+              (slot) =>
+                slot.date === selectedDate.toISOString().split("T")[0]
+            )
+            .map((slot) => (
+              <div
+                key={slot.id}
+                className="bg-pink-50 border border-pink-200 rounded-xl px-3 py-2 text-sm flex items-center gap-2"
+              >
+                {slot.time}
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(slot.id)}
+                  onChange={() => toggleSelected(slot.id)}
+                  className="ml-2"
+                />
+                <button
+                  onClick={async () => {
+                    const confirmDelete = confirm("Delete this slot?");
+                    if (!confirmDelete) return;
+                    const { error } = await supabase
+                      .from("availability")
+                      .delete()
+                      .eq("id", slot.id);
+                    if (error) {
+                      console.error("Delete error:", error.message);
+                      alert("Failed to delete slot.");
+                    } else {
+                      fetchAvailability();
+                    }
+                  }}
+                  className="text-red-500 text-xs hover:underline"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          {availability.filter(
+            (slot) =>
+              slot.date === selectedDate.toISOString().split("T")[0]
+          ).length === 0 && (
+            <p className="text-gray-500 italic text-sm">
+              No times for this day
+            </p>
+          )}
         </div>
-      </section>
+      </div>
+    )}
+  </div>
+</section>
     </main>
   );
  }

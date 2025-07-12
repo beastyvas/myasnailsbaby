@@ -8,6 +8,12 @@
       },
       "dest": "/api/stripe-webhook",
       "override": true
+    },
+    {
+      "src": "/(.*)",
+      "headers": {
+        "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload"
+      }
     }
   ]
 }

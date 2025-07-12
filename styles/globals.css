@@ -42,3 +42,14 @@ body {
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+.react-calendar__tile--now {
+  background: #ffe4e6 !important; /* light pink highlight */
+}
+.react-calendar__tile--active {
+  background: #ec4899 !important; /* pink-500 */
+  color: white !important;
+}
+.bg-pink-100 {
+  background-color: #ffe4e6 !important;
+}

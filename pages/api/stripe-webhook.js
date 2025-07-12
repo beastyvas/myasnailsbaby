@@ -51,6 +51,7 @@ export default async function handler(req, res) {
       date,
       time,
       notes,
+      length,
       returning,
       referral
     } = metadata;
@@ -66,6 +67,7 @@ export default async function handler(req, res) {
         date,
         time,
         notes,
+        length: Length,
         returning,
         referral,
         paid: true,
