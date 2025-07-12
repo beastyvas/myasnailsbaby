@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { Resend } from "resend";
+import { supabase } from "@/utils/supabaseClient";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -9,10 +10,7 @@ export default async function handler(req, res) {
 
   try {
     const { session_id } = req.body;
-
-    if (!session_id) {
-      return res.status(400).json({ error: "Missing session_id" });
-    }
+    if (!session_id) return res.status(400).json({ error: "Missing session_id" });
 
     const session = await stripe.checkout.sessions.retrieve(session_id);
     const metadata = session.metadata || {};
@@ -29,13 +27,12 @@ export default async function handler(req, res) {
       notes = "",
       returning = "N/A",
       referral = "",
-      soakoff = "N/A", // ✅ soakoff included here
+      soakoff = "N/A",
     } = metadata;
 
     console.log("📨 Confirm-payment metadata:", metadata);
 
-    // 🛑 No insert here — Supabase insert handled by webhook!
-
+    // ✅ Send email
     try {
       await resend.emails.send({
         from: "Mya's Nails <onboarding@resend.dev>",
@@ -49,7 +46,7 @@ export default async function handler(req, res) {
           <p><strong>Service:</strong> ${service}</p>
           <p><strong>Art Level:</strong> ${artLevel}</p>
           <p><strong>Length:</strong> ${length}</p>
-          <p><strong>Soak-Off:</strong> ${soakoff}</p> <!-- ✅ soakoff in email -->
+          <p><strong>Soak-Off:</strong> ${soakoff}</p>
           <p><strong>Date:</strong> ${date}</p>
           <p><strong>Time:</strong> ${time}</p>
           <p><strong>Notes:</strong> ${notes}</p>
@@ -61,8 +58,27 @@ export default async function handler(req, res) {
       console.error("❌ Email send failed:", emailErr.message);
     }
 
-    // ✅ Only send SMS if payment is confirmed
+    // ✅ SMS (only if not confirmed)
     if (phone && phone.length >= 10 && session.payment_status === "paid") {
+      const { data: existing, error } = await supabase
+        .from("bookings")
+        .select("id, confirmed")
+        .eq("phone", phone)
+        .eq("date", date)
+        .eq("time", time)
+        .single();
+
+      if (error || !existing) {
+        console.error("❌ Supabase lookup failed:", error?.message);
+        return res.status(404).json({ success: false, error: "Booking not found" });
+      }
+
+      if (existing.confirmed) {
+        console.log("⚠️ Booking already confirmed, skipping SMS.");
+        return res.status(200).json({ success: true });
+      }
+
+      // ✅ Send text
       try {
         const smsRes = await fetch("https://textbelt.com/text", {
           method: "POST",
@@ -81,6 +97,12 @@ export default async function handler(req, res) {
       } catch (smsErr) {
         console.error("❌ SMS send error:", smsErr.message);
       }
+
+      // ✅ Update booking as confirmed
+      await supabase
+        .from("bookings")
+        .update({ confirmed: true })
+        .eq("id", existing.id);
     }
 
     return res.status(200).json({ success: true });
