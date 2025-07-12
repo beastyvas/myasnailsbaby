@@ -1,15 +1,19 @@
 import { supabase } from "@/utils/supabaseClient";
 
-// ⬅️ Place this up top
+// ✅ Safely converts time like "1:25PM" to "13:25:00"
 function convertTo24Hr(timeStr) {
-  // "1:25PM" -> "13:25:00"
-  const [time, modifier] = timeStr.trim().toUpperCase().split(/(AM|PM)/);
-  let [hours, minutes] = time.split(":").map(Number);
+  if (!timeStr || typeof timeStr !== "string") return "00:00:00";
 
+  const [time, modifier] = timeStr.trim().toUpperCase().split(/(AM|PM)/);
+  if (!time || !modifier) return "00:00:00";
+
+  let [hours, minutes] = time.split(":").map(Number);
   if (modifier === "PM" && hours < 12) hours += 12;
   if (modifier === "AM" && hours === 12) hours = 0;
 
-  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:00`;
+  return `${hours.toString().padStart(2, "0")}:${(minutes || 0)
+    .toString()
+    .padStart(2, "0")}:00`;
 }
 
 export default async function handler(req, res) {
@@ -25,12 +29,15 @@ export default async function handler(req, res) {
     .eq("reminder_sent", false);
 
   if (error) {
-    console.error("Error fetching bookings:", error);
+    console.error("❌ Error fetching bookings:", error);
     return res.status(500).json({ error: "Failed to fetch bookings" });
   }
 
-  const upcoming = bookings.filter((b) => {
-    if (!b.date || !b.time) return false;
+  const safeBookings = bookings.filter((b) => {
+    return b.date && b.time && typeof b.time === "string";
+  });
+
+  const upcoming = safeBookings.filter((b) => {
     const dt = new Date(`${b.date}T${convertTo24Hr(b.time)}`);
     return dt >= windowStart && dt <= windowEnd;
   });
