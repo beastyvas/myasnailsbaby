@@ -18,20 +18,19 @@ export default async function handler(req, res) {
     const metadata = session.metadata || {};
 
     const {
-  name = "N/A",
-  instagram = "N/A",
-  phone = "",
-  service = "N/A",
-  artLevel = "N/A",
-  date = null,
-  time = null,
-  length = "N/A",
-  notes = "",
-  returning = "N/A",
-  referral = "",
-  soakoff = "N/A", // ✅ add this line
-} = metadata;
-
+      name = "N/A",
+      instagram = "N/A",
+      phone = "",
+      service = "N/A",
+      artLevel = "N/A",
+      date = null,
+      time = null,
+      length = "N/A",
+      notes = "",
+      returning = "N/A",
+      referral = "",
+      soakoff = "N/A", // ✅ soakoff included here
+    } = metadata;
 
     console.log("📨 Confirm-payment metadata:", metadata);
 
@@ -50,7 +49,7 @@ export default async function handler(req, res) {
           <p><strong>Service:</strong> ${service}</p>
           <p><strong>Art Level:</strong> ${artLevel}</p>
           <p><strong>Length:</strong> ${length}</p>
-          <p><strong>Soak-Off:</strong> ${soakoff}</p>
+          <p><strong>Soak-Off:</strong> ${soakoff}</p> <!-- ✅ soakoff in email -->
           <p><strong>Date:</strong> ${date}</p>
           <p><strong>Time:</strong> ${time}</p>
           <p><strong>Notes:</strong> ${notes}</p>
@@ -62,28 +61,27 @@ export default async function handler(req, res) {
       console.error("❌ Email send failed:", emailErr.message);
     }
 
-   if (phone && phone.length >= 10 && session.payment_status === "paid") {
-  // Send SMS only once for confirmed payments
-  try {
-    const smsRes = await fetch("https://textbelt.com/text", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        phone: phone.startsWith("+1") ? phone : `+1${phone}`,
-        message: `Hey love! 📅 Your appointment with Mya is confirmed for ${date} at ${time}. Please DM @myasnailsbaby if you have questions! 💅`,
-        key: process.env.TEXTBELT_API_KEY,
-      }),
-    });
+    // ✅ Only send SMS if payment is confirmed
+    if (phone && phone.length >= 10 && session.payment_status === "paid") {
+      try {
+        const smsRes = await fetch("https://textbelt.com/text", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: phone.startsWith("+1") ? phone : `+1${phone}`,
+            message: `Hey love! 📅 Your appointment with Mya is confirmed for ${date} at ${time}. Please DM @myasnailsbaby if you have questions! 💅`,
+            key: process.env.TEXTBELT_API_KEY,
+          }),
+        });
 
-    const smsResult = await smsRes.json();
-    if (!smsResult.success) {
-      console.error("❌ Textbelt failed:", smsResult);
+        const smsResult = await smsRes.json();
+        if (!smsResult.success) {
+          console.error("❌ Textbelt failed:", smsResult);
+        }
+      } catch (smsErr) {
+        console.error("❌ SMS send error:", smsErr.message);
+      }
     }
-  } catch (smsErr) {
-    console.error("❌ SMS send error:", smsErr.message);
-  }
-}
-
 
     return res.status(200).json({ success: true });
   } catch (err) {
