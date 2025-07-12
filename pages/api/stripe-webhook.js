@@ -9,7 +9,6 @@ export const config = {
   },
 };
 
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2022-11-15",
 });
@@ -19,8 +18,8 @@ export default async function handler(req, res) {
     return res.status(405).end('Method Not Allowed');
   }
 
-  let event;
   const sig = req.headers["stripe-signature"];
+  let event;
 
   try {
     const rawBody = await buffer(req);
@@ -34,11 +33,10 @@ export default async function handler(req, res) {
     const session = event.data.object;
     const metadata = session.metadata;
 
-    console.log("📬 Webhook received with metadata:", metadata);
-
-    if (!metadata || typeof metadata.booking_id !== "string" || metadata.booking_id.length < 10) {
-      console.error("❌ Invalid metadata or missing booking_id:", metadata);
-      return res.status(400).send("Invalid metadata");
+    console.log("📬 Webhook received for session:", session.id);
+    if (!metadata) {
+      console.error("❌ Missing metadata");
+      return res.status(400).send("Missing metadata");
     }
 
     const {
@@ -53,9 +51,23 @@ export default async function handler(req, res) {
       notes,
       length,
       returning,
-      referral
+      referral,
     } = metadata;
 
+    // 🔒 Check if booking already exists (by phone, date, time)
+    const { data: existing } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("phone", phone)
+      .eq("date", date)
+      .eq("time", time);
+
+    if (existing && existing.length > 0) {
+      console.log("⚠️ Booking already exists — skipping insert.");
+      return res.status(200).json({ alreadyExists: true });
+    }
+
+    // ✅ Insert fallback booking
     const { error } = await supabase.from("bookings").insert([
       {
         id: booking_id,
@@ -64,14 +76,14 @@ export default async function handler(req, res) {
         phone,
         service,
         art_level: artLevel,
+        length,
         date,
         time,
         notes,
-        length: Length,
         returning,
         referral,
         paid: true,
-      }
+      },
     ]);
 
     if (error) {
@@ -79,7 +91,7 @@ export default async function handler(req, res) {
       return res.status(500).send("Supabase insert failed");
     }
 
-    // Optional: Send SMS
+    // 📲 Optional: Send SMS
     try {
       await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/send-text`, {
         method: "POST",
@@ -87,7 +99,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({ name, date, time }),
       });
 
-      console.log("✅ Booking inserted & SMS sent");
+      console.log("✅ Booking inserted via webhook & SMS sent");
     } catch (smsErr) {
       console.error("⚠️ SMS sending failed:", smsErr.message);
     }
