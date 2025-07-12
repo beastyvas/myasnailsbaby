@@ -212,14 +212,19 @@ const timeOptions = availability
 
           <select name="service" required className="w-full border p-2 rounded">
             <option value="">Select a Service</option>
-            <option value="Foreign soak off">Foreign soak-off</option>
-            <option value="Soak off">Soak-off</option>
             <option value="Gel-X">Gel-X</option>
             <option value="Acrylic">Acrylic</option>
             <option value="Manicure">Gel Manicure</option>
             <option value="Manicure">Hard gel</option>
             <option value="Manicure">Builder Gel Manicure</option>
           </select>
+
+<select name="soakoff" required className="w-full border p-2 rounded">
+  <option value="">Select an Soakoff option</option>
+  <option value="none">No Soak-Off</option>
+  <option value="soak-off">Soak-Off</option>
+  <option value="foreign">Foreign Soak-Off</option>
+</select>
 
           <select name="artLevel" className="w-full border p-2 rounded">
             <option value="">Nail Art Level </option>

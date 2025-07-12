@@ -48,6 +48,7 @@ export default async function handler(req, res) {
           <p><strong>Service:</strong> ${service}</p>
           <p><strong>Art Level:</strong> ${artLevel}</p>
           <p><strong>Length:</strong> ${length}</p>
+          <p><strong>Soak-Off:</strong> ${soakoff}</p>
           <p><strong>Date:</strong> ${date}</p>
           <p><strong>Time:</strong> ${time}</p>
           <p><strong>Notes:</strong> ${notes}</p>
