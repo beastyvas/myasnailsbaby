@@ -22,6 +22,7 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState("");
   const [isReturning, setIsReturning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [soakoff, setSoakoff] = useState("");
 
 
  useEffect(() => {
@@ -91,23 +92,27 @@ const timeOptions = availability
   const notes = data.get("notes");
   const returning = data.get("returning");
   const referral = data.get("referral");
+  const soakoff = data.get("soakoff");
+
 
   const bookingId = uuidv4();
 
   const payload = {
-    id: bookingId,
-    name,
-    instagram,
-    phone,
-    service,
-    artLevel,
-    date,
-    time,
-    length,
-    notes,
-    returning,
-    referral,
-  };
+  id: bookingId,
+  name,
+  instagram,
+  phone,
+  service,
+  artLevel,
+  date,
+  time,
+  length,
+  notes,
+  returning,
+  referral,
+  soakoff, // ✅ new field
+};
+
 
   try {
     const res = await fetch("/api/book", {
@@ -131,6 +136,7 @@ const timeOptions = availability
       length,
       notes,
       returning,
+      soakoff,
       referral,
     };
 
@@ -219,12 +225,18 @@ const timeOptions = availability
             <option value="Manicure">Builder Gel Manicure</option>
           </select>
 
-<select name="soakoff" required className="w-full border p-2 rounded">
-  <option value="">Select an Soakoff option</option>
+<select
+  name="soakoff"
+  value={soakoff}
+  onChange={(e) => setSoakoff(e.target.value)}
+  required
+>
+  <option value="">Select a Soakoff option</option>
   <option value="none">No Soak-Off</option>
   <option value="soak-off">Soak-Off</option>
   <option value="foreign">Foreign Soak-Off</option>
 </select>
+
 
           <select name="artLevel" className="w-full border p-2 rounded">
             <option value="">Nail Art Level </option>
