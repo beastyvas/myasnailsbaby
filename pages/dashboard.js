@@ -148,10 +148,13 @@ async function fetchBookings() {
   }
 
   const now = new Date();
-  const upcoming = data.filter((booking) => {
-    const bookingTime = new Date(`${booking.date}T${convertTo24Hr(booking.time)}`);
-    return bookingTime.getTime() - now.getTime() > -5 * 60 * 1000; // 5 min grace
-  });
+const upcoming = data.filter((booking) => {
+  if (!booking.date || !booking.time) return false;
+
+  const bookingDateTime = new Date(`${booking.date}T${convertTo24Hr(booking.time)}`);
+  return bookingDateTime.getTime() > now.getTime() - 5 * 60 * 1000;
+});
+
 
   setBookings(upcoming);
 }
@@ -187,17 +190,21 @@ const handleDeleteBooking = async (booking) => {
 
 
 function convertTo24Hr(timeStr) {
-  if (!timeStr || typeof timeStr !== "string") return "00:00"; // fallback or skip
+  if (!timeStr || typeof timeStr !== "string") return "00:00";
 
-  const match = timeStr.match(/(\d+)(AM|PM)/i);
+  const match = timeStr.match(/^(\d{1,2}):?(\d{2})?\s*(AM|PM)$/i);
   if (!match) return "00:00";
 
-  const [hourStr, modifier] = match.slice(1, 3);
-  let hour = parseInt(hourStr);
-  if (modifier === "PM" && hour !== 12) hour += 12;
-  if (modifier === "AM" && hour === 12) hour = 0;
-  return `${hour.toString().padStart(2, "0")}:00`;
+  let [_, hourStr, minuteStr, modifier] = match;
+  let hour = parseInt(hourStr, 10);
+  let minutes = parseInt(minuteStr || "00", 10);
+
+  if (modifier.toUpperCase() === "PM" && hour !== 12) hour += 12;
+  if (modifier.toUpperCase() === "AM" && hour === 12) hour = 0;
+
+  return `${hour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 }
+
 
 
 
@@ -407,9 +414,12 @@ async function handleDeleteSelected() {
             <p className="text-sm text-gray-600">
               📸 @{b.instagram}
             </p>
+            
+            <p className="text-sm text-gray-600">
+               Soakoff: {b.soakoff}</p>
 
             <p className="text-sm text-gray-600">
-               Length:{b.length}</p>
+               Length: {b.length}</p>
 
             <p className="text-sm mb-1">
               {b.paid ? (
