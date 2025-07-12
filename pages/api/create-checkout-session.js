@@ -48,6 +48,7 @@ export default async function handler(req, res) {
         date: bookingMetadata.date,
         time: bookingMetadata.time,
         notes: bookingMetadata.notes,
+        soakoff: bookingMetadata.soakoff,
         returning: bookingMetadata.returning,
         referral: bookingMetadata.referral,
       },
