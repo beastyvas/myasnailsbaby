@@ -265,6 +265,7 @@ const timeOptions = availability
 
   className="w-full border rounded p-2 mb-4"
 />
+<input type="hidden" name="date" value={selectedDate} />
 
 
 {/* ⏰ Time Slot Dropdown */}
