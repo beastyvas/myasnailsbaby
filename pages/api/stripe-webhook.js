@@ -14,16 +14,20 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).end('Method Not Allowed');
+  if (req.method !== "POST") {
+    return res.status(405).end("Method Not Allowed");
   }
 
-  const sig = req.headers["stripe-signature"];
   let event;
+  const sig = req.headers["stripe-signature"];
 
   try {
     const rawBody = await buffer(req);
-    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      rawBody,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
   } catch (err) {
     console.error("❌ Webhook signature error:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -33,10 +37,15 @@ export default async function handler(req, res) {
     const session = event.data.object;
     const metadata = session.metadata;
 
-    console.log("📬 Webhook received for session:", session.id);
-    if (!metadata) {
-      console.error("❌ Missing metadata");
-      return res.status(400).send("Missing metadata");
+    console.log("📬 Webhook received with metadata:", metadata);
+
+    if (
+      !metadata ||
+      typeof metadata.booking_id !== "string" ||
+      metadata.booking_id.length < 10
+    ) {
+      console.error("❌ Invalid metadata or missing booking_id:", metadata);
+      return res.status(400).send("Invalid metadata");
     }
 
     const {
@@ -54,7 +63,7 @@ export default async function handler(req, res) {
       referral,
     } = metadata;
 
-    // 🔒 Check if booking already exists (by phone, date, time)
+    // Check for duplicate booking
     const { data: existing } = await supabase
       .from("bookings")
       .select("id")
@@ -63,35 +72,40 @@ export default async function handler(req, res) {
       .eq("time", time);
 
     if (existing && existing.length > 0) {
-      console.log("⚠️ Booking already exists — skipping insert.");
-      return res.status(200).json({ alreadyExists: true });
+      console.log("⚠️ Booking already exists, skipping insert");
+      return res
+        .status(200)
+        .json({ success: true, bookingId: existing[0].id });
     }
 
-    // ✅ Insert fallback booking
-    const { error } = await supabase.from("bookings").insert([
-      {
-        id: booking_id,
-        name,
-        instagram,
-        phone,
-        service,
-        art_level: artLevel,
-        length,
-        date,
-        time,
-        notes,
-        returning,
-        referral,
-        paid: true,
-      },
-    ]);
+    // Insert booking
+    const { data, error } = await supabase
+      .from("bookings")
+      .insert([
+        {
+          name,
+          instagram,
+          phone,
+          service,
+          art_level: artLevel,
+          length,
+          date,
+          time,
+          notes,
+          paid: true,
+          returning,
+          referral,
+        },
+      ])
+      .select()
+      .single();
 
     if (error) {
       console.error("❌ Supabase insert error:", error.message);
       return res.status(500).send("Supabase insert failed");
     }
 
-    // 📲 Optional: Send SMS
+    // Send confirmation text
     try {
       await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/send-text`, {
         method: "POST",
@@ -99,7 +113,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({ name, date, time }),
       });
 
-      console.log("✅ Booking inserted via webhook & SMS sent");
+      console.log("✅ Booking inserted & SMS sent");
     } catch (smsErr) {
       console.error("⚠️ SMS sending failed:", smsErr.message);
     }

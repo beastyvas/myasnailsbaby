@@ -21,6 +21,8 @@ export default function Home() {
   const [availability, setAvailability] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [isReturning, setIsReturning] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
  useEffect(() => {
   const fetchAvailability = async () => {
@@ -72,6 +74,9 @@ const timeOptions = availability
 
  const handleSubmit = async (e) => {
   e.preventDefault();
+  if (isSubmitting) return;
+  setIsSubmitting(true);
+
   const form = formRef.current;
   const data = new FormData(form);
 
@@ -87,7 +92,7 @@ const timeOptions = availability
   const returning = data.get("returning");
   const referral = data.get("referral");
 
-  const bookingId = uuidv4(); // ✅ Generate unique booking ID
+  const bookingId = uuidv4();
 
   const payload = {
     id: bookingId,
@@ -105,7 +110,6 @@ const timeOptions = availability
   };
 
   try {
-    // 1️⃣ Insert into Supabase bookings table
     const res = await fetch("/api/book", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -115,21 +119,21 @@ const timeOptions = availability
     const json = await res.json();
     if (!res.ok || !json.success) throw new Error("Booking failed");
 
-    // 2️⃣ Create Stripe Checkout session with full metadata
-   const bookingMetadata = {
-  booking_id: bookingId, // ✅ make sure it's included
-  name,
-  instagram,
-  phone,
-  service,
-  artLevel,
-  date,
-  time,
-  length,
-  notes,
-  returning,
-  referral,
-};
+    const bookingMetadata = {
+      booking_id: bookingId,
+      name,
+      instagram,
+      phone,
+      service,
+      artLevel,
+      date,
+      time,
+      length,
+      notes,
+      returning,
+      referral,
+    };
+
     const stripeRes = await fetch("/api/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -146,13 +150,15 @@ const timeOptions = availability
 
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
-    // 3️⃣ Redirect to Stripe Checkout
     window.location.href = stripeJson.url;
   } catch (err) {
     console.error("Error during booking:", err.message);
     toast.error("Something went wrong. Please try again.");
+  } finally {
+    setIsSubmitting(false);
   }
 };
+
 
 
   return (
@@ -236,7 +242,7 @@ const timeOptions = availability
         
 {/* 📅 Date Picker Calendar */}
 <Calendar
-  value={selectedDate ? new Date(selectedDate) : null}
+  value={selectedDate ? new Date(selectedDate + "T00:00:00") : null}
   onChange={(date) => {
     const isoDate = date.toISOString().split("T")[0];
     setSelectedDate(isoDate);
@@ -245,8 +251,21 @@ const timeOptions = availability
     const iso = date.toISOString().split("T")[0];
     return !availableDates.includes(iso);
   }}
+  tileClassName={({ date }) => {
+  const iso = date.toISOString().split("T")[0];
+  const isSelected = selectedDate === iso;
+  const isAvailable = availableDates.includes(iso);
+
+  return isSelected
+    ? "bg-pink-600 text-white font-semibold rounded-full"
+    : isAvailable
+    ? "bg-pink-100 font-semibold rounded-full"
+    : null;
+}}
+
   className="w-full border rounded p-2 mb-4"
 />
+
 
 {/* ⏰ Time Slot Dropdown */}
 <select
@@ -299,9 +318,16 @@ const timeOptions = availability
             <span>I understand a $20 deposit is required to book</span>
           </label>
 
-          <button type="submit" className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 rounded-xl shadow-sm">
-            Submit Booking Request
-          </button>
+         <button
+  type="submit"
+  disabled={isSubmitting}
+  className={`w-full text-white font-semibold py-2 rounded-xl shadow-sm ${
+    isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-pink-500 hover:bg-pink-600"
+  }`}
+>
+  {isSubmitting ? "Submitting..." : "Submit Booking Request"}
+</button>
+
           <Link href="/dashboard" className="text-sm text-myaAccent hover:underline mt-4 block text-center">
             Go to Dashboard
           </Link>

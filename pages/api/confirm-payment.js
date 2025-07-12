@@ -1,6 +1,5 @@
-import { supabase } from "@/utils/supabaseClient";
-import { Resend } from "resend";
 import Stripe from "stripe";
+import { Resend } from "resend";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -34,31 +33,7 @@ export default async function handler(req, res) {
 
     console.log("📨 Confirm-payment metadata:", metadata);
 
-    const { data, error } = await supabase
-      .from("bookings")
-      .insert([
-        {
-          name,
-          instagram,
-          phone,
-          service,
-          art_level: artLevel,
-          length, // lowercase here to match Supabase
-          date,
-          time,
-          notes,
-          paid: true,
-          returning,
-          referral,
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("❌ Supabase insert failed:", error.message);
-      return res.status(500).json({ success: false, error: error.message });
-    }
+    // 🛑 No insert here — Supabase insert handled by webhook!
 
     try {
       await resend.emails.send({
@@ -106,7 +81,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ success: true, bookingId: data.id });
+    return res.status(200).json({ success: true });
   } catch (err) {
     console.error("❌ Unexpected confirm-payment error:", err.message);
     return res.status(500).json({ success: false, error: err.message });
