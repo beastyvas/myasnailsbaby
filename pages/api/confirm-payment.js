@@ -18,18 +18,20 @@ export default async function handler(req, res) {
     const metadata = session.metadata || {};
 
     const {
-      name = "N/A",
-      instagram = "N/A",
-      phone = "",
-      service = "N/A",
-      artLevel = "N/A",
-      date = null,
-      time = null,
-      length = "N/A",
-      notes = "",
-      returning = "N/A",
-      referral = "",
-    } = metadata;
+  name = "N/A",
+  instagram = "N/A",
+  phone = "",
+  service = "N/A",
+  artLevel = "N/A",
+  date = null,
+  time = null,
+  length = "N/A",
+  notes = "",
+  returning = "N/A",
+  referral = "",
+  soakoff = "N/A", // ✅ add this line
+} = metadata;
+
 
     console.log("📨 Confirm-payment metadata:", metadata);
 
