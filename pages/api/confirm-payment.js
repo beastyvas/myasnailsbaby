@@ -60,23 +60,24 @@ export default async function handler(req, res) {
 
     // ✅ SMS (only if not confirmed)
     if (phone && phone.length >= 10 && session.payment_status === "paid") {
-      const { data: existing, error } = await supabase
-        .from("bookings")
-        .select("id, confirmed")
-        .eq("phone", phone)
-        .eq("date", date)
-        .eq("time", time)
-        .single();
+      // Check Supabase for booking
+const { data: existing, error: fetchError } = await supabase
+  .from("bookings")
+  .select("id, confirmed")
+  .eq("phone", phone)
+  .eq("date", date)
+  .eq("time", time)
+  .maybeSingle();
 
-      if (error || !existing) {
-        console.error("❌ Supabase lookup failed:", error?.message);
-        return res.status(404).json({ success: false, error: "Booking not found" });
-      }
+if (fetchError) {
+  console.error("❌ Failed to check existing booking:", fetchError.message);
+  return res.status(500).json({ success: false });
+}
 
-      if (existing.confirmed) {
-        console.log("⚠️ Booking already confirmed, skipping SMS.");
-        return res.status(200).json({ success: true });
-      }
+if (existing?.confirmed) {
+  console.log("⚠️ Booking already confirmed. Skipping email/SMS.");
+  return res.status(200).json({ success: true });
+}
 
       // ✅ Send text
       try {
