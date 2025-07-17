@@ -301,12 +301,15 @@ const timeOptions = availability
   ))}
 </select>
           <input
-            type="tel"
-            name="phone"
-            placeholder="Phone Number"
-            required
-            className="w-full border p-2 rounded"
-          />
+  type="tel"
+  name="phone"
+  placeholder="Phone Number (e.g. 7021234567)"
+  required
+  className="w-full border p-2 rounded"
+  pattern="\d{10}"
+  inputMode="numeric"
+  title="Enter a 10-digit phone number (no dashes or spaces)"
+/>
 
           <label className="block text-sm font-medium text-gray-700">Have you booked with Mya before?</label>
           <select

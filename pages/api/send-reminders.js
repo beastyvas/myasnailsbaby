@@ -33,14 +33,20 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Failed to fetch bookings" });
   }
 
-  const safeBookings = bookings.filter((b) => {
-    return b.date && b.time && typeof b.time === "string";
-  });
+  console.log("⏰ Reminder Window:", windowStart.toISOString(), "-", windowEnd.toISOString());
+console.log("📋 Fetched bookings:", bookings.length);
 
-  const upcoming = safeBookings.filter((b) => {
-    const dt = new Date(`${b.date}T${convertTo24Hr(b.time)}`);
-    return dt >= windowStart && dt <= windowEnd;
-  });
+const safeBookings = bookings.filter((b) => {
+  const isValid = b.date && b.time && typeof b.time === "string";
+  if (!isValid) console.warn("❌ Invalid booking skipped:", b);
+  return isValid;
+});
+
+const upcoming = safeBookings.filter((b) => {
+  const dt = new Date(`${b.date}T${convertTo24Hr(b.time)}`);
+  console.log("🧪 Checking booking:", b.id, "→", dt.toISOString());
+  return dt >= windowStart && dt <= windowEnd;
+});
 
   const promises = upcoming.map(async (b) => {
     const response = await fetch("https://textbelt.com/text", {
@@ -50,7 +56,7 @@ export default async function handler(req, res) {
         phone: b.phone,
         message: `Hi babe! 💅 This is a reminder that you’ve got a nail appointment with Mya tomorrow at ${b.date} @ ${b.time}
 
-📍 Address: 5935 Reflection Point Ct
+📍 Address: 2080 E. Flamingo Rd. Suite #106 Room 4 Las Vegas, Nevada
 📋 Policy: 
 Please arrive on time. Deposits are non-refundable. 
 Please no extra guest. 
@@ -62,6 +68,7 @@ See you soon! 💖`,
     });
 
     const result = await response.json();
+console.log("📤 Textbelt response for", b.phone, result);
 
     if (result.success) {
       await supabase
