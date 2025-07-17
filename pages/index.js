@@ -346,7 +346,75 @@ const timeOptions = availability
 >
   {isSubmitting ? "Submitting..." : "Submit Booking Request"}
 </button>
+<div className="bg-white border mt-10 rounded-lg p-6 shadow text-center text-gray-800 max-w-2xl mx-auto">
+  <h2 className="text-2xl font-semibold text-pink-700 mb-6">📌 Policies</h2>
 
+  <div className="space-y-6 text-sm leading-relaxed">
+  
+    <div>
+      <h3 className="font-semibold text-base mb-1">❌ No-Show / Cancellation Policy</h3>
+      <p>
+        Cancel at least 48 hours before your appointment and there’s no fee –<br />
+        your deposit can be applied to your next visit.<br />
+        Last-minute cancellations or no-shows will be charged 50% of your service price.
+      </p>
+    </div>
+
+    <div>
+      <h3 className="font-semibold text-base mb-1">⏰ Running Late?</h3>
+      <p>
+        You have a 5-minute grace period if you let me know your ETA.<br />
+        After that, there’s a $10 late fee. If time is tight, I might need to shorten your service<br />
+        (simpler design, shorter length, etc.)
+      </p>
+    </div>
+
+    <div>
+      <h3 className="font-semibold text-base mb-1">✨ Squeeze-In Appointments</h3>
+      <p>
+        Appointments before/after regular hours are squeeze-ins<br />
+        and cost 50% more than your base nail price.
+      </p>
+    </div>
+
+    <div>
+      <h3 className="font-semibold text-base mb-1">💔 Nail Fix Policy</h3>
+      <p>
+        If a nail chips, cracks, or breaks within 5 days, I’ll fix it for free.<br />
+        After 5 days, it’s $10 per nail to repair.
+      </p>
+    </div>
+
+    <div>
+      <h3 className="font-semibold text-base mb-1">🚫 No Extra Guests</h3>
+      <p>
+        To keep the space calm and focused on your pampering experience,<br />
+        no extra guests allowed — unless they’re also booked for a service.<br />
+        Thanks for understanding, queens! 
+      </p>
+    </div>
+  </div>
+</div>
+
+<div className="mt-12 text-center">
+  <h2 className="text-2xl font-semibold mb-2 text-pink-700">📍 Address</h2>
+  <p className="mb-4 text-gray-700 font-medium">
+    2080 E. Flamingo Rd. Suite #106 Room 4<br />
+    Las Vegas, Nevada
+  </p>
+  <div className="w-full max-w-2xl mx-auto rounded-lg overflow-hidden shadow">
+    <iframe
+      title="Mya's Nail Studio Location"
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3226.887402048895!2d-115.1218948!3d36.1136458!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80c8c6d4c4b0e1f5%3A0x1c9624dbd4a87b5b!2s2080%20E%20Flamingo%20Rd%2C%20Las%20Vegas%2C%20NV%2089119!5e0!3m2!1sen!2sus!4v1689200000000!5m2!1sen!2sus"
+      width="100%"
+      height="300"
+      style={{ border: 0 }}
+      allowFullScreen=""
+      loading="lazy"
+      referrerPolicy="no-referrer-when-downgrade"
+    ></iframe>
+  </div>
+</div>
           <Link href="/dashboard" className="text-sm text-myaAccent hover:underline mt-4 block text-center">
             Go to Dashboard
           </Link>
