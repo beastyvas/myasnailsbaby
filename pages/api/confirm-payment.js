@@ -86,7 +86,9 @@ if (existing?.confirmed) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             phone: phone.startsWith("+1") ? phone : `+1${phone}`,
-            message: `Hey love! 📅 Your appointment with Mya is confirmed for ${date} at ${time}. Please DM @myasnailsbaby if you have questions! 💅`,
+            message: `Hey love! 📅 Your appointment with Mya is confirmed for ${date} at ${time}. Please DM @myasnailsbaby if you have questions! 💅
+            📍2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV
+             Can’t wait to see you! 💋`,
             key: process.env.TEXTBELT_API_KEY,
           }),
         });
