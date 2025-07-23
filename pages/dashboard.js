@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import dynamic from "next/dynamic";
+
+const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
 
 
