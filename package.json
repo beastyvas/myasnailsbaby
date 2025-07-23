@@ -17,7 +17,7 @@
     "next": "15.3.3",
     "raw-body": "^3.0.0",
     "react": "^19.0.0",
-    "react-calendar": "^6.0.0",
+    "react-calendar": "^3.8.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
     "resend": "^4.5.2",

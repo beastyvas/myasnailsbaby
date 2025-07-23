@@ -10,7 +10,9 @@ import { v4 as uuidv4 } from "uuid";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 
+const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export default function Home() {
@@ -28,7 +30,7 @@ export default function Home() {
   const [availableTimes, setAvailableTimes] = useState([]);
   const [isReturning, setIsReturning] = useState(false);
 const [bookingNails, setBookingNails] = useState("")
-
+const [pedicureType, setPedicureType] = useState("");
 
 
 
@@ -226,8 +228,9 @@ const returning = data.get("returning");
 const referral = data.get("referral");
 const soakoff = data.get("soakoff");
 const pedicure = data.get("pedicure");
+const pedicureType = data.get("pedicureType") || ""; // ✅ NEW
+const bookingNails = data.get("bookingNails") || "no"; // ✅ NEW
 const bookingId = uuidv4();
-
 const durationHours = duration; // already calculated
 
 const payload = {
@@ -243,9 +246,11 @@ const payload = {
   notes,
   returning,
   duration: durationHours,
-  referral,
   soakoff,
-  pedicure, // ✅ include pedicure
+  referral,
+  pedicure,
+  pedicure_type: pedicureType,       // ✅ NEW
+  booking_nails: bookingNails,       // ✅ NEW
 };
 
     try {
@@ -270,6 +275,8 @@ const payload = {
   length,
   notes,
   returning,
+  pedicure_type: pedicureType,        // ✅
+  booking_nails: bookingNails,
   duration: durationHours,
   soakoff,
   referral,
@@ -453,11 +460,16 @@ const payload = {
 
 {/* 💅 Pedicure Type (shown only if yes) */}
 {pedicure === "yes" && (
-  <select name="pedicureType" className="w-full border p-2 rounded">
+  <select
+    name="pedicureType"
+    className="w-full border p-2 rounded"
+    value={pedicureType}
+    onChange={(e) => setPedicureType(e.target.value)}
+  >
     <option value="">Select Pedicure Type</option>
-    <option value="Basic Pedi">Basic Pedi</option> {/* <- change these as you want */}
-    <option value="Deluxe Pedi">Deluxe Pedi</option>
-    <option value="Spa Pedi">Spa Pedi</option>
+    <option value="Basic Pedicure">Basic Pedicure</option>
+    <option value="Spa Pedicure">Spa Pedicure</option>
+    <option value="Gel Pedicure">Gel Pedicure</option>
   </select>
 )}
 
