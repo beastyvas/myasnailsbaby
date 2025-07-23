@@ -59,13 +59,14 @@ useEffect(() => {
       .select("*")
       .eq("date", selectedDate);
 
-    const { data: bookingsData, error: bErr } = await supabase
+    // 2. Get all booked time ranges
+    const { data: booked, error: bookedErr } = await supabase
       .from("bookings")
-      .select("start_time, duration, end_time")
+      .select("start_time, duration")
       .eq("date", selectedDate);
 
-    if (aErr || bErr) {
-      console.error("Fetch error:", aErr || bErr);
+    if (bookedErr) {
+      console.error("Booking error:", bookedErr);
       return;
     }
 
@@ -113,7 +114,7 @@ useEffect(() => {
     // 1. Get availability window for that day
     const { data: availabilityData, error: availErr } = await supabase
       .from("availability")
-      .select("start_time, end_time")
+      .select("start_time")
       .eq("date", selectedDate)
       .single();
 
@@ -129,7 +130,7 @@ useEffect(() => {
     // 2. Get all booked ranges
     const { data: booked, error: bookedErr } = await supabase
       .from("bookings")
-      .select("start_time, end_time, duration")
+      .select("start_time, duration")
       .eq("date", selectedDate);
 
     if (bookedErr) {
