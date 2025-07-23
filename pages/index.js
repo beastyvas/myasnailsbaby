@@ -129,7 +129,7 @@ useEffect(() => {
     // 2. Get all booked ranges
     const { data: booked, error: bookedErr } = await supabase
       .from("bookings")
-      .select("time, duration")
+      .select("start_time, end_time, duration")
       .eq("date", selectedDate);
 
     if (bookedErr) {
