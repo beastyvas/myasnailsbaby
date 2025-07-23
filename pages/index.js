@@ -61,7 +61,7 @@ useEffect(() => {
 
     const { data: bookingsData, error: bErr } = await supabase
       .from("bookings")
-      .select("time, duration")
+      .select("start_time, duration, end_time")
       .eq("date", selectedDate);
 
     if (aErr || bErr) {
@@ -171,10 +171,6 @@ useEffect(() => {
 
   loadAvailableTimes();
 }, [selectedDate, duration]);
-
-
-
-
 
 useEffect(() => {
   const fetchAvailableDates = async () => {
