@@ -55,15 +55,14 @@ const upcoming = safeBookings.filter((b) => {
       body: JSON.stringify({
         phone: b.phone,
         message: `Hi babe! 💅 This is a reminder that you’ve got a nail appointment with Mya tomorrow at ${b.date} @ ${b.time}
-
 📍 Address: 2080 E. Flamingo Rd. Suite #106 Room 4 Las Vegas, Nevada
 📋 Policy: 
 Please arrive on time. Deposits are non-refundable. 
 Please no extra guest. 
 DM @myasnailsbaby if anything changes!
-
 See you soon! 💖`,
-        key: process.env.TEXTBELT_API_KEY,
+       
+key: process.env.TEXTBELT_API_KEY,
       }),
     });
 

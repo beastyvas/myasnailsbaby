@@ -58,18 +58,19 @@ export default async function handler(req, res) {
     }
 
     const {
-      booking_id,
-      name,
-      instagram,
-      phone,
-      service,
-      artLevel,
-      notes,
-      length,
-      soakoff,
-      returning,
-      referral,
-    } = metadata;
+  booking_id,
+  name,
+  instagram,
+  phone,
+  service,
+  artLevel,
+  notes,
+  length,
+  soakoff,
+  returning,
+  referral,
+  pedicure, // ✅ new
+} = metadata;
 
     // Check for duplicate booking
     const { data: existing } = await supabase
@@ -87,27 +88,28 @@ export default async function handler(req, res) {
     }
 
     // Insert sanitized booking
-    const { data, error } = await supabase
-      .from("bookings")
-      .insert([
-        {
-          name,
-          instagram,
-          phone,
-          service,
-          art_level: artLevel,
-          length,
-          date: safeDate,
-          time: safeTime,
-          notes,
-          soakoff,
-          paid: true,
-          returning,
-          referral,
-        },
-      ])
-      .select()
-      .single();
+const { data, error } = await supabase
+  .from("bookings")
+  .insert([
+    {
+      name,
+      instagram,
+      phone,
+      service,
+      art_level: artLevel,
+      length,
+      date: safeDate,
+      time: safeTime,
+      notes,
+      soakoff,
+      returning,
+      referral,
+      paid: true,
+      pedicure, // ✅ include in DB
+    },
+  ])
+  .select()
+  .single();
 
     if (error) {
       console.error("❌ Supabase insert error:", error.message);

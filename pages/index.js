@@ -4,100 +4,233 @@ import confetti from "canvas-confetti";
 import toast, { Toaster } from "react-hot-toast";
 import { useRef, useEffect, useState } from "react";
 import NailGallery from "@/components/NailGallery";
-import Link from "next/link";
 import { supabase } from "@/utils/supabaseClient";
 import { loadStripe } from "@stripe/stripe-js";
-import { v4 as uuidv4 } from "uuid"; // Only once at the top if not already there
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
-
-
-
+import { v4 as uuidv4 } from "uuid";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import Link from "next/link";
 
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export default function Home() {
   const formRef = useRef();
-  const [availability, setAvailability] = useState([]);
-  const [selectedDate, setSelectedDate] = useState("");
-  const [isReturning, setIsReturning] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null); // not ""
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [service, setService] = useState("");
+  const [pedicure, setPedicure] = useState("");
+  const [duration, setDuration] = useState(0);
   const [soakoff, setSoakoff] = useState("");
+  const [bioText, setBioText] = useState("");
+  const [timeOptions, setTimeOptions] = useState([]);
+  const [availableDates, setAvailableDates] = useState([]);
+  const [time, setTime] = useState("");
+  const [availableTimes, setAvailableTimes] = useState([]);
+  const [isReturning, setIsReturning] = useState(false);
+const [bookingNails, setBookingNails] = useState("")
 
 
- useEffect(() => {
-  const fetchAvailability = async () => {
-    // Get available time slots
-    const { data: availabilityData, error: availabilityError } = await supabase
+
+
+
+  useEffect(() => {
+    let d = 0;
+    if (service) d += 2;
+    if (pedicure === "yes") d += 1;
+    setDuration(d);
+  }, [service, pedicure]);
+
+  function generateTimeSlots(startHour, endHour, durationInHours) {
+    const slots = [];
+    for (let hour = startHour; hour <= endHour - durationInHours; hour++) {
+      const h = hour % 12 === 0 ? 12 : hour % 12;
+      const suffix = hour >= 12 ? "PM" : "AM";
+      slots.push(`${h}${suffix}`);
+    }
+    return slots;
+  }
+useEffect(() => {
+  const fetchAvailableTimes = async () => {
+    if (!selectedDate) return;
+
+    const { data: availabilityData, error: aErr } = await supabase
       .from("availability")
-      .select("*");
+      .select("*")
+      .eq("date", selectedDate);
 
-    // Get booked appointments
-    const { data: bookingsData, error: bookingsError } = await supabase
+    const { data: bookingsData, error: bErr } = await supabase
       .from("bookings")
-      .select("date, time");
+      .select("time, duration")
+      .eq("date", selectedDate);
 
-    if (availabilityError || bookingsError) {
-      console.error("Fetch error:", availabilityError || bookingsError);
+    if (aErr || bErr) {
+      console.error("Fetch error:", aErr || bErr);
       return;
     }
 
-    // Filter out times that are already booked
-    const filtered = availabilityData.filter((slot) => {
-      return !bookingsData.some(
-        (b) => b.date === slot.date && b.time === slot.time
+    // Get all booked time ranges
+    const bookedRanges = bookingsData.map((b) => {
+      const [startHour] = b.time.split(":");
+      const start = parseInt(startHour);
+      const end = start + (b.duration || 2); // default 2-hour blocks
+      return { start, end };
+    });
+
+    const filtered = [];
+
+for (let slot of availabilityData) {
+  const startHour = parseInt(slot.start_time.split(":")[0]);
+  const endHour = parseInt(slot.end_time.split(":")[0]);
+
+  for (let hour = startHour; hour < endHour; hour++) {
+    const isBooked = bookedRanges.some((r) => hour >= r.start && hour < r.end);
+    if (!isBooked) {
+      const h = hour % 12 === 0 ? 12 : hour % 12;
+      const suffix = hour >= 12 ? "PM" : "AM";
+      const label = `${h}${suffix}`;
+      if (!filtered.includes(label)) filtered.push(label);
+    }
+  }
+}
+setAvailableTimes(filtered);
+  };
+  fetchAvailableTimes();
+}, [selectedDate]);
+
+  useEffect(() => {
+    const fetchBio = async () => {
+      const { data, error } = await supabase.from("settings").select("bio").single();
+      if (!error && data) setBioText(data.bio || "");
+    };
+    fetchBio();
+  }, []);
+
+useEffect(() => {
+  const loadAvailableTimes = async () => {
+    if (!selectedDate || !duration) return setTimeOptions([]);
+
+    // 1. Get availability window for that day
+    const { data: availabilityData, error: availErr } = await supabase
+      .from("availability")
+      .select("start_time, end_time")
+      .eq("date", selectedDate)
+      .single();
+
+    if (availErr || !availabilityData) {
+      console.error("No availability:", availErr);
+      setTimeOptions([]);
+      return;
+    }
+
+    const startHour = parseInt(availabilityData.start_time.split(":")[0]);
+    const endHour = parseInt(availabilityData.end_time.split(":")[0]);
+
+    // 2. Get all booked ranges
+    const { data: booked, error: bookedErr } = await supabase
+      .from("bookings")
+      .select("time, duration")
+      .eq("date", selectedDate);
+
+    if (bookedErr) {
+      console.error("Booking error:", bookedErr);
+      return;
+    }
+
+    const bookedRanges = booked.map(({ time, duration }) => {
+      const hour = parseInt(time.replace(/AM|PM/, ""));
+      const isPM = time.includes("PM") && hour !== 12;
+      const isAM = time.includes("AM") && hour === 12;
+      const start = isPM ? hour + 12 : isAM ? 0 : hour;
+      return { start, end: start + (duration || 2) };
+    });
+
+    // 3. Generate possible time slots
+    const allSlots = [];
+    for (let hour = startHour; hour <= endHour - duration; hour++) {
+      const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+      const suffix = hour >= 12 ? "PM" : "AM";
+      allSlots.push(`${displayHour}${suffix}`);
+    }
+
+    // 4. Filter out overlapping slots
+    const available = allSlots.filter((label) => {
+      const hour = parseInt(label.replace(/AM|PM/, ""));
+      const isPM = label.includes("PM") && hour !== 12;
+      const isAM = label.includes("AM") && hour === 12;
+      const start = isPM ? hour + 12 : isAM ? 0 : hour;
+      const end = start + duration;
+
+      return !bookedRanges.some(
+        (r) => start < r.end && end > r.start
       );
     });
 
-    setAvailability(filtered);
+    setTimeOptions(available);
   };
 
-  fetchAvailability();
-}, []);
+  loadAvailableTimes();
+}, [selectedDate, duration]);
 
-const [bioText, setBioText] = useState("");
+
+
+
 
 useEffect(() => {
-  const fetchBio = async () => {
-    const { data, error } = await supabase.from("settings").select("bio").single();
-    if (!error && data) setBioText(data.bio || "");
+  const fetchAvailableDates = async () => {
+    const { data, error } = await supabase
+      .from("availability")
+      .select("date");
+
+    if (error) {
+      console.error("Failed to fetch available dates:", error.message);
+      return;
+    }
+
+    const uniqueDates = [...new Set(data.map((d) => d.date))];
+    setAvailableDates(uniqueDates);
   };
-  fetchBio();
+
+  fetchAvailableDates();
 }, []);
 
 
-const availableDates = [...new Set(availability.map((slot) => slot.date))];
 
-const timeOptions = availability
-  .filter((slot) => slot.date === selectedDate)
-  .map((slot) => slot.time);
-
-
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (isSubmitting) return;
-  setIsSubmitting(true);
-
-  const form = formRef.current;
-  const data = new FormData(form);
-
-  const name = data.get("name");
-  const instagram = data.get("instagram");
-  const phone = data.get("phone");
-  const service = data.get("service");
-  const artLevel = data.get("artLevel");
-  const date = data.get("date");
-  const time = data.get("time");
-  const length = data.get("Length");
-  const notes = data.get("notes");
-  const returning = data.get("returning");
-  const referral = data.get("referral");
-  const soakoff = data.get("soakoff");
+function convertTo12Hour(time) {
+  const [hourStr, minuteStr] = time.split(":");
+  let hour = parseInt(hourStr);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  if (hour === 0) hour = 12;
+  else if (hour > 12) hour -= 12;
+  return `${hour}:${minuteStr} ${ampm}`;
+}
 
 
-  const bookingId = uuidv4();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
-  const payload = {
+    const form = formRef.current;
+    const data = new FormData(form);
+
+    const name = data.get("name");
+const instagram = data.get("instagram");
+const phone = data.get("phone");
+const service = data.get("service");
+const artLevel = data.get("artLevel");
+const date = data.get("date");
+const time = data.get("time");
+const length = data.get("Length");
+const notes = data.get("notes");
+const returning = data.get("returning");
+const referral = data.get("referral");
+const soakoff = data.get("soakoff");
+const pedicure = data.get("pedicure");
+const bookingId = uuidv4();
+
+const durationHours = duration; // already calculated
+
+const payload = {
   id: bookingId,
   name,
   instagram,
@@ -109,63 +242,64 @@ const timeOptions = availability
   length,
   notes,
   returning,
+  duration: durationHours,
   referral,
-  soakoff, // ✅ new field
+  soakoff,
+  pedicure, // ✅ include pedicure
 };
 
+    try {
+      const res = await fetch("/api/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-  try {
-    const res = await fetch("/api/book", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error("Booking failed");
 
-    const json = await res.json();
-    if (!res.ok || !json.success) throw new Error("Booking failed");
-
-    const bookingMetadata = {
-      booking_id: bookingId,
-      name,
-      instagram,
-      phone,
-      service,
-      artLevel,
-      date,
-      time,
-      length,
-      notes,
-      returning,
-      soakoff,
-      referral,
-    };
-
-    const stripeRes = await fetch("/api/create-checkout-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookingMetadata }),
-    });
-
-    const stripeJson = await stripeRes.json();
-    if (!stripeRes.ok) throw new Error(stripeJson.error || "Stripe checkout failed");
-
-    toast.success("Booking request submitted!", {
-      duration: 2000,
-      position: "bottom-center",
-    });
-
-    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-
-    window.location.href = stripeJson.url;
-  } catch (err) {
-    console.error("Error during booking:", err.message);
-    toast.error("Something went wrong. Please try again.");
-  } finally {
-    setIsSubmitting(false);
-  }
+      const bookingMetadata = {
+  booking_id: bookingId,
+  name,
+  instagram,
+  phone,
+  service,
+  artLevel,
+  date,
+  time,
+  length,
+  notes,
+  returning,
+  duration: durationHours,
+  soakoff,
+  referral,
+  pedicure, // ✅ include pedicure
 };
 
+      const stripeRes = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingMetadata }),
+      });
 
+      const stripeJson = await stripeRes.json();
+      if (!stripeRes.ok) throw new Error(stripeJson.error || "Stripe checkout failed");
+
+      toast.success("Booking request submitted!", {
+        duration: 2000,
+        position: "bottom-center",
+      });
+
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+
+      window.location.href = stripeJson.url;
+    } catch (err) {
+      console.error("Error during booking:", err.message);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-pink-50 p-4 sm:p-6 md:p-10 text-gray-800">
@@ -215,50 +349,119 @@ const timeOptions = availability
         >
           <input type="text" name="name" placeholder="Full Name" required className="w-full border p-2 rounded" />
           <input type="text" name="instagram" placeholder="Instagram Handle" required className="w-full border p-2 rounded" />
-
-          <select name="service" required className="w-full border p-2 rounded">
-            <option value="">Select a Service</option>
-            <option value="Gel-X">Gel-X</option>
-            <option value="Acrylic">Acrylic</option>
-            <option value="Manicure">Gel Manicure</option>
-            <option value="Manicure">Hard gel</option>
-            <option value="Manicure">Builder Gel Manicure</option>
-          </select>
-
+{/* 💅 Are you booking nails? */}
 <select
-  name="soakoff"
-  value={soakoff}
-  onChange={(e) => setSoakoff(e.target.value)}
+  name="bookingNails"
   required
   className="w-full border p-2 rounded"
+  value={bookingNails}
+  onChange={(e) => {
+    const val = e.target.value;
+    setBookingNails(val);
+    const newDuration =
+      val === "yes"
+        ? 2 + (pedicure === "yes" ? 1 : 0)
+        : pedicure === "yes"
+        ? 1
+        : 0;
+    setDuration(newDuration);
+    if (val === "no") {
+      setService("");
+      setSoakoff("");
+    }
+  }}
 >
-  <option value="">Select a Soak-Off option</option>
-  <option value="none">No Soak-Off</option>
-  <option value="soak-off">Soak-Off</option>
-  <option value="foreign">Foreign Soak-Off</option>
+  <option value="">Are you booking nails?</option>
+  <option value="yes">Yes</option>
+  <option value="no">No</option>
 </select>
 
+{/* 🖌️ Nail Service Selection */}
+{bookingNails === "yes" && (
+  <>
+    <select
+      name="service"
+      required
+      className="w-full border p-2 rounded"
+      value={service}
+      onChange={(e) => {
+        const val = e.target.value;
+        setService(val);
+        setDuration(
+          val ? 2 + (pedicure === "yes" ? 1 : 0) : pedicure === "yes" ? 1 : 0
+        );
+      }}
+    >
+      <option value="">Select a Nail Service</option>
+      <option value="Gel-X">Gel-X</option>
+      <option value="Acrylic">Acrylic</option>
+      <option value="Gel Manicure">Gel Manicure</option>
+      <option value="Hard Gel">Hard Gel</option>
+      <option value="Builder Gel Manicure">Builder Gel Manicure</option>
+    </select>
 
-          <select name="artLevel" className="w-full border p-2 rounded">
-            <option value="">Nail Art Level </option>
-            <option value="N/A">N/A</option>
-            <option value="Level 1">Level 1</option>
-            <option value="Level 2">Level 2</option>
-            <option value="Level 3">Level 3</option>
-            <option value="French Tips">French Tips</option>
-          </select>
+    <select
+      name="soakoff"
+      value={soakoff}
+      onChange={(e) => setSoakoff(e.target.value)}
+      required
+      className="w-full border p-2 rounded"
+    >
+      <option value="">Select a Soak-Off option</option>
+      <option value="none">No Soak-Off</option>
+      <option value="soak-off">Soak-Off</option>
+      <option value="foreign">Foreign Soak-Off</option>
+    </select>
 
-<select name="Length" className="w-full border p-2 rounded">
-            <option value="">Nail Length </option>
-            <option value="N/A">N/A</option>
-            <option value="Small/Xtra Small">Small/Xtra Small</option>
-            <option value="Medium">Medium</option>
-            <option value="Large">Large</option>
-            <option value="XL/XXL">XL/XXL</option>
-          </select>
+    <select name="artLevel" className="w-full border p-2 rounded">
+      <option value="">Nail Art Level</option>
+      <option value="N/A">N/A</option>
+      <option value="Level 1">Level 1</option>
+      <option value="Level 2">Level 2</option>
+      <option value="Level 3">Level 3</option>
+      <option value="French Tips">French Tips</option>
+    </select>
+
+    <select name="Length" className="w-full border p-2 rounded">
+      <option value="">Nail Length</option>
+      <option value="N/A">N/A</option>
+      <option value="Small/Xtra Small">Small/Xtra Small</option>
+      <option value="Medium">Medium</option>
+      <option value="Large">Large</option>
+      <option value="XL/XXL">XL/XXL</option>
+    </select>
+  </>
+)}
+
+
+{/* 🦶 Pedicure Selection */}
+<select
+  name="pedicure"
+  required
+  className="w-full border p-2 rounded"
+  value={pedicure}
+  onChange={(e) => {
+    const val = e.target.value;
+    setPedicure(val);
+    setDuration(service ? 2 + (val === "yes" ? 1 : 0) : val === "yes" ? 1 : 0);
+  }}
+>
+  <option value="">Are you booking a pedicure?</option>
+  <option value="yes">Yes</option>
+  <option value="no">No</option>
+</select>
+
+{/* 💅 Pedicure Type (shown only if yes) */}
+{pedicure === "yes" && (
+  <select name="pedicureType" className="w-full border p-2 rounded">
+    <option value="">Select Pedicure Type</option>
+    <option value="Basic Pedi">Basic Pedi</option> {/* <- change these as you want */}
+    <option value="Deluxe Pedi">Deluxe Pedi</option>
+    <option value="Spa Pedi">Spa Pedi</option>
+  </select>
+)}
 
         
-{/* 📅 Date Picker Calendar */}
 <Calendar
   value={selectedDate ? new Date(selectedDate + "T00:00:00") : null}
   onChange={(date) => {
@@ -270,36 +473,47 @@ const timeOptions = availability
     return !availableDates.includes(iso);
   }}
   tileClassName={({ date }) => {
-  const iso = date.toISOString().split("T")[0];
-  const isSelected = selectedDate === iso;
-  const isAvailable = availableDates.includes(iso);
+    const iso = date.toISOString().split("T")[0];
+    const isSelected = selectedDate === iso;
+    const isAvailable = availableDates.includes(iso);
 
-  return isSelected
-    ? "bg-pink-600 text-white font-semibold rounded-full"
-    : isAvailable
-    ? "bg-pink-100 font-semibold rounded-full"
-    : null;
-}}
-
+    return isSelected
+      ? "bg-pink-600 text-white font-semibold rounded-full"
+      : isAvailable
+      ? "bg-pink-100 font-semibold rounded-full"
+      : null;
+  }}
+  calendarType="US" // ✅ forces Sunday-start calendar view
   className="w-full border rounded p-2 mb-4"
 />
-<input type="hidden" name="date" value={selectedDate} />
+
+<input type="hidden" name="date" value={selectedDate || ""} />
 
 
-{/* ⏰ Time Slot Dropdown */}
+
+{/* 🕒 Time Slot Dropdown */}
+<div className="mb-4">
+ <label className="block mb-2 font-semibold">Select a Time:</label>
 <select
   name="time"
+  value={time}
+  onChange={(e) => setTime(e.target.value)}
   required
-  className="w-full border p-2 rounded"
-  disabled={!selectedDate}
+  className="w-full border rounded px-3 py-2 mb-4"
 >
-  <option value="">Select a Time</option>
-  {timeOptions.map((time, idx) => (
-    <option key={idx} value={time}>
-      {time}
+  <option value="">-- Select a Time --</option>
+  {timeOptions.map((t) => (
+    <option key={t} value={t}>
+      {t}
     </option>
   ))}
 </select>
+
+</div>
+
+
+
+
           <input
   type="tel"
   name="phone"

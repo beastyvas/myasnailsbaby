@@ -15,6 +15,10 @@ export default function Dashboard() {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
   const [bookings, setBookings] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+
 
   const correctPin = "052224";
 
@@ -67,6 +71,30 @@ const saveBio = async () => {
     console.error("Bio update error:", error.message);
   } else {
     alert("Bio updated!");
+  }
+};
+const [newSlot, setNewSlot] = useState({ start: "", end: "" });
+
+const handleAddSlot = async (e) => {
+  e.preventDefault();
+
+  if (!selectedDate || !newSlot.start || !newSlot.end) {
+    alert("Please select a date and time.");
+    return;
+  }
+
+  const { error } = await supabase.from("availability").insert({
+    date: selectedDate,
+    start_time: newSlot.start,
+    end_time: newSlot.end,
+  });
+
+  if (error) {
+    console.error("Add slot error:", error.message);
+    alert("Failed to add slot.");
+  } else {
+    setNewSlot({ start: "", end: "" });
+    fetchAvailability(); // Refresh slots
   }
 };
 
@@ -125,16 +153,21 @@ const saveBio = async () => {
     else setGallery(data);
   }
 
-  async function fetchAvailability() {
-    const { data, error } = await supabase
-      .from("availability")
-      .select("*")
-      .order("date", { ascending: true });
-    if (error) console.error("Error fetching availability:", error.message);
-    else setAvailability(data);
-  }
+function convertTo24Hr(timeStr) {
+  if (!timeStr || typeof timeStr !== "string") return "00:00";
 
- 
+  const match = timeStr.match(/^(\d{1,2}):?(\d{2})?\s*(AM|PM)$/i);
+  if (!match) return "00:00";
+
+  let [_, hourStr, minuteStr, modifier] = match;
+  let hour = parseInt(hourStr, 10);
+  let minutes = parseInt(minuteStr || "00", 10);
+
+  if (modifier.toUpperCase() === "PM" && hour !== 12) hour += 12;
+  if (modifier.toUpperCase() === "AM" && hour === 12) hour = 0;
+
+  return `${hour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+}
 
 async function fetchBookings() {
   const { data, error } = await supabase
@@ -187,32 +220,67 @@ const handleDeleteBooking = async (booking) => {
   }
 };
 
+useEffect(() => {
+  const fetch = async () => {
+    const { data, error } = await supabase.from("availability").select("*").order("date");
+    if (!error && data) setAvailability(data);
+  };
+  fetch();
+}, []);
+
+const handleDeleteAvailability = async (date) => {
+  await supabase.from("availability").delete().eq("date", date);
+  setAvailability(availability.filter((a) => a.date !== date));
+};
 
 
-function convertTo24Hr(timeStr) {
-  if (!timeStr || typeof timeStr !== "string") return "00:00";
+const generateMonthAvailability = async () => {
+  const inserts = [];
+  const year = selectedYear;
+  const month = selectedMonth;
 
-  const match = timeStr.match(/^(\d{1,2}):?(\d{2})?\s*(AM|PM)$/i);
-  if (!match) return "00:00";
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  let [_, hourStr, minuteStr, modifier] = match;
-  let hour = parseInt(hourStr, 10);
-  let minutes = parseInt(minuteStr || "00", 10);
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const dow = date.getDay();
+    if (dow === 0) continue; // skip Sundays
 
-  if (modifier.toUpperCase() === "PM" && hour !== 12) hour += 12;
-  if (modifier.toUpperCase() === "AM" && hour === 12) hour = 0;
+    const iso = date.toISOString().split("T")[0];
 
-  return `${hour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-}
+    if (dow === 1 || dow === 2) {
+      inserts.push({ date: iso, start_time: "14:00", end_time: "22:00" });
+    } else {
+      inserts.push({ date: iso, start_time: "08:00", end_time: "16:00" });
+    }
+  }
+
+  const { error } = await supabase.from("availability").insert(inserts);
+  if (error) {
+    console.error("Insert error:", error.message);
+    alert("❌ Failed to insert slots.");
+  } else {
+    alert("✅ Availability generated!");
+    fetchAvailability();
+  }
+};
 
 
 
+const fetchAvailability = async () => {
+  const { data, error } = await supabase
+    .from("availability")
+    .select("*")
+    .order("date");
+  if (!error && data) setAvailability(data);
+};
 
-  async function handleDelete(item) {
-    const { error } = await supabase
-      .from("gallery")
-      .delete()
-      .eq("id", item.id);
+
+  async function handleDeleteImage(item) {
+  const { error } = await supabase
+    .from("gallery")
+    .delete()
+    .eq("id", item.id);
 
     if (error) {
       console.error("Delete failed:", error.message);
@@ -249,6 +317,14 @@ async function handleDeleteSelected() {
     setSelectedIds([]);
     fetchAvailability();
   }
+}
+function formatTime(time24) {
+  const [hourStr, minuteStr] = time24.split(":");
+  const hour = parseInt(hourStr, 10);
+  const minute = parseInt(minuteStr, 10);
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${minuteStr}${suffix}`;
 }
 
 
@@ -298,7 +374,8 @@ async function handleDeleteSelected() {
         >
           {saving ? "Saving..." : "Save Bio"}
         </button>
-      </section>
+      </section> 
+      
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold mb-2">Gallery Upload</h2>
@@ -402,236 +479,232 @@ async function handleDeleteSelected() {
         const isVerified = b.returning === "yes";
 
         return (
-          <div key={b.id} className="border-b pb-2 mb-2">
-            <p className="font-medium">
-              {b.name} • {b.service}
-            </p>
+  <div
+    key={b.id}
+    className="bg-white shadow-sm border rounded p-4 mb-4 space-y-2"
+  >
+    {/* Header: Name + Service */}
+    <div className="flex justify-between items-center">
+      <h3 className="font-semibold text-lg">{b.name}</h3>
+      <span className="text-sm text-gray-500">
+        {b.date} @ {b.start_time} – {b.end_time}
+      </span>
+    </div>
 
-            <p className="text-sm text-gray-600">
-              {b.date} @ {b.time}
-            </p>
+    {/* Instagram */}
+    {b.instagram && (
+      <p className="text-sm text-gray-600">
+        📸 @{b.instagram}
+      </p>
+    )}
 
-            <p className="text-sm text-gray-600">
-              📸 @{b.instagram}
-            </p>
-            
-            <p className="text-sm text-gray-600">
-               Soakoff: {b.soakoff}</p>
+    {/* Services */}
+    <div className="text-sm space-y-1 text-gray-700">
+      {b.service && <p>💅 {b.service}</p>}
+      {b.art_level && b.art_level !== "N/A" && (
+        <p>🎨 Nail Art: {b.art_level}</p>
+      )}
+      {b.length && b.length !== "N/A" && <p>📏 Length: {b.length}</p>}
+      {b.soakoff && b.soakoff !== "N/A" && <p>🧽 Soak-Off: {b.soakoff}</p>}
+      {b.pedicure === "yes" && (
+        <p>🦶 Pedicure: {b.pedicure_type || "N/A"}</p>
+      )}
+    </div>
 
-            <p className="text-sm text-gray-600">
-               Length: {b.length}</p>
+    {/* Payment & Verification */}
+    <div className="flex items-center gap-4 text-sm">
+      <span className={b.paid ? "text-green-600" : "text-red-600"}>
+        {b.paid ? "✔ Paid" : "✘ Not Paid"}
+      </span>
+      <span className={isVerified ? "text-green-600" : "text-red-600"}>
+        {isVerified ? "✅ Verified" : "❌ Not Verified"}
+      </span>
+    </div>
 
-            <p className="text-sm mb-1">
-              {b.paid ? (
-                <span className="text-green-500">✔ Paid</span>
-              ) : (
-                <span className="text-red-500">✘ Not Paid</span>
-              )}
-            </p>
+    {/* Referral */}
+    {!isVerified && b.referral?.trim() && (
+      <p className="text-sm text-gray-500 italic">
+        Referred by: {b.referral}
+      </p>
+    )}
 
-            <p className="text-sm mb-1">
-              {isVerified ? (
-                <span className="text-green-500">✅ Verified</span>
-              ) : (
-                <span className="text-red-500">❌ Not Verified</span>
-              )}
-            </p>
+    {/* Delete Button */}
+    <button
+      onClick={() => handleDeleteBooking(b)}
+      className="text-sm text-red-500 hover:underline mt-2"
+    >
+      Delete Appointment
+    </button>
+  </div>
+);
 
-            {!isVerified && b.referral?.trim() && (
-              <p className="text-sm text-gray-600 italic mb-1">
-                Referred by: {b.referral}
-              </p>
-            )}
 
-            {b.art_level && (
-              <p className="text-sm mb-1 text-purple-600">
-                🎨 Nail Art Level: {b.art_level}
-              </p>
-            )}
-
-            <button
-              onClick={() => handleDeleteBooking(b)}
-              className="text-sm text-red-500 hover:underline"
-            >
-              Delete Appointment
-            </button>
-          </div>
-        );
       })
     )}
   </div>
 </section>
 
-
-      <section className="mb-10">
+<section className="mb-10">
   <h2 className="text-lg font-semibold mb-2">Availability Calendar 📅</h2>
   <div className="bg-white p-4 rounded shadow space-y-4">
 
-    {/* ➕ Manual Add Slot */}
-    <div className="flex flex-col sm:flex-row gap-2">
-      <input
-        type="date"
-        value={newDate}
-        onChange={(e) => setNewDate(e.target.value)}
-        className="border p-2 rounded w-full"
-      />
-      <input
-        type="time"
-        value={newTime}
-        onChange={(e) => setNewTime(e.target.value)}
-        className="border p-2 rounded w-full"
-      />
-      <button
-        onClick={async () => {
-          if (!newDate || !newTime) return alert("Fill both fields!");
-          const [hourStr, minuteStr] = newTime.split(":");
-          const hour = parseInt(hourStr, 10);
-          const minute = parseInt(minuteStr, 10);
-          const suffix = hour >= 12 ? "PM" : "AM";
-          const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-          const formattedTime =
-            minute === 0
-              ? `${hour12}${suffix}`
-              : `${hour12}:${minuteStr}${suffix}`;
+<div className="flex gap-2 mb-3">
+  <select
+    value={selectedMonth}
+    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+    className="border p-2 rounded"
+  >
+    {[
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December",
+    ].map((month, idx) => (
+      <option key={idx} value={idx}>{month}</option>
+    ))}
+  </select>
 
-          const { error } = await supabase
-            .from("availability")
-            .insert({ date: newDate, time: formattedTime });
+  <select
+    value={selectedYear}
+    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+    className="border p-2 rounded"
+  >
+    {Array.from({ length: 3 }, (_, i) => new Date().getFullYear() + i).map((year) => (
+      <option key={year} value={year}>{year}</option>
+    ))}
+  </select>
+</div>
 
-          if (error) return alert("Insert failed.");
-          setNewDate("");
-          setNewTime("");
-          fetchAvailability();
-        }}
-        className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded"
-      >
-        Add Slot
-      </button>
-    </div>
+<button
+  onClick={generateMonthAvailability}
+  className="bg-pink-500 text-white px-4 py-2 rounded shadow hover:bg-pink-600"
+>
+  Generate Availability for Selected Month 🗓️
+</button>
 
-    {/* ⚡ Auto-Generate Slots */}
+
+<Calendar
+  value={selectedDate ? new Date(selectedDate + "T00:00:00") : null}
+  onChange={(date) => {
+    const iso = date.toISOString().split("T")[0];
+    setSelectedDate(iso);
+  }}
+  tileClassName={({ date }) => {
+    const iso = date.toISOString().split("T")[0];
+    const isAvailable =
+      Array.isArray(availability) && availability.some((a) => a.date === iso);
+    return isAvailable ? "bg-pink-200 rounded-full" : "";
+  }}
+  calendarType="US" // ✅ forces Sunday-start layout
+  className="border p-2 rounded w-full mb-6"
+/>
+
+
+
+{/* ➕ Add New Time Slot for Selected Date */}
+{selectedDate && (
+  <form
+    onSubmit={handleAddSlot}
+    className="flex flex-wrap gap-3 items-center mb-4"
+  >
+    <input
+      type="time"
+      name="startTime"
+      required
+      className="border rounded p-2 text-sm"
+      value={newSlot.start}
+      onChange={(e) =>
+        setNewSlot((prev) => ({ ...prev, start: e.target.value }))
+      }
+    />
+    <input
+      type="time"
+      name="endTime"
+      required
+      className="border rounded p-2 text-sm"
+      value={newSlot.end}
+      onChange={(e) =>
+        setNewSlot((prev) => ({ ...prev, end: e.target.value }))
+      }
+    />
     <button
-      onClick={async () => {
-        const weekdayTimes = ["8AM", "10AM", "12PM", "2PM"];
-        const mondayTimes = ["1PM", "3PM", "5PM", "7PM"];
-        const saturdayTimes = ["8AM", "10AM", "12AM", "2PM"];
-        const inserts = [];
-        const baseDate = new Date();
-
-        for (let i = 0; i < 30; i++) {
-          const date = new Date(baseDate);
-          date.setDate(baseDate.getDate() + i);
-          const day = date.getDay();
-          if (day === 0) continue; // Skip Sunday
-          const formattedDate = date.toISOString().split("T")[0];
-          const times = day === 1
-            ? mondayTimes
-            : day === 6
-            ? saturdayTimes
-            : weekdayTimes;
-
-          times.forEach((time) => inserts.push({ date: formattedDate, time }));
-        }
-
-        const { error } = await supabase.from("availability").insert(inserts);
-        if (error) {
-          console.error("Insert error:", error.message);
-          alert("Insert failed ❌");
-        } else {
-          alert("✅ 2-week schedule generated!");
-          fetchAvailability();
-        }
-      }}
-      className="bg-pink-100 hover:bg-pink-200 text-pink-700 font-medium px-3 py-2 rounded shadow-sm text-sm mt-2"
+      type="submit"
+      className="bg-pink-500 text-white px-4 py-2 rounded shadow hover:bg-pink-600"
     >
-      Auto-Generate Next 30 Days 🗓
+      Add Slot
     </button>
+  </form>
+)}
+
+{/* 🕒 Availability for Selected Date */}
+{selectedDate && (
+  <>
+    <h3 className="font-semibold text-gray-700 mb-2">
+      Available Times on{" "}
+      {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+})}
+
+    </h3>
+
+    <div className="flex flex-col gap-2 mb-4">
+      {availability
+        .filter((slot) => slot.date === selectedDate)
+        .map((slot) => (
+          <div
+            key={slot.id}
+            className="flex items-center gap-3 bg-pink-50 border border-pink-200 rounded-lg px-3 py-2 text-sm"
+          >
+            {formatTime(slot.start_time)} → {formatTime(slot.end_time)}
+
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(slot.id)}
+              onChange={() => toggleSelected(slot.id)}
+              className="ml-auto"
+            />
+            <button
+              onClick={async () => {
+                const confirmDelete = confirm("Delete this slot?");
+                if (!confirmDelete) return;
+                const { error } = await supabase
+                  .from("availability")
+                  .delete()
+                  .eq("id", slot.id);
+                if (error) {
+                  console.error("Delete error:", error.message);
+                  alert("Failed to delete slot.");
+                } else {
+                  fetchAvailability();
+                }
+              }}
+              className="text-red-500 text-xs hover:underline"
+            >
+              Delete
+            </button>
+          </div>
+        ))}
+
+      {availability.filter((slot) => slot.date === selectedDate).length === 0 && (
+        <p className="text-gray-500 italic text-sm">
+          No times available for this day
+        </p>
+      )}
+    </div>
 
     {/* 🗑️ Delete Selected */}
     {selectedIds.length > 0 && (
       <button
         onClick={handleDeleteSelected}
-        className="bg-red-500 text-white px-4 py-2 rounded shadow-sm mb-3"
+        className="bg-red-500 text-white px-4 py-2 rounded shadow-sm mb-4"
       >
         Delete Selected ({selectedIds.length})
       </button>
     )}
-
-    {/* 📆 Calendar View */}
-    <Calendar
-      value={selectedDate}
-      onChange={setSelectedDate}
-      tileClassName={({ date }) => {
-        const iso = date.toISOString().split("T")[0];
-        const isAvailable = availability.some((slot) => slot.date === iso);
-        return isAvailable ? "bg-pink-100 font-semibold rounded-full" : null;
-      }}
-      className="rounded border"
-    />
-
-    {/* ⏰ Time Slots Display */}
-    {selectedDate && (
-      <div className="mt-4 space-y-2">
-        <h3 className="font-semibold text-gray-700">
-          Available Times on{" "}
-          {selectedDate.toLocaleDateString("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {availability
-            .filter(
-              (slot) =>
-                slot.date === selectedDate.toISOString().split("T")[0]
-            )
-            .map((slot) => (
-              <div
-                key={slot.id}
-                className="bg-pink-50 border border-pink-200 rounded-xl px-3 py-2 text-sm flex items-center gap-2"
-              >
-                {slot.time}
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(slot.id)}
-                  onChange={() => toggleSelected(slot.id)}
-                  className="ml-2"
-                />
-                <button
-                  onClick={async () => {
-                    const confirmDelete = confirm("Delete this slot?");
-                    if (!confirmDelete) return;
-                    const { error } = await supabase
-                      .from("availability")
-                      .delete()
-                      .eq("id", slot.id);
-                    if (error) {
-                      console.error("Delete error:", error.message);
-                      alert("Failed to delete slot.");
-                    } else {
-                      fetchAvailability();
-                    }
-                  }}
-                  className="text-red-500 text-xs hover:underline"
-                >
-                  Delete
-                </button>
-              </div>
-            ))}
-          {availability.filter(
-            (slot) =>
-              slot.date === selectedDate.toISOString().split("T")[0]
-          ).length === 0 && (
-            <p className="text-gray-500 italic text-sm">
-              No times for this day
-            </p>
-          )}
-        </div>
-      </div>
-    )}
-  </div>
+  </>
+)}
+</div>
 </section>
     </main>
   );
- }
+}

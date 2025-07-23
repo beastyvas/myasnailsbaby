@@ -38,20 +38,22 @@ export default async function handler(req, res) {
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel`,
       metadata: {
-        booking_id: bookingMetadata.booking_id,
-        name: bookingMetadata.name,
-        instagram: bookingMetadata.instagram,
-        phone: bookingMetadata.phone,
-        service: bookingMetadata.service,
-        artLevel: bookingMetadata.artLevel,
-        length: bookingMetadata.length,
-        date: bookingMetadata.date,
-        time: bookingMetadata.time,
-        notes: bookingMetadata.notes,
-        soakoff: bookingMetadata.soakoff,
-        returning: bookingMetadata.returning,
-        referral: bookingMetadata.referral,
-      },
+  booking_id: bookingMetadata.booking_id,
+  name: bookingMetadata.name,
+  instagram: bookingMetadata.instagram,
+  phone: bookingMetadata.phone,
+  service: bookingMetadata.service,
+  artLevel: bookingMetadata.artLevel,
+  length: bookingMetadata.length,
+  date: bookingMetadata.date,
+  time: bookingMetadata.time,
+  notes: bookingMetadata.notes,
+  soakoff: bookingMetadata.soakoff,
+  returning: bookingMetadata.returning,
+  referral: bookingMetadata.referral,
+  pedicure: bookingMetadata.pedicure, // ✅ add this
+},
+
     });
 
     return res.status(200).json({ url: session.url });
