@@ -7,7 +7,6 @@ import NailGallery from "@/components/NailGallery";
 import { supabase } from "@/utils/supabaseClient";
 import { loadStripe } from "@stripe/stripe-js";
 import { v4 as uuidv4 } from "uuid";
-import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import Link from "next/link";
 import dynamic from "next/dynamic";
