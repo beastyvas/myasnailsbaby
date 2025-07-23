@@ -1,0 +1,24 @@
+{
+  "build": {
+    "env": {
+      "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/stripe-webhook",
+      "methods": ["POST"],
+      "headers": {
+        "Cache-Control": "no-store"
+      },
+      "dest": "/api/stripe-webhook",
+      "override": true
+    },
+    {
+      "src": "/(.*)",
+      "headers": {
+        "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload"
+      }
+    }
+  ]
+}
