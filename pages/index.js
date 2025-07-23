@@ -111,10 +111,9 @@ useEffect(() => {
   const loadAvailableTimes = async () => {
     if (!selectedDate || !duration) return setTimeOptions([]);
 
-    // 1. Get availability window for that day
     const { data: availabilityData, error: availErr } = await supabase
       .from("availability")
-      .select("start_time")
+      .select("start_time, end_time")
       .eq("date", selectedDate)
       .single();
 
@@ -127,7 +126,6 @@ useEffect(() => {
     const startHour = parseInt(availabilityData.start_time.split(":")[0]);
     const endHour = parseInt(availabilityData.end_time.split(":")[0]);
 
-    // 2. Get all booked ranges
     const { data: booked, error: bookedErr } = await supabase
       .from("bookings")
       .select("start_time, duration")
@@ -138,40 +136,29 @@ useEffect(() => {
       return;
     }
 
-    const bookedRanges = booked.map(({ time, duration }) => {
-      const hour = parseInt(time.replace(/AM|PM/, ""));
-      const isPM = time.includes("PM") && hour !== 12;
-      const isAM = time.includes("AM") && hour === 12;
-      const start = isPM ? hour + 12 : isAM ? 0 : hour;
-      return { start, end: start + (duration || 2) };
+    const bookedRanges = booked.map((b) => {
+      const [startHour] = b.start_time.split(":");
+      const start = parseInt(startHour);
+      const end = start + (b.duration || 2);
+      return { start, end };
     });
 
-    // 3. Generate possible time slots
-    const allSlots = [];
+    const available = [];
     for (let hour = startHour; hour <= endHour - duration; hour++) {
-      const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-      const suffix = hour >= 12 ? "PM" : "AM";
-      allSlots.push(`${displayHour}${suffix}`);
+      const isBooked = bookedRanges.some((r) => hour < r.end && hour + duration > r.start);
+      if (!isBooked) {
+        const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+        const suffix = hour >= 12 ? "PM" : "AM";
+        available.push(`${displayHour}${suffix}`);
+      }
     }
-
-    // 4. Filter out overlapping slots
-    const available = allSlots.filter((label) => {
-      const hour = parseInt(label.replace(/AM|PM/, ""));
-      const isPM = label.includes("PM") && hour !== 12;
-      const isAM = label.includes("AM") && hour === 12;
-      const start = isPM ? hour + 12 : isAM ? 0 : hour;
-      const end = start + duration;
-
-      return !bookedRanges.some(
-        (r) => start < r.end && end > r.start
-      );
-    });
 
     setTimeOptions(available);
   };
 
   loadAvailableTimes();
 }, [selectedDate, duration]);
+
 
 useEffect(() => {
   const fetchAvailableDates = async () => {
@@ -463,9 +450,9 @@ const payload = {
     onChange={(e) => setPedicureType(e.target.value)}
   >
     <option value="">Select Pedicure Type</option>
-    <option value="Basic Pedicure">Basic Pedicure</option>
-    <option value="Spa Pedicure">Spa Pedicure</option>
-    <option value="Gel Pedicure">Gel Pedicure</option>
+    <option value="Basic Pedicure">Gel Pedicure</option>
+    <option value="Spa Pedicure">Gel Pedicure + Acrylic big toes(only)</option>
+    <option value="Gel Pedicure">Acrylic Pedicure</option>
   </select>
 )}
 
