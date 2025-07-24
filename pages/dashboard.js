@@ -182,14 +182,13 @@ async function fetchBookings() {
     return;
   }
 
-  const now = new Date();
+ const now = new Date();
 const upcoming = data.filter((booking) => {
-  if (!booking.date || !booking.time) return false;
+  if (!booking.date || !booking.start_time) return false;
 
-  const bookingDateTime = new Date(`${booking.date}T${convertTo24Hr(booking.time)}`);
+  const bookingDateTime = new Date(`${booking.date}T${convertTo24Hr(booking.start_time)}`);
   return bookingDateTime.getTime() > now.getTime() - 5 * 60 * 1000;
 });
-
 
   setBookings(upcoming);
 }
@@ -197,20 +196,20 @@ const handleDeleteBooking = async (booking) => {
   const confirmed = window.confirm("Are you sure you want to cancel this appointment?");
   if (!confirmed) return;
 
-  const { id, name, phone, date, time } = booking;
-
-  const { error } = await supabase.from("bookings").delete().eq("id", id);
-  if (error) {
-    console.error("❌ Delete failed:", error.message);
-    alert("Could not delete appointment.");
-    return;
-  }
+  const { id, name, phone, date, start_time } = booking;
 
   try {
+    const { error } = await supabase.from("bookings").delete().eq("id", id);
+    if (error) {
+      console.error("❌ Delete failed:", error.message);
+      alert("Could not delete appointment.");
+      return;
+    }
+
     await fetch("/api/send-cancel-text", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, phone, date, time }),
+      body: JSON.stringify({ name, phone, date, start_time }),
     });
 
     alert("Appointment deleted and client informed!");
@@ -221,6 +220,7 @@ const handleDeleteBooking = async (booking) => {
     await fetchBookings(); // still refresh
   }
 };
+
 
 useEffect(() => {
   const fetch = async () => {

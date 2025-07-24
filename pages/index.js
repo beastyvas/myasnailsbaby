@@ -34,12 +34,12 @@ const [pedicureType, setPedicureType] = useState("");
 
 
 
-  useEffect(() => {
-    let d = 0;
-    if (service) d += 2;
-    if (pedicure === "yes") d += 1;
-    setDuration(d);
-  }, [service, pedicure]);
+ useEffect(() => {
+  let d = 0;
+  if (bookingNails === "yes") d += 2;
+  if (pedicure === "yes") d += 1;
+  setDuration(d);
+}, [bookingNails, pedicure]);
 
   function generateTimeSlots(startHour, endHour, durationInHours) {
     const slots = [];
@@ -71,12 +71,12 @@ useEffect(() => {
     }
 
     // Get all booked time ranges
-    const bookedRanges = bookingsData.map((b) => {
-      const [startHour] = b.time.split(":");
-      const start = parseInt(startHour);
-      const end = start + (b.duration || 2); // default 2-hour blocks
-      return { start, end };
-    });
+    const bookedRanges = booked.map((b) => {
+  const [startHour] = b.start_time.split(":");
+  const start = parseInt(startHour);
+  const end = start + (b.duration || 2);
+  return { start, end };
+});
 
     const filtered = [];
 
@@ -204,7 +204,7 @@ const phone = data.get("phone");
 const service = data.get("service");
 const artLevel = data.get("artLevel");
 const date = data.get("date");
-const time = data.get("time");
+const start_time = data.get("start_time");
 const length = data.get("Length");
 const notes = data.get("notes");
 const returning = data.get("returning");
@@ -224,7 +224,7 @@ const payload = {
   service,
   artLevel,
   date,
-  time,
+  start_time,
   length,
   notes,
   returning,
@@ -254,7 +254,7 @@ const payload = {
   service,
   artLevel,
   date,
-  time,
+  start_time,
   length,
   notes,
   returning,
@@ -346,20 +346,13 @@ const payload = {
   className="w-full border p-2 rounded"
   value={bookingNails}
   onChange={(e) => {
-    const val = e.target.value;
-    setBookingNails(val);
-    const newDuration =
-      val === "yes"
-        ? 2 + (pedicure === "yes" ? 1 : 0)
-        : pedicure === "yes"
-        ? 1
-        : 0;
-    setDuration(newDuration);
-    if (val === "no") {
-      setService("");
-      setSoakoff("");
-    }
-  }}
+  const val = e.target.value;
+  setBookingNails(val);
+  if (val === "no") {
+    setService("");
+    setSoakoff("");
+  }
+}}
 >
   <option value="">Are you booking nails?</option>
   <option value="yes">Yes</option>
@@ -431,10 +424,9 @@ const payload = {
   className="w-full border p-2 rounded"
   value={pedicure}
   onChange={(e) => {
-    const val = e.target.value;
-    setPedicure(val);
-    setDuration(service ? 2 + (val === "yes" ? 1 : 0) : val === "yes" ? 1 : 0);
-  }}
+  setPedicure(e.target.value);
+}}
+
 >
   <option value="">Are you booking a pedicure?</option>
   <option value="yes">Yes</option>
@@ -490,7 +482,7 @@ const payload = {
 <div className="mb-4">
  <label className="block mb-2 font-semibold">Select a Time:</label>
 <select
-  name="time"
+  name="start_time"
   value={time}
   onChange={(e) => setTime(e.target.value)}
   required

@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   try {
-    const { name, phone, date, time } = req.body;
+    const { name, phone, date, start_time } = req.body;
 
     // Strip non-digits from phone number
     const cleanedPhone = phone.replace(/\D/g, "");
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         phone: cleanedPhone,
-        message: `Hey babes! Your nail appointment with Mya on ${date} @ ${time} was canceled. Please dm @myasnailsbaby if you believe this was an error!`,
+        message: `Hey babes! Your nail appointment with Mya on ${date} @ ${start_time} was canceled. Please dm @myasnailsbaby if you believe this was an error!`,
         key: process.env.TEXTBELT_API_KEY,
       }),
     });

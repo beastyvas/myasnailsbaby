@@ -48,68 +48,83 @@ export default async function handler(req, res) {
       return res.status(400).send("Invalid metadata");
     }
 
-    // 🧼 Sanitize date & time
-    const safeDate = metadata.date?.trim() || null;
-    const safeTime = metadata.time?.trim() || null;
+    const {
+      booking_id,
+      name,
+      instagram,
+      phone,
+      service,
+      artLevel,
+      notes,
+      length,
+      soakoff,
+      returning,
+      referral,
+      duration,
+      pedicure,
+      pedicure_type,
+      booking_nails,
+      start_time,
+      date,
+    } = metadata;
 
-    if (!safeDate || !safeTime) {
-      console.error("❌ Missing or invalid date/time:", { safeDate, safeTime });
-      return res.status(400).send("Missing date/time");
+    const safeDate = date?.trim() || null;
+    const safeStart = start_time?.trim() || null;
+
+    if (!safeDate || !safeStart) {
+      console.error("❌ Missing date or start_time:", { safeDate, safeStart });
+      return res.status(400).send("Missing date or start_time");
     }
 
-    const {
-  booking_id,
-  name,
-  instagram,
-  phone,
-  service,
-  artLevel,
-  notes,
-  length,
-  soakoff,
-  returning,
-  referral,
-  pedicure, // ✅ new
-} = metadata;
+    // Generate end_time from start_time + duration
+    const startHour = parseInt(safeStart.replace(/AM|PM/, ""));
+    const isPM = safeStart.includes("PM") && startHour !== 12;
+    const isAM = safeStart.includes("AM") && startHour === 12;
+    const start24 = isPM ? startHour + 12 : isAM ? 0 : startHour;
+    const endHour = start24 + (parseInt(duration) || 2);
+    const endSuffix = endHour >= 12 ? "PM" : "AM";
+    const endDisplay = `${endHour % 12 === 0 ? 12 : endHour % 12}${endSuffix}`;
 
-    // Check for duplicate booking
+    // Check for duplicate
     const { data: existing } = await supabase
       .from("bookings")
       .select("id")
       .eq("phone", phone)
       .eq("date", safeDate)
-      .eq("time", safeTime);
+      .eq("start_time", safeStart);
 
     if (existing && existing.length > 0) {
       console.log("⚠️ Booking already exists, skipping insert");
-      return res
-        .status(200)
-        .json({ success: true, bookingId: existing[0].id });
+      return res.status(200).json({ success: true, bookingId: existing[0].id });
     }
 
-    // Insert sanitized booking
-const { data, error } = await supabase
-  .from("bookings")
-  .insert([
-    {
-      name,
-      instagram,
-      phone,
-      service,
-      art_level: artLevel,
-      length,
-      date: safeDate,
-      time: safeTime,
-      notes,
-      soakoff,
-      returning,
-      referral,
-      paid: true,
-      pedicure, // ✅ include in DB
-    },
-  ])
-  .select()
-  .single();
+    // Insert into Supabase
+    const { data, error } = await supabase
+      .from("bookings")
+      .insert([
+        {
+          name,
+          instagram,
+          phone,
+          service,
+          art_level: artLevel,
+          length,
+          date: safeDate,
+          start_time: safeStart,
+          end_time: endDisplay,
+          notes,
+          soakoff,
+          returning,
+          duration,
+          referral,
+          paid: true,
+          pedicure,
+          pedicure_type,
+          booking_nails,
+        },
+      ])
+      .select()
+      .single();
 
     if (error) {
       console.error("❌ Supabase insert error:", error.message);
@@ -121,14 +136,16 @@ const { data, error } = await supabase
       await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/send-text`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, date: safeDate, time: safeTime }),
+        body: JSON.stringify({ name, date: safeDate, start_time: safeStart }),
       });
 
       console.log("✅ Booking inserted & SMS sent");
     } catch (smsErr) {
       console.error("⚠️ SMS sending failed:", smsErr.message);
     }
+
+    return res.status(200).json({ received: true });
   }
 
-  return res.status(200).json({ received: true });
+  res.status(200).json({ received: true });
 }

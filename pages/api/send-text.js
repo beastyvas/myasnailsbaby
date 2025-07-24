@@ -1,14 +1,14 @@
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
-  const { name, date, time } = req.body;
+  const { name, date, start_time } = req.body;
 
   const response = await fetch("https://textbelt.com/text", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       phone: "+17029818428", // Mya's number
-      message: `📅 New Booking: ${name} on ${date} at ${time}`,
+      message: `📅 New Booking: ${name} on ${date} at ${start_time}`,
       key: process.env.TEXTBELT_API_KEY,
     }),
   });
