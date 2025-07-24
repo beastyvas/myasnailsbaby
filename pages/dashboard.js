@@ -598,6 +598,99 @@ function formatTime(time24) {
   calendarType="US" // ✅ forces Sunday-start layout
   className="border p-2 rounded w-full mb-6"
 />
+<section className="mb-10">
+  <h2 className="text-xl font-bold mb-4 text-gray-800">📛 Block Off Time Manually</h2>
+  <div className="bg-white p-6 rounded-xl shadow-md space-y-4 border border-gray-200">
+    <p className="text-sm text-gray-600">
+      Use this form to manually block off time for walk-ins, IG referrals, or other appointments not made through the website.
+    </p>
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const date = e.target.date.value;
+        const startTime = e.target.start_time.value;
+        const duration = parseInt(e.target.duration.value);
+        const endHour = parseInt(startTime.split(":")[0]) + duration;
+        const endTime = `${endHour.toString().padStart(2, "0")}:00`;
+
+        const { data, error } = await supabase.from("bookings").insert([
+          {
+            name: "BLOCKED",
+            phone: "offline",
+            service: "N/A",
+            start_time: startTime,
+            end_time: endTime,
+            duration,
+            date,
+            paid: true,
+            returning: "no",
+            referral: "MANUAL BLOCK",
+          },
+        ]);
+
+        if (error) {
+          alert("❌ Failed to block time");
+          console.error(error.message);
+        } else {
+          alert("✅ Time successfully blocked!");
+        }
+      }}
+      className="grid grid-cols-1 md:grid-cols-3 gap-4"
+    >
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">📅 Date</label>
+        <input
+          type="date"
+          name="date"
+          required
+          className="border p-2 rounded w-full"
+        />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">⏰ Start Time</label>
+        <select
+          name="start_time"
+          required
+          className="border p-2 rounded w-full"
+        >
+          <option value="">Select Start Time</option>
+          {Array.from({ length: 14 }, (_, i) => {
+            const hour = i + 8;
+            return (
+              <option key={hour} value={`${hour.toString().padStart(2, "0")}:00`}>
+                {hour % 12 === 0 ? 12 : hour % 12}{hour >= 12 ? "PM" : "AM"}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-700">⏳ Duration</label>
+        <select
+          name="duration"
+          required
+          className="border p-2 rounded w-full"
+        >
+          <option value="1">1 Hour</option>
+          <option value="2">2 Hours</option>
+          <option value="3">3 Hours</option>
+        </select>
+      </div>
+
+      <div className="md:col-span-3">
+        <button
+          type="submit"
+          className="mt-2 bg-black w-full text-white py-2 rounded hover:bg-gray-800 transition"
+        >
+          Block Time
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
 
 
 
