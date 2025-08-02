@@ -408,7 +408,7 @@ const payload = {
     <select name="Length" className="w-full border p-2 rounded">
       <option value="">Nail Length</option>
       <option value="N/A">N/A</option>
-      <option value="Small/Xtra Small">Small/Xtra Small</option>
+      <option value="Small/Xtra Small">Short/Xtra Short</option>
       <option value="Medium">Medium</option>
       <option value="Large">Large</option>
       <option value="XL/XXL">XL/XXL</option>

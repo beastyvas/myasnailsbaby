@@ -16,6 +16,11 @@ export default async function handler(req, res) {
       notes = "",
       returning = "",
       referral = "",
+      soakoff = "",
+      pedicure = "",
+      bookingNails = "", // default to "no" if not provided
+      pedicureType = "", // new field for pedicure type
+
     } = req.body;
 
     const bookingId = uuidv4(); // generate unique ID for use in webhook insert
@@ -35,6 +40,10 @@ export default async function handler(req, res) {
     notes,
     returning,
     referral,
+    soakoff,
+    pedicure,
+    pedicure_type: pedicureType, // new field
+    booking_nails: bookingNails, // new field
   },
 });
 
