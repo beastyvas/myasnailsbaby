@@ -85,18 +85,26 @@ export default async function handler(req, res) {
     const endSuffix = endHour >= 12 ? "PM" : "AM";
     const endDisplay = `${endHour % 12 === 0 ? 12 : endHour % 12}${endSuffix}`;
 
-    // Check for duplicate
-    const { data: existing } = await supabase
-      .from("bookings")
-      .select("id")
-      .eq("phone", phone)
-      .eq("date", safeDate)
-      .eq("start_time", safeStart);
+   
 
-    if (existing && existing.length > 0) {
-      console.log("⚠️ Booking already exists, skipping insert");
-      return res.status(200).json({ success: true, bookingId: existing[0].id });
-    }
+// 🔒 Check for time conflicts on same date
+const { data: conflicts, error: conflictError } = await supabase
+  .from("bookings")
+  .select("id, start_time, end_time")
+  .eq("date", safeDate)
+  .filter("start_time", "<", end24)
+  .filter("end_time", ">", start24);
+
+if (conflictError) {
+  console.error("❌ Conflict check error:", conflictError.message);
+  return res.status(500).json({ error: "Internal error during conflict check" });
+}
+
+if (conflicts.length > 0) {
+  console.warn("⚠️ Time conflict with existing booking:", conflicts);
+  return res.status(409).json({ error: "Time slot already booked" });
+}
+
 
     // Insert into Supabase
     const { data, error } = await supabase
