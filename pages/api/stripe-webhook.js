@@ -77,15 +77,14 @@ export default async function handler(req, res) {
     }
 
     // Generate end_time from start_time + duration
-    const startHour = parseInt(safeStart.replace(/AM|PM/, ""));
-    const isPM = safeStart.includes("PM") && startHour !== 12;
-    const isAM = safeStart.includes("AM") && startHour === 12;
-    const start24 = isPM ? startHour + 12 : isAM ? 0 : startHour;
-    const endHour = start24 + (parseInt(duration) || 2);
-    const endSuffix = endHour >= 12 ? "PM" : "AM";
-    const endDisplay = `${endHour % 12 === 0 ? 12 : endHour % 12}${endSuffix}`;
-
-   
+const startHour = parseInt(safeStart.replace(/AM|PM/, ""));
+const isPM = safeStart.includes("PM") && startHour !== 12;
+const isAM = safeStart.includes("AM") && startHour === 12;
+const start24 = isPM ? startHour + 12 : isAM ? 0 : startHour;
+const endHour = start24 + (parseInt(duration) || 2);
+const end24 = endHour; // ✅ Add this line
+const endSuffix = endHour >= 12 ? "PM" : "AM";
+const endDisplay = `${endHour % 12 === 0 ? 12 : endHour % 12}${endSuffix}`;
 
 // 🔒 Check for time conflicts on same date
 const { data: conflicts, error: conflictError } = await supabase
@@ -94,6 +93,7 @@ const { data: conflicts, error: conflictError } = await supabase
   .eq("date", safeDate)
   .filter("start_time", "<", end24)
   .filter("end_time", ">", start24);
+
 
 if (conflictError) {
   console.error("❌ Conflict check error:", conflictError.message);

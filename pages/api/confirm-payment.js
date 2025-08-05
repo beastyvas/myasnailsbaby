@@ -71,12 +71,17 @@ export default async function handler(req, res) {
         .select("id, confirmed")
         .eq("phone", phone)
         .eq("date", date)
-        .eq("start_time", start_time) // ✅ FIXED HERE
+        .eq("start_time", start_time)
         .maybeSingle();
 
       if (fetchError) {
         console.error("❌ Failed to check existing booking:", fetchError.message);
         return res.status(500).json({ success: false });
+      }
+
+      if (!existing) {
+        console.error("❌ Booking not found — cannot confirm.");
+        return res.status(404).json({ success: false, error: "Booking not found" });
       }
 
       if (existing?.confirmed) {
@@ -91,10 +96,10 @@ export default async function handler(req, res) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             phone: phone.startsWith("+1") ? phone : `+1${phone}`,
-            message: `Hey love! 📅 Your appointment with Mya is confirmed for ${date} at ${start_time}. 
-            Please DM @myasnailsbaby if you have questions! 💅
-            📍2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV
-            Can’t wait to see you! 💋`,
+            message: `Hey love! 📅 Your appointment with Mya is confirmed for ${date} at ${start_time}.
+        Please DM @myasnailsbaby if you have questions! 💅
+       📍2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV
+       Can't wait to see you! 💋`,
             key: process.env.TEXTBELT_API_KEY,
           }),
         });

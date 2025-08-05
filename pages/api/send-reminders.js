@@ -4,12 +4,19 @@ import { supabase } from "@/utils/supabaseClient";
 function convertTo24Hr(timeStr) {
   if (!timeStr || typeof timeStr !== "string") return "00:00:00";
 
-  const match = timeStr.trim().toUpperCase().match(/^(\d{1,2})(?::(\d{2}))?(AM|PM)$/);
+  const normalized = timeStr.trim().toUpperCase();
+  
+  // 💡 Handle shorthand like "2PM" → "2:00PM"
+  const corrected = /^\d{1,2}(AM|PM)$/.test(normalized)
+    ? normalized.replace(/(AM|PM)/, ":00$1")
+    : normalized;
+
+  const match = corrected.match(/^(\d{1,2}):(\d{2})(AM|PM)$/);
   if (!match) return "00:00:00";
 
   let [_, hourStr, minuteStr, modifier] = match;
   let hours = parseInt(hourStr);
-  const minutes = parseInt(minuteStr || "0");
+  const minutes = parseInt(minuteStr);
 
   if (modifier === "PM" && hours < 12) hours += 12;
   if (modifier === "AM" && hours === 12) hours = 0;
@@ -18,6 +25,7 @@ function convertTo24Hr(timeStr) {
     .toString()
     .padStart(2, "0")}:00`;
 }
+
 
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end("Method Not Allowed");
