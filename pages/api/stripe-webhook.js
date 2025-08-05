@@ -75,6 +75,12 @@ export default async function handler(req, res) {
       console.error("❌ Missing date or start_time:", { safeDate, safeStart });
       return res.status(400).send("Missing date or start_time");
     }
+function toTimeStr(hour) {
+  return `${hour.toString().padStart(2, "0")}:00:00`;
+}
+
+const startTimeStr = toTimeStr(start24);
+const endTimeStr = toTimeStr(end24);
 
     // Generate end_time from start_time + duration
 const startHour = parseInt(safeStart.replace(/AM|PM/, ""));
@@ -91,9 +97,8 @@ const { data: conflicts, error: conflictError } = await supabase
   .from("bookings")
   .select("id, start_time, end_time")
   .eq("date", safeDate)
-  .filter("start_time", "<", end24)
-  .filter("end_time", ">", start24);
-
+  .filter("start_time", "<", endTimeStr)
+  .filter("end_time", ">", startTimeStr);
 
 if (conflictError) {
   console.error("❌ Conflict check error:", conflictError.message);
