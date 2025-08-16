@@ -1,22 +1,49 @@
 // File: /pages/api/stripe-webhook.js
 import { buffer } from "micro";
 import Stripe from "stripe";
-import { supabase } from "@/utils/supabaseClient";
+import { createClient } from "@supabase/supabase-js";
 
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  api: { bodyParser: false }, // ✅ raw body for Stripe signature verification
 };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2022-11-15",
+  apiVersion: "2024-06-20",
 });
 
+// ✅ SERVICE ROLE client (server-only). Do NOT use your public supabaseClient here.
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// --- helpers ---
+function to24h(timeLabel) {
+  // Accepts "8AM", "8:30 PM", "12AM" etc → "08:00:00" or "20:30:00"
+  if (!timeLabel) return null;
+  const m = String(timeLabel).trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const min = m[2] ? parseInt(m[2], 10) : 0;
+  const ampm = m[3].toUpperCase();
+  if (ampm === "PM" && h !== 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 0;
+  const hh = String(h).padStart(2, "0");
+  const mm = String(min).padStart(2, "0");
+  return `${hh}:${mm}:00`;
+}
+
+function addHoursTo24h(start24, hours) {
+  const [h, m] = start24.split(":").map(Number);
+  const d = new Date(Date.UTC(2000, 0, 1, h, m || 0, 0)); // dummy date
+  d.setUTCHours(d.getUTCHours() + (Number(hours) || 2));
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mm = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mm}:00`;
+}
+
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).end("Method Not Allowed");
-  }
+  if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
   let event;
   const sig = req.headers["stripe-signature"];
@@ -35,130 +62,104 @@ export default async function handler(req, res) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const metadata = session.metadata;
+    const md = session.metadata || {};
 
-    console.log("📬 Webhook received with metadata:", metadata);
-
-    if (
-      !metadata ||
-      typeof metadata.booking_id !== "string" ||
-      metadata.booking_id.length < 10
-    ) {
-      console.error("❌ Invalid metadata or missing booking_id:", metadata);
-      return res.status(400).send("Invalid metadata");
+    // Basic validation
+    const safeDate = md.date?.trim();
+    const safeStartLabel = md.start_time?.trim(); // "8AM"
+    if (!safeDate || !safeStartLabel) {
+      console.error("❌ Missing date or start_time in metadata:", md);
+      return res.status(200).json({ received: true }); // ack so Stripe stops retrying
     }
 
-    const {
-      booking_id,
-      name,
-      instagram,
-      phone,
-      service,
-      artLevel,
-      notes,
-      length,
-      soakoff,
-      returning,
-      referral,
-      duration,
-      pedicure,
-      pedicure_type,
-      booking_nails,
-      start_time,
-      date,
-    } = metadata;
-
-    const safeDate = date?.trim() || null;
-    const safeStart = start_time?.trim() || null;
-
-    if (!safeDate || !safeStart) {
-      console.error("❌ Missing date or start_time:", { safeDate, safeStart });
-      return res.status(400).send("Missing date or start_time");
+    // Convert to 24h for DB (your columns are type 'time')
+    const start24 = to24h(safeStartLabel);
+    if (!start24) {
+      console.error("❌ Could not parse start_time:", safeStartLabel);
+      return res.status(200).json({ received: true });
     }
-function toTimeStr(hour) {
-  return `${hour.toString().padStart(2, "0")}:00:00`;
-}
+    const end24 = addHoursTo24h(start24, md.duration || 2);
 
-const startTimeStr = toTimeStr(start24);
-const endTimeStr = toTimeStr(end24);
-
-    // Generate end_time from start_time + duration
-const startHour = parseInt(safeStart.replace(/AM|PM/, ""));
-const isPM = safeStart.includes("PM") && startHour !== 12;
-const isAM = safeStart.includes("AM") && startHour === 12;
-const start24 = isPM ? startHour + 12 : isAM ? 0 : startHour;
-const endHour = start24 + (parseInt(duration) || 2);
-const end24 = endHour; // ✅ Add this line
-const endSuffix = endHour >= 12 ? "PM" : "AM";
-const endDisplay = `${endHour % 12 === 0 ? 12 : endHour % 12}${endSuffix}`;
-
-// 🔒 Check for time conflicts on same date
-const { data: conflicts, error: conflictError } = await supabase
-  .from("bookings")
-  .select("id, start_time, end_time")
-  .eq("date", safeDate)
-  .filter("start_time", "<", endTimeStr)
-  .filter("end_time", ">", startTimeStr);
-
-if (conflictError) {
-  console.error("❌ Conflict check error:", conflictError.message);
-  return res.status(500).json({ error: "Internal error during conflict check" });
-}
-
-if (conflicts.length > 0) {
-  console.warn("⚠️ Time conflict with existing booking:", conflicts);
-  return res.status(409).json({ error: "Time slot already booked" });
-}
-
-
-    // Insert into Supabase
-    const { data, error } = await supabase
+    // Idempotency: if we already inserted for this session, bail early
+    const { data: existingRow, error: existingErr } = await supabase
       .from("bookings")
-      .insert([
-        {
-          name,
-          instagram,
-          phone,
-          service,
-          art_level: artLevel,
-          length,
-          date: safeDate,
-          start_time: safeStart,
-          end_time: endDisplay,
-          notes,
-          soakoff,
-          returning,
-          duration,
-          referral,
-          paid: true,
-          pedicure,
-          pedicure_type,
-          booking_nails,
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("❌ Supabase insert error:", error.message);
-      return res.status(500).send("Supabase insert failed");
+      .select("id")
+      .eq("session_id", session.id)
+      .maybeSingle();
+    if (existingErr) console.error("⚠️ session lookup error:", existingErr.message);
+    if (existingRow) {
+      console.log("ℹ️ Booking already exists for session:", session.id);
+      return res.status(200).json({ received: true });
     }
 
-    // Send confirmation text
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/send-text`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, date: safeDate, start_time: safeStart }),
-      });
+    // Overlap check on same date using proper time values
+    const { data: conflicts, error: conflictError } = await supabase
+      .from("bookings")
+      .select("id, start_time, end_time")
+      .eq("date", safeDate)
+      .lt("start_time", end24)
+      .gt("end_time", start24);
 
-      console.log("✅ Booking inserted & SMS sent");
+    if (conflictError) {
+      console.error("❌ Conflict check error:", conflictError.message);
+      // Acknowledge but log; you can alert yourself here
+      return res.status(200).json({ received: true });
+    }
+    if (conflicts && conflicts.length > 0) {
+      console.warn("⚠️ Time conflict; not inserting. Conflicts:", conflicts);
+      // Still ack Stripe; this is a business rule failure, not a webhook failure
+      return res.status(200).json({ received: true });
+    }
+
+    // Insert booking (single source of truth). Store session_id to prevent dupes.
+    const insert = {
+      // columns: adjust to your exact schema
+      name: md.name ?? null,
+      instagram: md.instagram ?? null,
+      phone: md.phone ?? null,
+      service: md.service ?? null,
+      art_level: md.artLevel ?? null,
+      length: md.length ?? null,
+      date: safeDate,                   // 'YYYY-MM-DD' (DATE)
+      start_time: start24,              // 'HH:MM:SS' (TIME)
+      end_time: end24,                  // 'HH:MM:SS' (TIME)
+      notes: md.notes ?? null,
+      soakoff: md.soakoff ?? null,
+      returning: md.returning ?? null,
+      duration: md.duration ?? null,
+      referral: md.referral ?? null,
+      pedicure: md.pedicure ?? null,
+      pedicure_type: md.pedicure_type ?? null,
+      booking_nails: md.booking_nails ?? null,
+      paid: true,
+      confirmed: true,
+      session_id: session.id,
+    };
+
+    const { error: insertErr } = await supabase.from("bookings").insert([insert]);
+    if (insertErr) {
+      console.error("❌ Supabase insert error:", insertErr.message);
+      return res.status(200).json({ received: true }); // ack so Stripe stops retrying
+    }
+
+    // Optional: fire SMS directly (avoid calling your own API route here)
+    try {
+      await fetch("https://textbelt.com/text", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          phone: md.phone ?? "",
+          message: `✅ Confirmed: ${md.service ?? "Appointment"} on ${safeDate} at ${safeStartLabel}. See you soon!`,
+          key: process.env.TEXTBELT_API_KEY,
+        }),
+      });
     } catch (smsErr) {
-      console.error("⚠️ SMS sending failed:", smsErr.message);
+      console.error("⚠️ SMS send failed:", smsErr?.message || smsErr);
     }
 
     return res.status(200).json({ received: true });
   }
 
-  res.status(200).json({ received: true });
+  // Always acknowledge unknown events to prevent retries storm
+  return res.status(200).json({ received: true });
 }
