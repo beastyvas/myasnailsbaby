@@ -102,7 +102,7 @@ export default async function handler(req, res) {
         from: "Mya's Nails <onboarding@resend.dev>",
         to: ["myasnailsbaby@gmail.com"],
         subject: "New Booking 💅",
-        html:` <h2>New Booking Request!</h2> <p><strong>Name:</strong> ${name}</p>
+        html:` <h2>New Booking Request!</h2> <p><strong>Name:</strong> ${md.name}</p>
          <p><strong>Instagram:</strong> ${instagram}</p>
           ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""} 
           <p><strong>Booking Nails?:</strong> ${booking_nails}</p> 
