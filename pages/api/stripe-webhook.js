@@ -92,25 +92,23 @@ export default async function handler(req, res) {
       return res.status(200).json({ received: true });
     }
 
-    // Overlap check on same date using proper time values
-    const { data: conflicts, error: conflictError } = await supabase
-  .from("bookings")
-  .select("id, start_time, end_time")
-  .eq("date", safeDate)
-  .not("end_time", "lte", start24)   // existing end must be > new start
-  .not("start_time", "gte", end24);  // existing start must be < new end
+   // start24 and end24 are "HH:MM:SS" strings you already compute
+const { data: conflicts, error: conflictError } = await supabase
+  .rpc("bookings_conflict", {
+    p_date: safeDate,
+    p_start: start24,
+    p_end: end24,
+  });
 
+if (conflictError) {
+  console.error("❌ Conflict check error (RPC):", conflictError);
+  return res.status(200).json({ received: true });
+}
+if (conflicts && conflicts.length > 0) {
+  console.warn("⚠️ Time conflict; not inserting. Conflicts:", conflicts);
+  return res.status(200).json({ received: true });
+}
 
-    if (conflictError) {
-      console.error("❌ Conflict check error:", conflictError.message);
-      // Acknowledge but log; you can alert yourself here
-      return res.status(200).json({ received: true });
-    }
-    if (conflicts && conflicts.length > 0) {
-      console.warn("⚠️ Time conflict; not inserting. Conflicts:", conflicts);
-      // Still ack Stripe; this is a business rule failure, not a webhook failure
-      return res.status(200).json({ received: true });
-    }
 
     // Insert booking (single source of truth). Store session_id to prevent dupes.
     const insert = {
