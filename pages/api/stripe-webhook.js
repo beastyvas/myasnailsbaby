@@ -94,11 +94,12 @@ export default async function handler(req, res) {
 
     // Overlap check on same date using proper time values
     const { data: conflicts, error: conflictError } = await supabase
-      .from("bookings")
-      .select("id, start_time, end_time")
-      .eq("date", safeDate)
-      .lt("start_time", end24)
-      .gt("end_time", start24);
+  .from("bookings")
+  .select("id, start_time, end_time")
+  .eq("date", safeDate)
+  .not("end_time", "lte", start24)   // existing end must be > new start
+  .not("start_time", "gte", end24);  // existing start must be < new end
+
 
     if (conflictError) {
       console.error("❌ Conflict check error:", conflictError.message);
