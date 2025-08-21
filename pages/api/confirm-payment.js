@@ -1,4 +1,4 @@
-// File: /pages/api/confirm-payment.js   (JS version)
+// /pages/api/confirm-payment.js
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
@@ -6,13 +6,12 @@ import { createClient } from "@supabase/supabase-js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// SERVICE ROLE (server-only) so RLS can't block updates/inserts
+// SERVICE ROLE so RLS can't block
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// keep same helpers as webhook if you need to normalize
 function to24h(label) {
   if (!label) return null;
   const m = String(label).trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
@@ -26,9 +25,9 @@ function to24h(label) {
 }
 function addHours(start24, hrs = 2) {
   const [h, m] = start24.split(":").map(Number);
-  const d = new Date(Date.UTC(2000,0,1,h,m||0,0));
-  d.setUTCHours(d.getUTCHours() + Number(hrs||2));
-  return `${String(d.getUTCHours()).padStart(2,"0")}:${String(d.getUTCMinutes()).padStart(2,"0")}:00`;
+  const d = new Date(Date.UTC(2000, 0, 1, h, m || 0, 0));
+  d.setUTCHours(d.getUTCHours() + Number(hrs || 2));
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}:00`;
 }
 
 export default async function handler(req, res) {
@@ -38,41 +37,63 @@ export default async function handler(req, res) {
     const { session_id } = req.body;
     if (!session_id) return res.status(400).json({ error: "Missing session_id" });
 
-    // 1) Get the session to build email/SMS text & fallback insert payload
+    // 1) Stripe session + metadata
     const session = await stripe.checkout.sessions.retrieve(session_id);
     const md = session.metadata || {};
-    const safeDate = md.date?.trim() || null;
-    const startLabel = md.start_time?.trim() || null;
-    const start24 = startLabel ? to24h(startLabel) : null;
-    const end24 = start24 ? addHours(start24, md.duration || 2) : null;
 
-    // 2) Find booking by session_id first (idempotent + no AM/PM mismatch)
+    // Destructure ONCE from metadata with safe defaults
+    const {
+      name = "N/A",
+      instagram = "N/A",
+      phone = "",
+      service = "N/A",
+      artLevel = "N/A",
+      length = "N/A",
+      notes = "",
+      returning = "N/A",
+      referral = "",
+      soakoff = "N/A",
+      duration = null,
+      pedicure_type = "N/A",
+      booking_nails = "N/A",
+      start_time: startLabelRaw = null,
+      date: dateRaw = null,
+      pedicure = null, // if you send this too
+    } = md;
+
+    const safeDate = dateRaw?.trim() || null;
+    const startLabel = startLabelRaw?.trim() || null;
+    const start24 = startLabel ? to24h(startLabel) : null;
+    const end24 = start24 ? addHours(start24, duration || 2) : null;
+
+    // 2) Find booking by session_id
     let { data: booking, error: findErr } = await supabase
       .from("bookings")
       .select("*")
       .eq("session_id", session_id)
       .maybeSingle();
+    if (findErr) console.error("lookup_error", findErr);
 
-    // 3) If webhook hasn’t inserted yet, do a safe UPSERT (one-time fallback)
+    // 3) Fallback UPSERT if webhook hasn't inserted yet
     if (!booking) {
       const insert = {
-        name: md.name ?? null,
-        instagram: md.instagram ?? null,
-        phone: md.phone ?? null,
-        service: md.service ?? null,
-        art_level: md.artLevel ?? null,
-        length: md.length ?? null,
+        name,
+        instagram,
+        phone,
+        service,
+        art_level: artLevel,
+        length,
         date: safeDate,
-        start_time: start24, // normalized
+        start_time: start24,
         end_time: end24,
-        notes: md.notes ?? null,
-        soakoff: md.soakoff ?? null,
-        returning: md.returning ?? null,
-        duration: md.duration ?? null,
-        referral: md.referral ?? null,
-        pedicure: md.pedicure ?? null,
-        pedicure_type: md.pedicure_type ?? null,
-        booking_nails: md.booking_nails ?? null,
+        notes,
+        soakoff,
+        returning,
+        duration,
+        referral,
+        pedicure,
+        pedicure_type,
+        booking_nails,
         paid: session.payment_status === "paid",
         confirmed: session.payment_status === "paid",
         session_id,
@@ -80,64 +101,73 @@ export default async function handler(req, res) {
 
       const { data: upserted, error: upErr } = await supabase
         .from("bookings")
-        .upsert(insert, { onConflict: "session_id" }) // requires unique index on session_id (we added earlier)
+        .upsert(insert, { onConflict: "session_id" })
         .select("*")
         .maybeSingle();
-
       if (upErr) {
-        console.error("❌ upsert failed", upErr);
+        console.error("upsert_failed", upErr);
         return res.status(500).json({ success: false });
       }
       booking = upserted;
     }
 
-    // 4) Mark confirmed (idempotent)
+    // 4) Ensure confirmed if paid
     if (booking && !booking.confirmed && session.payment_status === "paid") {
-      await supabase.from("bookings").update({ confirmed: true }).eq("id", booking.id);
+      const { error: updErr } = await supabase
+        .from("bookings")
+        .update({ confirmed: true, paid: true })
+        .eq("id", booking.id);
+      if (updErr) console.error("confirm_update_failed", updErr);
     }
 
-    // 5) Send email (Mya)
+    // 5) Email to Mya — now using the destructured vars
     try {
       await resend.emails.send({
-        from: "Mya's Nails <onboarding@resend.dev>",
+        from: "Mya's Nails <onboarding@resend.dev>", // make sure this domain is verified in Resend
         to: ["myasnailsbaby@gmail.com"],
         subject: "New Booking 💅",
-        html:` <h2>New Booking Request!</h2> <p><strong>Name:</strong> ${md.name}</p>
-         <p><strong>Instagram:</strong> ${instagram}</p>
-          ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""} 
-          <p><strong>Booking Nails?:</strong> ${booking_nails}</p> 
+        html: `
+          <h2>New Booking Request!</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Instagram:</strong> ${instagram}</p>
+          ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ""}
+          <p><strong>Booking Nails?:</strong> ${booking_nails}</p>
           <p><strong>Service:</strong> ${service}</p>
-           <p><strong>Pedicure Type:</strong> ${pedicure_type}</p>
-            <p><strong>Art Level:</strong> ${artLevel}</p>
-             <p><strong>Length:</strong> ${length}</p> 
-             <p><strong>Soak-Off:</strong> ${soakoff}</p> 
-             <p><strong>Date:</strong> ${date}</p>
-              <p><strong>Duration (hrs):</strong> ${duration}</p>
-               <p><strong>Start Time:</strong> ${start_time}</p>
-                <p><strong>Notes:</strong> ${notes}</p>
-                 <p><strong>Returning Client:</strong> ${returning}</p>
-                  ${referral ? `<p><strong>Referral:</strong> ${referral}</p>` : ""} `,
+          <p><strong>Pedicure Type:</strong> ${pedicure_type}</p>
+          <p><strong>Art Level:</strong> ${artLevel}</p>
+          <p><strong>Length:</strong> ${length}</p>
+          <p><strong>Soak-Off:</strong> ${soakoff}</p>
+          <p><strong>Date:</strong> ${booking?.date ?? safeDate ?? "N/A"}</p>
+          <p><strong>Duration (hrs):</strong> ${duration ?? "N/A"}</p>
+          <p><strong>Start Time:</strong> ${startLabel ?? "N/A"}</p>
+          <p><strong>Notes:</strong> ${notes}</p>
+          <p><strong>Returning Client:</strong> ${returning}</p>
+          ${referral ? `<p><strong>Referral:</strong> ${referral}</p>` : ""}
+        `,
       });
     } catch (e) {
       console.error("❌ email failed", e?.message || e);
+      // continue; not fatal for user flow
     }
 
-    // 6) SMS (client)
-    if (md.phone && session.payment_status === "paid") {
+    // 6) SMS to client (optional)
+    if (phone && session.payment_status === "paid") {
       try {
         const r = await fetch("https://textbelt.com/text", {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({
-            phone: md.phone.startsWith("+1") ? md.phone : `+1${md.phone}`,
-            message: `Hey love! Your appointment is confirmed for ${booking?.date ?? safeDate} at ${startLabel || "your selected time"} 💅`,
+            phone: phone.startsWith("+1") ? phone : `+1${phone}`,
+            message: `Hey love! Your appointment with Mya is confirmed for ${booking?.date ?? safeDate} at ${startLabel || "your selected time"} 💅
+📍2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV
+DM @myasnailsbaby if you need anything!`,
             key: process.env.TEXTBELT_API_KEY,
           }),
         });
         const j = await r.json();
-        if (!j.success) console.error("❌ textbelt failed", j);
+        if (!j.success) console.error("textbelt_failed", j);
       } catch (e) {
-        console.error("❌ sms error", e?.message || e);
+        console.error("sms_error", e?.message || e);
       }
     }
 
