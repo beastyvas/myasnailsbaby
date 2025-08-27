@@ -19,15 +19,24 @@ const supabase = createClient(
 
 // --- helpers ---
 function to24h(timeLabel) {
-  // Accepts "8AM", "8:30 PM", "12AM" etc → "08:00:00" or "20:30:00"
   if (!timeLabel) return null;
+  
+  // If already in 24h format (HH:MM), return with seconds
+  if (/^\d{2}:\d{2}$/.test(timeLabel)) {
+    return `${timeLabel}:00`;
+  }
+  
+  // Handle 12h format (8AM, 2:30PM, etc.)
   const m = String(timeLabel).trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
   if (!m) return null;
+  
   let h = parseInt(m[1], 10);
   const min = m[2] ? parseInt(m[2], 10) : 0;
   const ampm = m[3].toUpperCase();
+  
   if (ampm === "PM" && h !== 12) h += 12;
   if (ampm === "AM" && h === 12) h = 0;
+  
   const hh = String(h).padStart(2, "0");
   const mm = String(min).padStart(2, "0");
   return `${hh}:${mm}:00`;
