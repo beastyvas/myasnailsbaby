@@ -1,22 +1,28 @@
-// /middleware.ts  — DIAGNOSTIC
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(req: NextRequest) {
-  // add a visible header on EVERY request so we can confirm runtime
-  const res = NextResponse.next();
-  res.headers.set("x-mw", "hit");
+function hasSupabaseSession(req: NextRequest) {
+  return (
+    req.cookies.has("sb-access-token") ||
+    req.cookies.has("sb-refresh-token") ||
+    req.cookies.has("supabase-auth-token") ||
+    req.cookies.has("supabase-auth-token.expires")
+  );
+}
 
-  // force redirect ONLY for /dashboard* so we can check matching
-  if (req.nextUrl.pathname === "/dashboard" || req.nextUrl.pathname.startsWith("/dashboard/")) {
+export function middleware(req: NextRequest) {
+  const p = req.nextUrl.pathname;
+  const isDash = p === "/dashboard" || p.startsWith("/dashboard/");
+  if (!isDash) return NextResponse.next();
+
+  if (!hasSupabaseSession(req)) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirectedFrom", req.nextUrl.pathname);
+    url.searchParams.set("redirectedFrom", p);
     return NextResponse.redirect(url);
   }
 
-  return res;
+  return NextResponse.next();
 }
 
-// Match EVERYTHING (temporarily)
-export const config = { matcher: ["/:path*"] };
+export const config = { matcher: ["/dashboard", "/dashboard/:path*"] };
