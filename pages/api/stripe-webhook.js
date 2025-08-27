@@ -158,22 +158,6 @@ if (conflicts && conflicts.length > 0) {
       return res.status(200).json({ received: true }); // ack so Stripe stops retrying
     }
 
-    // Optional: fire SMS directly (avoid calling your own API route here)
-try {
-  const displayTime = to12h(start24);
-  await fetch("https://textbelt.com/text", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      phone: md.phone ?? "",
-      message: `New booking confirmed: ${md.name ?? "Unknown"} - ${md.service ?? "Service"} on ${safeDate} at ${displayTime}`,
-      key: process.env.TEXTBELT_API_KEY,
-    }),
-  });
-} catch (smsErr) {
-  console.error("⚠️ SMS send failed:", smsErr?.message || smsErr);
-}
-
     return res.status(200).json({ received: true });
   }
 
