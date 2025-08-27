@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
 import "react-calendar/dist/Calendar.css";
+import { createServerClient } from '@supabase/ssr';
+import { serialize } from 'cookie';
 
 // Load react-calendar only on the client
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
@@ -1135,8 +1137,48 @@ export default function Dashboard() {
   );
 }
 
-// Prevent caching to ensure middleware runs on every request
-export async function getServerSideProps({ res }) {
-  res.setHeader('Cache-Control', 'no-store');
-  return { props: {} };
+// Server-side authentication check
+export async function getServerSideProps(ctx) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get: (name) => ctx.req.cookies[name],
+        set: (name, value, options) => {
+          ctx.res.setHeader(
+            'Set-Cookie',
+            serialize(name, value, { ...options, path: '/' })
+          );
+        },
+        remove: (name, options) => {
+          ctx.res.setHeader(
+            'Set-Cookie',
+            serialize(name, '', { ...options, path: '/', maxAge: 0 })
+          );
+        },
+      },
+    }
+  );
+  
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  
+  if (!session) {
+    return {
+      redirect: {
+        destination: `/login?redirectedFrom=${encodeURIComponent(
+          ctx.resolvedUrl || '/dashboard'
+        )}`,
+        permanent: false,
+      },
+    };
+  }
+  
+  return {
+    props: {
+      user: session.user,
+    },
+  };
 }
