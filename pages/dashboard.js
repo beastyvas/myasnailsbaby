@@ -1137,8 +1137,10 @@ export default function Dashboard() {
   );
 }
 
-// Server-side authentication check
 export async function getServerSideProps(ctx) {
+  console.log('🔍 Dashboard getServerSideProps running');
+  console.log('🍪 Cookies:', Object.keys(ctx.req.cookies));
+  
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -1146,36 +1148,30 @@ export async function getServerSideProps(ctx) {
       cookies: {
         get: (name) => ctx.req.cookies[name],
         set: (name, value, options) => {
-          ctx.res.setHeader(
-            'Set-Cookie',
-            serialize(name, value, { ...options, path: '/' })
-          );
+          ctx.res.setHeader('Set-Cookie', serialize(name, value, { ...options, path: '/' }));
         },
         remove: (name, options) => {
-          ctx.res.setHeader(
-            'Set-Cookie',
-            serialize(name, '', { ...options, path: '/', maxAge: 0 })
-          );
+          ctx.res.setHeader('Set-Cookie', serialize(name, '', { ...options, path: '/', maxAge: 0 }));
         },
       },
     }
   );
   
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { data: { session }, error } = await supabase.auth.getSession();
+  console.log('🔑 Session exists:', !!session);
+  console.log('❌ Session error:', error);
   
   if (!session) {
+    console.log('🚫 No session, redirecting to login');
     return {
       redirect: {
-        destination: `/login?redirectedFrom=${encodeURIComponent(
-          ctx.resolvedUrl || '/dashboard'
-        )}`,
+        destination: `/login?redirectedFrom=${encodeURIComponent(ctx.resolvedUrl || '/dashboard')}`,
         permanent: false,
       },
     };
   }
   
+  console.log('✅ Session valid, rendering dashboard');
   return {
     props: {
       user: session.user,
