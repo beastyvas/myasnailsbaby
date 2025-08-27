@@ -11,23 +11,21 @@ export default function LoginPage() {
   const router = useRouter();
 
 const onSubmit = async (e) => {
-  e.preventDefault();
-  setErr(null);
-  setIsLoading(true);
-  
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  
-  if (error) {
-    setErr(error.message);
-    setIsLoading(false);
-    return;
-  }
-  
-  // Force a hard refresh instead of client-side navigation
-  // This ensures cookies are properly set for server-side reading
-  const to = router.query.redirectedFrom || "/dashboard";
-  window.location.href = to; // Changed from router.replace(to)
-};
+    e.preventDefault();
+    setErr(null);
+    setIsLoading(true);
+    
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+      setErr(error.message);
+      setIsLoading(false);
+      return;
+    }
+    
+    const to = router.query.redirectedFrom || "/dashboard";
+    router.replace(to);
+  };
 
   return (
     <main className="min-h-screen relative overflow-hidden bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">

@@ -1,15 +1,15 @@
 // pages/dashboard.jsx
 import { useEffect, useState } from "react";
+import { useRouter } from 'next/router';
 import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
 import "react-calendar/dist/Calendar.css";
-import { createServerClient } from '@supabase/ssr';
-import { serialize } from 'cookie';
 
 // Load react-calendar only on the client
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
 export default function Dashboard() {
+  const router = useRouter();
   // -------- STATE (all hooks at the top, fixed order) --------
   const [ready, setReady] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
@@ -1135,46 +1135,4 @@ export default function Dashboard() {
       `}</style>
     </main>
   );
-}
-
-export async function getServerSideProps(ctx) {
-  console.log('🔍 Dashboard getServerSideProps running');
-  console.log('🍪 Cookies:', Object.keys(ctx.req.cookies));
-  
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get: (name) => ctx.req.cookies[name],
-        set: (name, value, options) => {
-          ctx.res.setHeader('Set-Cookie', serialize(name, value, { ...options, path: '/' }));
-        },
-        remove: (name, options) => {
-          ctx.res.setHeader('Set-Cookie', serialize(name, '', { ...options, path: '/', maxAge: 0 }));
-        },
-      },
-    }
-  );
-  
-  const { data: { session }, error } = await supabase.auth.getSession();
-  console.log('🔑 Session exists:', !!session);
-  console.log('❌ Session error:', error);
-  
-  if (!session) {
-    console.log('🚫 No session, redirecting to login');
-    return {
-      redirect: {
-        destination: `/login?redirectedFrom=${encodeURIComponent(ctx.resolvedUrl || '/dashboard')}`,
-        permanent: false,
-      },
-    };
-  }
-  
-  console.log('✅ Session valid, rendering dashboard');
-  return {
-    props: {
-      user: session.user,
-    },
-  };
 }
