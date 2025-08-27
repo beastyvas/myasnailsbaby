@@ -1,13 +1,13 @@
-// TEMP DIAGNOSTIC MIDDLEWARE
+// /middleware.ts  — DIAGNOSTIC
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  // add a header on *every* request so we can see if this runs at all
+  // add a visible header on EVERY request so we can confirm runtime
   const res = NextResponse.next();
   res.headers.set("x-mw", "hit");
 
-  // force redirect from /dashboard to /login to prove matching
+  // force redirect ONLY for /dashboard* so we can check matching
   if (req.nextUrl.pathname === "/dashboard" || req.nextUrl.pathname.startsWith("/dashboard/")) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
@@ -18,5 +18,5 @@ export function middleware(req: NextRequest) {
   return res;
 }
 
-// match everything so we can see the header on any route
+// Match EVERYTHING (temporarily)
 export const config = { matcher: ["/:path*"] };
