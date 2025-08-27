@@ -41,6 +41,14 @@ function to24h(timeLabel) {
   const mm = String(min).padStart(2, "0");
   return `${hh}:${mm}:00`;
 }
+function to12h(time24) {
+  if (!time24) return "unknown time";
+  const [hourStr, minuteStr] = time24.split(":");
+  const hour = parseInt(hourStr, 10);
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${minuteStr}${suffix}`;
+}
 
 function addHoursTo24h(start24, hours) {
   const [h, m] = start24.split(":").map(Number);
@@ -151,19 +159,20 @@ if (conflicts && conflicts.length > 0) {
     }
 
     // Optional: fire SMS directly (avoid calling your own API route here)
-    try {
-      await fetch("https://textbelt.com/text", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          phone: md.phone ?? "",
-          message: `✅ Confirmed: ${md.service ?? "Appointment"} on ${safeDate} at ${safeStartLabel}. See you soon!`,
-          key: process.env.TEXTBELT_API_KEY,
-        }),
-      });
-    } catch (smsErr) {
-      console.error("⚠️ SMS send failed:", smsErr?.message || smsErr);
-    }
+try {
+  const displayTime = to12h(start24);
+  await fetch("https://textbelt.com/text", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      phone: md.phone ?? "",
+      message: `New booking confirmed: ${md.name ?? "Unknown"} - ${md.service ?? "Service"} on ${safeDate} at ${displayTime}`,
+      key: process.env.TEXTBELT_API_KEY,
+    }),
+  });
+} catch (smsErr) {
+  console.error("⚠️ SMS send failed:", smsErr?.message || smsErr);
+}
 
     return res.status(200).json({ received: true });
   }

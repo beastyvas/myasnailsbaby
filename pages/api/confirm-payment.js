@@ -12,6 +12,15 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+function to12h(time24) {
+  if (!time24) return "your selected time";
+  const [hourStr, minuteStr] = time24.split(":");
+  const hour = parseInt(hourStr, 10);
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12}:${minuteStr}${suffix}`;
+}
+
 function to24h(label) {
   if (!label) return null;
   const m = String(label).trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
@@ -147,20 +156,23 @@ export default async function handler(req, res) {
     }
 
     // 5) Send confirmation SMS to client
-    if (phone) {
-      try {
-        const formattedPhone = phone.startsWith("+1") ? phone : `+1${phone}`;
-        const smsResponse = await fetch("https://textbelt.com/text", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            phone: formattedPhone,
-            message: `Hey love! Your appointment with Mya is confirmed for ${booking.date} at ${startLabel || "your selected time"} 💅
+if (phone) {
+  try {
+    // Convert booking time to 12-hour format for display
+    const displayTime = booking.start_time ? to12h(booking.start_time) : "your selected time";
+    
+    const formattedPhone = phone.startsWith("+1") ? phone : `+1${phone}`;
+    const smsResponse = await fetch("https://textbelt.com/text", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        phone: formattedPhone,
+        message: `Hey love! Your appointment with Mya is confirmed for ${booking.date} at ${displayTime} 💅
 📍2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV
 DM @myasnailsbaby if you need anything!`,
-            key: process.env.TEXTBELT_API_KEY,
-          }),
-        });
+        key: process.env.TEXTBELT_API_KEY,
+      }),
+    });
         
         const smsResult = await smsResponse.json();
         if (!smsResult.success) {

@@ -427,9 +427,9 @@ export default function Home() {
                   onChange={(e) => setPedicureType(e.target.value)}
                 >
                   <option value="">Select Pedicure Type</option>
-                  <option value="Basic Pedicure">Gel Pedicure</option>
-                  <option value="Spa Pedicure">Gel Pedicure + Acrylic big toes(only)</option>
-                  <option value="Gel Pedicure">Acrylic Pedicure</option>
+                  <option value="Gel pedicure">Gel Pedicure</option>
+                  <option value="Gel pedciure + Acrylic big toes">Gel Pedicure + Acrylic big toes(only)</option>
+                  <option value="Acrylic Pedicure">Acrylic Pedicure</option>
                 </select>
               </div>
             )}
