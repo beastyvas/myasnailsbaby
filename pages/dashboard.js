@@ -1134,3 +1134,9 @@ export default function Dashboard() {
     </main>
   );
 }
+
+// Prevent caching to ensure middleware runs on every request
+export async function getServerSideProps({ res }) {
+  res.setHeader('Cache-Control', 'no-store');
+  return { props: {} };
+}
