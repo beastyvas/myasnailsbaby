@@ -12,7 +12,6 @@ export default function Dashboard() {
   const router = useRouter();
   // -------- STATE (all hooks at the top, fixed order) --------
   const [ready, setReady] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
   const [preview, setPreview] = useState(null);
@@ -50,7 +49,7 @@ export default function Dashboard() {
   }, []);
 
   // -------- RENDER GUARD --------
-  if (!authChecked || !ready) {
+  if (!ready) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
