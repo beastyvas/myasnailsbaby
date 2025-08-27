@@ -278,8 +278,8 @@ export default function Dashboard() {
       const dow = date.getDay();
       if (dow === 0) continue; // skip Sundays
       const iso = date.toISOString().split("T")[0];
-      if (dow === 1 || dow === 2) {
-        inserts.push({ date: iso, start_time: "14:00", end_time: "22:00" });
+      if (dow === 1) {
+        inserts.push({ date: iso, start_time: "13:00", end_time: "21:00" });
       } else {
         inserts.push({ date: iso, start_time: "08:00", end_time: "16:00" });
       }
@@ -909,7 +909,7 @@ export default function Dashboard() {
 
               <div className="mt-4 p-4 bg-pink-50 rounded-xl border border-pink-200">
                 <p className="text-sm text-pink-800">
-                  <strong>Schedule:</strong> Mon/Tue: 2PM-10PM • Wed-Sat: 8AM-4PM • Sundays: Closed
+                  <strong>Schedule:</strong> Mon: 1PM-9PM • Tue-Sat: 8AM-4PM • Sundays: Closed
                 </p>
               </div>
             </div>
