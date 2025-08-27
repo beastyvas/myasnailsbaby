@@ -1,28 +1,33 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+// middleware.ts at project root
+import { NextRequest, NextResponse } from 'next/server';
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
-function hasSupabaseSession(req: NextRequest) {
-  return (
-    req.cookies.has("sb-access-token") ||
-    req.cookies.has("sb-refresh-token") ||
-    req.cookies.has("supabase-auth-token") ||
-    req.cookies.has("supabase-auth-token.expires")
-  );
-}
+export async function middleware(req: NextRequest) {
+  // Create a response we can mutate (cookies, etc.)
+  const res = NextResponse.next();
 
-export function middleware(req: NextRequest) {
-  const p = req.nextUrl.pathname;
-  const isDash = p === "/dashboard" || p.startsWith("/dashboard/");
-  if (!isDash) return NextResponse.next();
+  // Supabase helper must receive both req & res, so it can refresh the session cookie
+  const supabase = createMiddlewareClient({ req, res });
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!hasSupabaseSession(req)) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("redirectedFrom", p);
-    return NextResponse.redirect(url);
+  const url = req.nextUrl;
+  const isProtected = url.pathname.startsWith('/dashboard');
+
+  if (isProtected && !session) {
+    const redirectUrl = url.clone();
+    redirectUrl.pathname = '/login';
+    redirectUrl.searchParams.set('redirectedFrom', url.pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
-  return NextResponse.next();
+  // Optional: debugging header to prove middleware ran
+  res.headers.set('x-mw', 'hit');
+  return res;
 }
 
-export const config = { matcher: ["/dashboard", "/dashboard/:path*"] };
+// Only run on dashboard routes
+export const config = {
+  matcher: ['/dashboard/:path*'],
+};
