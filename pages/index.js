@@ -64,33 +64,32 @@ export default function Home() {
       const startHour = parseInt(availabilityData.start_time.split(":")[0]);
       const endHour = parseInt(availabilityData.end_time.split(":")[0]);
 
-      const { data: booked, error: bookedErr } = await supabase
-        .from("bookings")
-        .select("start_time, duration")
-        .eq("date", selectedDate);
+   // fetch booked ranges via RPC (works for anon because SECURITY DEFINER)
+const { data: booked, error: bookedErr } = await supabase
+  .rpc('get_booked_slots', { p_date: selectedDate }); // 'YYYY-MM-DD'
 
-      if (bookedErr) {
-        console.error("Booking error:", bookedErr);
-        return;
-      }
+if (bookedErr) {
+  console.error('Booking RPC error:', bookedErr);
+  return;
+}
 
-      const bookedRanges = booked.map((b) => {
-        const [startHour] = b.start_time.split(":");
-        const start = parseInt(startHour);
-        const end = start + (b.duration || 2);
-        return { start, end };
-      });
+/*
+  booked = [{ start_time: '14:00:00', end_time: '16:00:00' }, ...]
+  Convert to hours and subtract from availability.
+*/
+const bookedRanges = booked.map(({ start_time, end_time }) => {
+  const [sh] = String(start_time).split(':');
+  const [eh] = String(end_time).split(':');
+  return { start: parseInt(sh, 10), end: parseInt(eh, 10) };
+});
 
-      const available = [];
-      for (let hour = startHour; hour <= endHour - duration; hour++) {
-        const isBooked = bookedRanges.some((r) => hour < r.end && hour + duration > r.start);
-        if (!isBooked) {
-          available.push(`${hour.toString().padStart(2, "0")}:00`);
-        }
-      }
-
-      setTimeOptions(available);
-    };
+const available = [];
+for (let hour = startHour; hour <= endHour - duration; hour++) {
+  const overlaps = bookedRanges.some(r => hour < r.end && (hour + duration) > r.start);
+  if (!overlaps) available.push(`${String(hour).padStart(2,'0')}:00`);
+}
+setTimeOptions(available);
+    }
 
     loadAvailableTimes();
   }, [selectedDate, duration]);
