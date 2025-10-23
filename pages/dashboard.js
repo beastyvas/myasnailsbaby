@@ -278,11 +278,13 @@ export default function Dashboard() {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const dow = date.getDay();
-      if (dow === 0) continue; // skip Sundays
+      if (dow === 0 || dow === 3) continue; // skip Sundays and Wednesdays
       const iso = date.toISOString().split("T")[0];
       if (dow === 1) {
-        inserts.push({ date: iso, start_time: "13:00", end_time: "21:00" });
+        // Monday: 2:30PM-8:30PM
+        inserts.push({ date: iso, start_time: "14:30", end_time: "20:30" });
       } else {
+        // Tuesday, Thursday, Friday, Saturday: 8AM-4PM
         inserts.push({ date: iso, start_time: "08:00", end_time: "16:00" });
       }
     }
