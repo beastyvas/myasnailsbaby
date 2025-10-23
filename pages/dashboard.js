@@ -678,7 +678,7 @@ export default function Dashboard() {
 
                     const { error } = await supabase.from("bookings").insert([
                       {
-                        name: "BLOCKED",
+                        name: "deez nuts",
                         phone: "offline",
                         service: "N/A",
                         start_time: startTime,
@@ -913,7 +913,7 @@ export default function Dashboard() {
 
               <div className="mt-4 p-4 bg-pink-50 rounded-xl border border-pink-200">
                 <p className="text-sm text-pink-800">
-                  <strong>Schedule:</strong> Mon: 1PM-9PM • Tue-Sat: 8AM-4PM • Sundays: Closed
+                  <strong>Schedule:</strong> Mon: 2:30PM-8:30PM • Tue-Thur-Fri-Sat: 8AM-4PM • Wednesday&Sundays: Closed
                 </p>
               </div>
             </div>
