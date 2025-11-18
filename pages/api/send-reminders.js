@@ -12,7 +12,14 @@ function convertTo24Hr(timeStr) {
     : normalized;
 
   const match = corrected.match(/^(\d{1,2}):(\d{2})(AM|PM)$/);
-  if (!match) return "00:00:00";
+  if (!match) {
+    // Already in 24hr format like "14:00"
+    if (/^\d{1,2}:\d{2}$/.test(normalized)) {
+      const [h, m] = normalized.split(':');
+      return `${h.padStart(2, '0')}:${m.padStart(2, '0')}:00`;
+    }
+    return "00:00:00";
+  }
 
   let [_, hourStr, minuteStr, modifier] = match;
   let hours = parseInt(hourStr);
@@ -26,14 +33,26 @@ function convertTo24Hr(timeStr) {
     .padStart(2, "0")}:00`;
 }
 
-
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end("Method Not Allowed");
 
+  // 🌎 FIXED: Work in Vegas timezone (PST/PDT)
   const now = new Date();
-  const windowStart = new Date(now.getTime() + 23.5 * 60 * 60 * 1000);
-  const windowEnd = new Date(now.getTime() + 24.5 * 60 * 60 * 1000);
+  
+  // Convert to Vegas time for calculations
+  const vegasTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+  console.log("🕐 Current Vegas Time:", vegasTime.toISOString());
 
+  // Look for appointments 24 hours from now (±30 min buffer for safety)
+  const targetDate = new Date(vegasTime);
+  targetDate.setDate(targetDate.getDate() + 1);
+  
+  const windowStart = new Date(targetDate.getTime() - 30 * 60 * 1000); // 30 min before
+  const windowEnd = new Date(targetDate.getTime() + 30 * 60 * 1000);   // 30 min after
+
+  console.log("⏰ Reminder Window:", windowStart.toISOString(), "to", windowEnd.toISOString());
+
+  // Fetch bookings that haven't received reminders
   const { data: bookings, error } = await supabase
     .from("bookings")
     .select("id, name, phone, date, start_time, reminder_sent")
@@ -44,52 +63,121 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Failed to fetch bookings" });
   }
 
-  console.log("⏰ Reminder Window:", windowStart.toISOString(), "-", windowEnd.toISOString());
   console.log("📋 Fetched bookings:", bookings.length);
 
+  // Filter valid bookings
   const safeBookings = bookings.filter((b) => {
-    const isValid = b.date && b.start_time && typeof b.start_time === "string";
-    if (!isValid) console.warn("❌ Invalid booking skipped:", b);
+    const isValid = b.date && b.start_time && b.phone;
+    if (!isValid) {
+      console.warn("❌ Invalid booking skipped:", b);
+    }
     return isValid;
   });
 
-  const upcoming = safeBookings.filter((b) => {
-    const dt = new Date(`${b.date}T${convertTo24Hr(b.start_time)}`);
-    console.log("🧪 Checking booking:", b.id, "→", dt.toISOString());
-    return dt >= windowStart && dt <= windowEnd;
-  });
+  console.log("✅ Valid bookings:", safeBookings.length);
 
-  const promises = upcoming.map(async (b) => {
-    const response = await fetch("https://textbelt.com/text", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        phone: b.phone,
-        message: `Hi babe! 💅 This is a reminder that you’ve got a nail appointment with Mya tomorrow at ${b.date} @ ${b.start_time}
-📍 Address: 2080 E. Flamingo Rd. Suite #106 Room 4 Las Vegas, Nevada
-📋 Policy: 
-Please arrive on time. Deposits are non-refundable. 
-Please no extra guest. 
-DM @myasnailsbaby if anything changes!
-See you soon! 💖`,
-        key: process.env.TEXTBELT_API_KEY,
-      }),
+  // Find bookings in the 24-hour window
+  const upcoming = safeBookings.filter((b) => {
+    // Convert booking time to 24hr format
+    const time24 = convertTo24Hr(b.start_time);
+    
+    // Create datetime string in ISO format
+    const dateTimeStr = `${b.date}T${time24}`;
+    
+    // Parse in Vegas timezone
+    const bookingTime = new Date(dateTimeStr);
+    
+    // Adjust for Vegas timezone offset
+    const vegasOffset = new Date().toLocaleString("en-US", { 
+      timeZone: "America/Los_Angeles",
+      timeZoneName: "short" 
+    }).includes("PST") ? -8 : -7; // PST or PDT
+    
+    const utcOffset = bookingTime.getTimezoneOffset() / 60;
+    bookingTime.setHours(bookingTime.getHours() + utcOffset + Math.abs(vegasOffset));
+
+    const isInWindow = bookingTime >= windowStart && bookingTime <= windowEnd;
+    
+    console.log(`🧪 Booking ${b.id}:`, {
+      date: b.date,
+      start_time: b.start_time,
+      converted: time24,
+      bookingTime: bookingTime.toISOString(),
+      isInWindow,
+      windowStart: windowStart.toISOString(),
+      windowEnd: windowEnd.toISOString()
     });
 
-    const result = await response.json();
-    console.log("📤 Textbelt response for", b.phone, result);
-
-    if (result.success) {
-      await supabase
-        .from("bookings")
-        .update({ reminder_sent: true })
-        .eq("id", b.id);
-    } else {
-      console.error(`❌ Failed to send reminder to ${b.phone}:`, result.error);
-    }
+    return isInWindow;
   });
 
-  await Promise.all(promises);
+  console.log("🎯 Bookings in window:", upcoming.length);
 
-  res.status(200).json({ success: true });
+  if (upcoming.length === 0) {
+    console.log("✅ No reminders to send");
+    return res.status(200).json({ 
+      success: true, 
+      message: "No reminders needed",
+      checked: safeBookings.length 
+    });
+  }
+
+  // Send reminders
+  const results = await Promise.allSettled(
+    upcoming.map(async (b) => {
+      console.log(`📤 Sending reminder to ${b.phone} for booking ${b.id}`);
+      
+      const response = await fetch("https://textbelt.com/text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: b.phone,
+          message: `Hi ${b.name}! 💅 This is a reminder that you've got a nail appointment with Mya tomorrow at ${b.start_time}
+
+📍 Address: 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, Nevada
+
+📋 Policy: Please arrive on time. Deposits are non-refundable. Please no extra guests.
+
+DM @myasnailsbaby if anything changes!
+
+See you soon! 💖`,
+          key: process.env.TEXTBELT_API_KEY,
+        }),
+      });
+
+      const result = await response.json();
+      console.log(`📨 Textbelt response for ${b.phone}:`, result);
+
+      if (result.success) {
+        const { error: updateError } = await supabase
+          .from("bookings")
+          .update({ reminder_sent: true })
+          .eq("id", b.id);
+
+        if (updateError) {
+          console.error(`❌ Failed to mark reminder as sent for ${b.id}:`, updateError);
+        } else {
+          console.log(`✅ Marked reminder as sent for booking ${b.id}`);
+        }
+        
+        return { success: true, booking: b.id, phone: b.phone };
+      } else {
+        console.error(`❌ Failed to send reminder to ${b.phone}:`, result.error);
+        return { success: false, booking: b.id, phone: b.phone, error: result.error };
+      }
+    })
+  );
+
+  const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+  const failed = results.filter(r => r.status === 'rejected' || !r.value?.success).length;
+
+  console.log(`✅ Reminders sent: ${successful}, Failed: ${failed}`);
+
+  return res.status(200).json({ 
+    success: true,
+    sent: successful,
+    failed: failed,
+    total: upcoming.length,
+    details: results
+  });
 }
