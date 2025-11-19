@@ -259,7 +259,7 @@ setTimeOptions(available);
               />
             )}
             <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-white text-lg">💅</span>
+              <span className="text-white text-lg"></span>
             </div>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-4">
