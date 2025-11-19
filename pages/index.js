@@ -258,9 +258,7 @@ setTimeOptions(available);
                 className="w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-full mx-auto shadow-2xl border-4 border-white"
               />
             )}
-            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-white text-lg"></span>
-            </div>
+            
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-4">
             Hey babes 💋
