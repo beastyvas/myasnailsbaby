@@ -23,6 +23,9 @@ export default function Home() {
   const [duration, setDuration] = useState(0);
   const [soakoff, setSoakoff] = useState("");
   const [bioText, setBioText] = useState("");
+  const [profilePicUrl, setProfilePicUrl] = useState(null);
+  const [promoText, setPromoText] = useState("");
+  const [promoEnabled, setPromoEnabled] = useState(false);
   const [timeOptions, setTimeOptions] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [time, setTime] = useState("");
@@ -38,11 +41,20 @@ export default function Home() {
   }, [bookingNails, pedicure]);
 
   useEffect(() => {
-    const fetchBio = async () => {
-      const { data, error } = await supabase.from("settings").select("bio").single();
-      if (!error && data) setBioText(data.bio || "");
+    const fetchSettings = async () => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("bio, profile_picture_url, promo_text, promo_enabled")
+        .single();
+      
+      if (!error && data) {
+        setBioText(data.bio || "");
+        setProfilePicUrl(data.profile_picture_url || null);
+        setPromoText(data.promo_text || "");
+        setPromoEnabled(data.promo_enabled || false);
+      }
     };
-    fetchBio();
+    fetchSettings();
   }, []);
 
   useEffect(() => {
@@ -226,15 +238,26 @@ setTimeOptions(available);
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 p-4 sm:p-6 md:p-10 text-gray-800">
       <Toaster />
+      
+      
+
       <div className="max-w-2xl mx-auto">
         {/* Header Section */}
         <section className="text-center mb-8">
           <div className="relative inline-block mb-6">
-            <img
-              src="/images/mya.png"
-              alt="Mya - Las Vegas Nail Tech"
-              className="w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-full mx-auto shadow-2xl border-4 border-white"
-            />
+            {profilePicUrl ? (
+              <img
+                src={`https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicUrl}`}
+                alt="Mya - Las Vegas Nail Tech"
+                className="w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-full mx-auto shadow-2xl border-4 border-white"
+              />
+            ) : (
+              <img
+                src="/images/mya.png"
+                alt="Mya - Las Vegas Nail Tech"
+                className="w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-full mx-auto shadow-2xl border-4 border-white"
+              />
+            )}
             <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full flex items-center justify-center shadow-lg">
               <span className="text-white text-lg">💅</span>
             </div>
@@ -277,6 +300,15 @@ setTimeOptions(available);
             </a>
           </div>
         </section>
+
+{/* Promo Banner */}
+      {promoEnabled && promoText && (
+        <div className="mb-6 max-w-2xl mx-auto">
+          <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-4 rounded-2xl text-center font-semibold shadow-lg animate-pulse">
+            {promoText}
+          </div>
+        </div>
+      )}
 
         {/* Booking Form */}
         <form
@@ -335,7 +367,7 @@ setTimeOptions(available);
                 }
               }}
             >
-              <option value="">💅 Are you booking nails?</option>
+              <option value=""> Are you booking nails?</option>
               <option value="yes">Yes</option>
               <option value="no">No</option>
             </select>
@@ -413,7 +445,7 @@ setTimeOptions(available);
               value={pedicure}
               onChange={(e) => setPedicure(e.target.value)}
             >
-              <option value="">🦶 Are you booking a pedicure?</option>
+              <option value=""> Are you booking a pedicure?</option>
               <option value="yes">Yes</option>
               <option value="no">No</option>
             </select>

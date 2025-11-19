@@ -542,6 +542,14 @@ export default function Dashboard() {
 
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
+  
+  const [profilePic, setProfilePic] = useState(null);
+  const [profilePicPreview, setProfilePicPreview] = useState(null);
+  const [uploadingProfilePic, setUploadingProfilePic] = useState(false);
+  
+  const [promoText, setPromoText] = useState("");
+  const [promoEnabled, setPromoEnabled] = useState(false);
+  const [savingPromo, setSavingPromo] = useState(false);
 
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -602,11 +610,14 @@ export default function Dashboard() {
 
   // -------- ACTIONS & HELPERS --------
   async function fetchBio() {
-    const { data, error } = await supabase.from("settings").select("bio").single();
+    const { data, error } = await supabase.from("settings").select("bio, profile_picture_url, promo_text, promo_enabled").single();
     if (error) {
       console.error("Error fetching bio:", error.message);
     } else {
       setBio(data?.bio || "");
+      setProfilePicPreview(data?.profile_picture_url || null);
+      setPromoText(data?.promo_text || "");
+      setPromoEnabled(data?.promo_enabled || false);
     }
   }
 
@@ -663,6 +674,78 @@ export default function Dashboard() {
       console.error("Bio update error:", error.message);
     } else {
       alert("Bio updated!");
+    }
+  };
+
+  const handleProfilePicChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setProfilePic(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setProfilePicPreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const uploadProfilePicture = async () => {
+    if (!profilePic) {
+      alert("Please select a photo first!");
+      return;
+    }
+
+    setUploadingProfilePic(true);
+    const filePath = `profile/mya-profile-${Date.now()}.png`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("gallery")
+      .upload(filePath, profilePic);
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError.message);
+      alert("Upload failed 😢");
+      setUploadingProfilePic(false);
+      return;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from("gallery")
+      .getPublicUrl(filePath);
+
+    // Update settings with new profile picture URL
+    const { error: updateError } = await supabase
+      .from("settings")
+      .update({ profile_picture_url: filePath })
+      .eq("id", "c5d1931e-8603-4f6e-ac4e-e6cf6bd839a9");
+
+    setUploadingProfilePic(false);
+
+    if (updateError) {
+      alert("Upload succeeded but failed to save 😢");
+      console.error("DB update error:", updateError.message);
+    } else {
+      alert("✅ Profile picture updated!");
+      setProfilePic(null);
+      fetchBio();
+    }
+  };
+
+  const savePromoSettings = async () => {
+    setSavingPromo(true);
+    const { error } = await supabase
+      .from("settings")
+      .update({ 
+        promo_text: promoText,
+        promo_enabled: promoEnabled 
+      })
+      .eq("id", "c5d1931e-8603-4f6e-ac4e-e6cf6bd839a9");
+    
+    setSavingPromo(false);
+    
+    if (error) {
+      alert("Failed to save promo settings.");
+      console.error("Promo update error:", error.message);
+    } else {
+      alert("✅ Promo banner settings saved!");
     }
   };
 
@@ -918,6 +1001,10 @@ export default function Dashboard() {
   };
 
   const handleUpdateBooking = async (updatedData) => {
+    // Check if date or time changed
+    const dateChanged = editingBooking.date !== updatedData.date;
+    const timeChanged = editingBooking.start_time !== updatedData.start_time;
+
     const { error } = await supabase
       .from("bookings")
       .update(updatedData)
@@ -927,6 +1014,27 @@ export default function Dashboard() {
       alert("❌ Failed to update appointment");
       console.error("Update error:", error.message);
     } else {
+      // Send SMS if date or time changed
+      if ((dateChanged || timeChanged) && updatedData.phone) {
+        try {
+          await fetch('/api/send-update-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: updatedData.phone,
+              name: updatedData.name,
+              oldDate: editingBooking.date,
+              oldTime: editingBooking.start_time,
+              newDate: updatedData.date,
+              newTime: updatedData.start_time,
+            }),
+          });
+        } catch (smsError) {
+          console.error('SMS notification error:', smsError);
+          // Don't fail the update if SMS fails
+        }
+      }
+
       alert("✅ Appointment updated successfully!");
       setEditingBooking(null);
       fetchBookings();
@@ -949,8 +1057,16 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-2xl">💅</span>
+              <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+                {profilePicPreview ? (
+                  <img 
+                    src={`https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicPreview}`}
+                    alt="Mya"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl">💅</span>
+                )}
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
@@ -1158,15 +1274,19 @@ export default function Dashboard() {
               <h2 className="text-xl font-bold text-gray-800 mb-4">Upcoming This Week</h2>
               <div className="space-y-3">
                 {(() => {
-                  const tomorrow = new Date();
+                  const now = new Date();
+                  const tomorrow = new Date(now);
                   tomorrow.setDate(tomorrow.getDate() + 1);
-                  const nextWeek = new Date();
+                  tomorrow.setHours(0, 0, 0, 0); // Start of tomorrow
+                  
+                  const nextWeek = new Date(now);
                   nextWeek.setDate(nextWeek.getDate() + 7);
+                  nextWeek.setHours(23, 59, 59, 999); // End of 7 days from now
                   
                   const upcomingBookings = bookings
                     .filter(b => {
                       const bookingDate = new Date(b.date + 'T00:00:00');
-                      return bookingDate >= tomorrow && bookingDate < nextWeek;
+                      return bookingDate >= tomorrow && bookingDate <= nextWeek;
                     })
                     .slice(0, 5);
                   
@@ -1183,7 +1303,7 @@ export default function Dashboard() {
                         <p className="text-sm text-gray-600">{booking.service}</p>
                       </div>
                       <div className="text-right text-sm">
-                        <p className="font-medium text-gray-800">{new Date(booking.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                        <p className="font-medium text-gray-800">{new Date(booking.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                         <p className="text-gray-600">{formatTime(booking.start_time)}</p>
                       </div>
                     </div>
@@ -1265,19 +1385,16 @@ export default function Dashboard() {
                               <div className="space-y-2">
                                 {booking.service && booking.service !== "N/A" && (
                                   <div className="flex items-center space-x-2">
-                                    <span className="text-pink-500">💅</span>
-                                    <span className="text-sm text-gray-700">{booking.service}</span>
+                                    <span className="text-sm text-gray-700 font-medium">{booking.service}</span>
                                   </div>
                                 )}
                                 {booking.art_level && booking.art_level !== "N/A" && (
                                   <div className="flex items-center space-x-2">
-                                    <span className="text-purple-500">🎨</span>
                                     <span className="text-sm text-gray-700">Nail Art: {booking.art_level}</span>
                                   </div>
                                 )}
                                 {booking.length && booking.length !== "N/A" && (
                                   <div className="flex items-center space-x-2">
-                                    <span className="text-blue-500">📏</span>
                                     <span className="text-sm text-gray-700">Length: {booking.length}</span>
                                   </div>
                                 )}
@@ -1286,13 +1403,11 @@ export default function Dashboard() {
                               <div className="space-y-2">
                                 {booking.soakoff && booking.soakoff !== "N/A" && booking.soakoff !== "none" && (
                                   <div className="flex items-center space-x-2">
-                                    <span className="text-orange-500">🧽</span>
                                     <span className="text-sm text-gray-700">Soak-Off: {booking.soakoff}</span>
                                   </div>
                                 )}
                                 {booking.pedicure === "yes" && (
                                   <div className="flex items-center space-x-2">
-                                    <span className="text-green-500">🦶</span>
                                     <span className="text-sm text-gray-700">Pedicure: {booking.pedicure_type || "Standard"}</span>
                                   </div>
                                 )}
@@ -1781,37 +1896,135 @@ export default function Dashboard() {
         )}
 
         {activeTab === "settings" && (
-          <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Bio Settings</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Booking Page Bio
-                </label>
-                <textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  rows={6}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 resize-none text-gray-900 placeholder-gray-500"
-                  placeholder="Enter the bio that will appear on your booking page..."
-                />
-              </div>
+          <div className="space-y-6">
+            {/* Profile Picture Section */}
+            <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Profile Picture</h2>
               
-              <button
-                onClick={saveBio}
-                disabled={saving}
-                className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
-              >
-                {saving ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Saving...</span>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-6">
+                  <div className="w-24 h-24 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+                    {profilePicPreview ? (
+                      <img 
+                        src={profilePicPreview.startsWith('http') ? profilePicPreview : `https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicPreview}`}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-4xl">💅</span>
+                    )}
                   </div>
-                ) : (
-                  "Save Bio"
+                  
+                  <div className="flex-1">
+                    <label className="cursor-pointer">
+                      <div className="border-2 border-dashed border-pink-300 rounded-xl p-4 text-center hover:border-pink-400 hover:bg-pink-50 transition-all duration-200">
+                        <p className="text-sm font-medium text-gray-700">Click to upload new profile picture</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+                      </div>
+                      <input type="file" accept="image/*" onChange={handleProfilePicChange} className="hidden" />
+                    </label>
+                    
+                    {profilePic && (
+                      <button
+                        onClick={uploadProfilePicture}
+                        disabled={uploadingProfilePic}
+                        className="mt-3 w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 transition-all"
+                      >
+                        {uploadingProfilePic ? "Uploading..." : "Save Profile Picture"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bio Section */}
+            <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Bio Settings</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Booking Page Bio
+                  </label>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    rows={6}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 resize-none text-gray-900 placeholder-gray-500"
+                    placeholder="Enter the bio that will appear on your booking page..."
+                  />
+                </div>
+                
+                <button
+                  onClick={saveBio}
+                  disabled={saving}
+                  className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
+                >
+                  {saving ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Saving...</span>
+                    </div>
+                  ) : (
+                    "Save Bio"
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Promo Banner Section */}
+            <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/20">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Promo Banner</h2>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <input
+                    type="checkbox"
+                    checked={promoEnabled}
+                    onChange={(e) => setPromoEnabled(e.target.checked)}
+                    className="w-5 h-5 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
+                  />
+                  <label className="text-sm font-medium text-gray-700">
+                    Show promo banner on booking page
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Promo Message
+                  </label>
+                  <input
+                    type="text"
+                    value={promoText}
+                    onChange={(e) => setPromoText(e.target.value)}
+                    placeholder="e.g. 🎉 20% OFF all services this week! Use code HOLIDAY20"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">This will appear at the top of your booking page when enabled</p>
+                </div>
+
+                {promoEnabled && promoText && (
+                  <div className="p-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl text-center font-medium">
+                    {promoText}
+                  </div>
                 )}
-              </button>
+
+                <button
+                  onClick={savePromoSettings}
+                  disabled={savingPromo}
+                  className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
+                >
+                  {savingPromo ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Saving...</span>
+                    </div>
+                  ) : (
+                    "Save Promo Settings"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
