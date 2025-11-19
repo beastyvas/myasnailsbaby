@@ -261,7 +261,7 @@ setTimeOptions(available);
             
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-4">
-            Hey babes 💋
+            MyasNailsBaby 💋
           </h2>
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
             <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
