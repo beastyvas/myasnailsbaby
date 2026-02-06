@@ -1,9 +1,11 @@
-import { supabase } from "@/utils/supabaseClient";
+import { createServerClient } from '@supabase/ssr';
 
+// ✅ Initialize Twilio once at module level
 const twilio = require('twilio')(
   process.env.TWILIO_ACCOUNT_SID, 
   process.env.TWILIO_AUTH_TOKEN
 );
+
 // ✅ Safely converts time like "1:25PM" or "2PM" to "13:25:00"
 function convertTo24Hr(timeStr) {
   if (!timeStr || typeof timeStr !== "string") return "00:00:00";
@@ -40,7 +42,30 @@ function convertTo24Hr(timeStr) {
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end("Method Not Allowed");
 
-  // 🌎 FIXED: Work in Vegas timezone (PST/PDT)
+  // ✅ AUTHENTICATION CHECK - prevents unauthorized reminder sending
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get: (name) => req.cookies[name],
+        set: (name, value, options) => {
+          res.setHeader('Set-Cookie', `${name}=${value}; Path=/; ${options?.httpOnly ? 'HttpOnly;' : ''} ${options?.secure ? 'Secure;' : ''}`);
+        },
+        remove: (name) => {
+          res.setHeader('Set-Cookie', `${name}=; Path=/; Max-Age=0`);
+        }
+      }
+    }
+  );
+
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session) {
+    return res.status(401).json({ error: 'Unauthorized - must be logged in' });
+  }
+
+  // 🌎 Work in Vegas timezone (PST/PDT)
   const now = new Date();
   
   // Convert to Vegas time for calculations
@@ -131,10 +156,10 @@ export default async function handler(req, res) {
     upcoming.map(async (b) => {
       console.log(`📤 Sending reminder to ${b.phone} for booking ${b.id}`);
       
-     let result;
-try {
-  await twilio.messages.create({
-    body: `Hi ${b.name}! 💅 This is a reminder that you've got a nail appointment with Mya tomorrow at ${b.start_time}
+      let result;
+      try {
+        await twilio.messages.create({
+          body: `Hi ${b.name}! 💅 This is a reminder that you've got a nail appointment with Mya tomorrow at ${b.start_time}
 
 📍 Address: 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, Nevada
 
@@ -143,15 +168,16 @@ try {
 DM @myasnailsbaby if anything changes!
 
 See you soon! 💖`,
-    from: process.env.TWILIO_PHONE_NUMBER,
-    to: b.phone,
-  });
-  result = { success: true };
-} catch (error) {
-  console.error(`❌ Twilio error for ${b.phone}:`, error.message);
-  result = { success: false, error: error.message };
-}
-      console.log(`📨 Textbelt response for ${b.phone}:`, result);
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: b.phone,
+        });
+        result = { success: true };
+      } catch (error) {
+        console.error(`❌ Twilio error for ${b.phone}:`, error.message);
+        result = { success: false, error: error.message };
+      }
+      
+      console.log(`📨 SMS response for ${b.phone}:`, result);
 
       if (result.success) {
         const { error: updateError } = await supabase
