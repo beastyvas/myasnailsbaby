@@ -7,21 +7,16 @@ export default async function handler(req, res) {
     // Strip non-digits from phone number
     const cleanedPhone = phone.replace(/\D/g, "");
 
-    const smsRes = await fetch("https://textbelt.com/text", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        phone: cleanedPhone,
-        message: `Hey babes! Your nail appointment with Mya on ${date} @ ${start_time} was canceled. Please dm @myasnailsbaby if you believe this was an error!`,
-        key: process.env.TEXTBELT_API_KEY,
-      }),
-    });
+    const twilio = require('twilio')(
+  process.env.TWILIO_ACCOUNT_SID, 
+  process.env.TWILIO_AUTH_TOKEN
+);
 
-    const smsJson = await smsRes.json();
-    if (!smsJson.success) {
-      console.error("❌ Textbelt error:", smsJson);
-      throw new Error("Textbelt failed");
-    }
+await twilio.messages.create({
+  body: `Hey babes! Your nail appointment with Mya on ${date} @ ${start_time} was canceled. Please dm @myasnailsbaby if you believe this was an error!`,
+  from: process.env.TWILIO_PHONE_NUMBER,
+  to: cleanedPhone,
+});
 
     res.status(200).json({ success: true });
   } catch (err) {

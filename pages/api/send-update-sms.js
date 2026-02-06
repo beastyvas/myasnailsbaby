@@ -43,25 +43,19 @@ export default async function handler(req, res) {
   message += `\n📍 Address: 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, Nevada\n\nDM @myasnailsbaby if you have any questions! 💖`;
 
   try {
-    const response = await fetch('https://textbelt.com/text', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone,
-        message,
-        key: process.env.TEXTBELT_API_KEY,
-      }),
-    });
+    const twilio = require('twilio')(
+  process.env.TWILIO_ACCOUNT_SID, 
+  process.env.TWILIO_AUTH_TOKEN
+);
 
-    const result = await response.json();
+await twilio.messages.create({
+  body: message,
+  from: process.env.TWILIO_PHONE_NUMBER,
+  to: phone,
+});
 
-    if (result.success) {
-      console.log(`✅ Update SMS sent to ${phone}`);
-      return res.status(200).json({ success: true });
-    } else {
-      console.error(`❌ Failed to send update SMS: ${result.error}`);
-      return res.status(500).json({ error: result.error });
-    }
+console.log(`✅ Update SMS sent to ${phone}`);
+return res.status(200).json({ success: true });
   } catch (error) {
     console.error('SMS API error:', error);
     return res.status(500).json({ error: 'Failed to send SMS' });

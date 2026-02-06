@@ -3,21 +3,21 @@ export default async function handler(req, res) {
 
   const { name, date, start_time } = req.body;
 
-  const response = await fetch("https://textbelt.com/text", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      phone: "+17029818428", // Mya's number
-      message: `📅 New Booking: ${name} on ${date} at ${start_time}`,
-      key: process.env.TEXTBELT_API_KEY,
-    }),
-  });
+  const twilio = require('twilio')(
+  process.env.TWILIO_ACCOUNT_SID, 
+  process.env.TWILIO_AUTH_TOKEN
+);
 
-  const data = await response.json();
-  if (!data.success) {
-    console.error("Textbelt error:", data.error);
-    return res.status(500).json({ success: false, error: data.error });
-  }
+try {
+  await twilio.messages.create({
+    body: `📅 New Booking: ${name} on ${date} at ${start_time}`,
+    from: process.env.TWILIO_PHONE_NUMBER,
+    to: "+17029818428", // Mya's number
+  });
+} catch (error) {
+  console.error("Twilio error:", error);
+  return res.status(500).json({ success: false, error: error.message });
+}
 
   res.status(200).json({ success: true });
 }

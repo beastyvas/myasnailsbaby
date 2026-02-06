@@ -1,5 +1,9 @@
 import { supabase } from "@/utils/supabaseClient";
 
+const twilio = require('twilio')(
+  process.env.TWILIO_ACCOUNT_SID, 
+  process.env.TWILIO_AUTH_TOKEN
+);
 // ✅ Safely converts time like "1:25PM" or "2PM" to "13:25:00"
 function convertTo24Hr(timeStr) {
   if (!timeStr || typeof timeStr !== "string") return "00:00:00";
@@ -127,12 +131,10 @@ export default async function handler(req, res) {
     upcoming.map(async (b) => {
       console.log(`📤 Sending reminder to ${b.phone} for booking ${b.id}`);
       
-      const response = await fetch("https://textbelt.com/text", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: b.phone,
-          message: `Hi ${b.name}! 💅 This is a reminder that you've got a nail appointment with Mya tomorrow at ${b.start_time}
+     let result;
+try {
+  await twilio.messages.create({
+    body: `Hi ${b.name}! 💅 This is a reminder that you've got a nail appointment with Mya tomorrow at ${b.start_time}
 
 📍 Address: 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, Nevada
 
@@ -141,11 +143,14 @@ export default async function handler(req, res) {
 DM @myasnailsbaby if anything changes!
 
 See you soon! 💖`,
-          key: process.env.TEXTBELT_API_KEY,
-        }),
-      });
-
-      const result = await response.json();
+    from: process.env.TWILIO_PHONE_NUMBER,
+    to: b.phone,
+  });
+  result = { success: true };
+} catch (error) {
+  console.error(`❌ Twilio error for ${b.phone}:`, error.message);
+  result = { success: false, error: error.message };
+}
       console.log(`📨 Textbelt response for ${b.phone}:`, result);
 
       if (result.success) {
