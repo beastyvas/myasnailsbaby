@@ -122,7 +122,36 @@ if (conflictError) {
   return res.status(200).json({ received: true });
 }
 if (conflicts && conflicts.length > 0) {
-  console.warn("⚠️ Time conflict; not inserting. Conflicts:", conflicts);
+  console.warn("⚠️ Time conflict; issuing refund. Conflicts:", conflicts);
+
+  // Auto-refund the customer since we can't honor this booking
+  try {
+    const refund = await stripe.refunds.create({
+      payment_intent: session.payment_intent,
+      reason: "duplicate", // closest Stripe reason
+    });
+    console.log("✅ Refund issued:", refund.id, "for session:", session.id);
+  } catch (refundErr) {
+    console.error("❌ Failed to issue refund for session:", session.id, refundErr.message);
+    // Even if refund fails, we still ack so Stripe stops retrying the webhook
+  }
+
+  // Mark booking as refunded in DB so confirm-payment shows a clear error
+  await supabase.from("bookings").insert([{
+    session_id: session.id,
+    name: md.name ?? null,
+    phone: md.phone ?? null,
+    date: safeDate,
+    start_time: start24,
+    end_time: end24,
+    paid: false,
+    confirmed: false,
+    refunded: true,
+    notes: "AUTO-REFUNDED: Time conflict at booking time",
+  }]).then(({ error }) => {
+    if (error) console.error("⚠️ Could not log refunded booking:", error.message);
+  });
+
   return res.status(200).json({ received: true });
 }
 

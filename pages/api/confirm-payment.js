@@ -95,6 +95,13 @@ export default async function handler(req, res) {
       }
 
       if (data) {
+        // If auto-refunded due to conflict, return a clear message
+        if (data.refunded) {
+          return res.status(409).json({
+            error: "time_conflict",
+            message: "Sorry, that time slot was just booked by someone else. You have been fully refunded. Please book a different time.",
+          });
+        }
         booking = data;
         break;
       }
