@@ -175,6 +175,7 @@ if (conflicts && conflicts.length > 0) {
       referral: md.referral ?? null,
       pedicure: md.pedicure ?? null,
       pedicure_type: md.pedicure_type ?? null,
+      email: md.email ?? null,
       booking_nails: md.booking_nails ?? null,
       paid: true,
       confirmed: true,

@@ -54,7 +54,8 @@ export default async function handler(req, res) {
   duration: bookingMetadata.duration,
   booking_nails: bookingMetadata.booking_nails,
   referral: bookingMetadata.referral,
-  pedicure: bookingMetadata.pedicure, // ✅ add this
+  pedicure: bookingMetadata.pedicure,
+  email: bookingMetadata.email ?? null,
 },
 
     });

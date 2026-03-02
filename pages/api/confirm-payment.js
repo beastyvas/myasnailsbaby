@@ -2,6 +2,12 @@
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
+import twilio from "twilio";
+
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -73,6 +79,7 @@ export default async function handler(req, res) {
       start_time: startLabelRaw = null,
       date: dateRaw = null,
       pedicure = null,
+      email: clientEmail = null,
     } = md;
 
     const safeDate = dateRaw?.trim() || null;
@@ -162,31 +169,103 @@ export default async function handler(req, res) {
       // Continue - email failure shouldn't break user flow
     }
 
-    // 5) Send confirmation SMS to client
-if (phone) {
-  try {
-    // Convert booking time to 12-hour format for display
-    const displayTime = booking.start_time ? to12h(booking.start_time) : "your selected time";
-    
-    const formattedPhone = phone.startsWith("+1") ? phone : `+1${phone}`;
-    const smsResponse = await fetch("https://textbelt.com/text", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        phone: formattedPhone,
-        message: `Hey love! Your appointment with Mya is confirmed for ${booking.date} at ${displayTime} 💅
+    // 5) Send confirmation email to client
+    if (clientEmail) {
+      try {
+        const displayTime = booking.start_time ? to12h(booking.start_time) : "your selected time";
+        await resend.emails.send({
+          from: "Mya's Nails <onboarding@resend.dev>",
+          to: [clientEmail],
+          subject: "Your Appointment is Confirmed 💅",
+          html: `
+            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid #f0e6f0;">
+              <!-- Header -->
+              <div style="background: linear-gradient(135deg, #e91e8c, #f06292); padding: 36px 32px; text-align: center;">
+                <h1 style="color: #fff; margin: 0; font-size: 26px; letter-spacing: 1px;">Mya's Nails Baby 💅</h1>
+                <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">@myasnailsbaby</p>
+              </div>
+
+              <!-- Body -->
+              <div style="padding: 32px;">
+                <h2 style="color: #c2185b; margin: 0 0 8px;">You're all booked, love! ✨</h2>
+                <p style="color: #555; margin: 0 0 24px; font-size: 15px;">Hey ${name}! Your appointment is confirmed. Here are your details:</p>
+
+                <!-- Booking Details Card -->
+                <div style="background: #fdf2f8; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;">
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="padding: 8px 0; color: #999; font-size: 13px; width: 40%;">📅 Date</td>
+                      <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 14px;">${booking.date}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #999; font-size: 13px;">⏰ Time</td>
+                      <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 14px;">${displayTime}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #999; font-size: 13px;">💅 Service</td>
+                      <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 14px;">${service}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px 0; color: #999; font-size: 13px;">💰 Deposit</td>
+                      <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 14px;">$20 ✅ Paid</td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Location -->
+                <div style="background: #fff8e1; border-left: 4px solid #f06292; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
+                  <p style="margin: 0; color: #555; font-size: 14px;"><strong style="color: #c2185b;">📍 Location</strong><br>
+                  2080 E. Flamingo Rd., Suite #106, Room 4<br>Las Vegas, NV</p>
+                </div>
+
+                <!-- Policy reminder -->
+                <p style="color: #888; font-size: 13px; margin: 0 0 24px;">
+                  Please remember the $20 deposit is <strong>non-refundable</strong>. If you need to reschedule, DM Mya at least 48 hours in advance.
+                </p>
+
+                <!-- CTA -->
+                <div style="text-align: center; margin-bottom: 24px;">
+                  <a href="https://instagram.com/myasnailsbaby"
+                     style="display: inline-block; background: linear-gradient(135deg, #e91e8c, #f06292); color: #fff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 15px;">
+                    DM @myasnailsbaby 💬
+                  </a>
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div style="background: #fdf2f8; padding: 20px 32px; text-align: center; border-top: 1px solid #f0e6f0;">
+                <p style="margin: 0; color: #bbb; font-size: 12px;">Mya's Nails Baby · Las Vegas, NV · @myasnailsbaby</p>
+              </div>
+            </div>
+          `,
+        });
+        console.log("✅ Confirmation email sent to client:", clientEmail);
+      } catch (clientEmailErr) {
+        console.error("Client email failed:", clientEmailErr?.message || clientEmailErr);
+        // Don't fail the whole request if email fails
+      }
+    }
+
+    // 6) Send confirmation SMS to client via Twilio
+    if (phone) {
+      try {
+        const displayTime = booking.start_time ? to12h(booking.start_time) : "your selected time";
+        const formattedPhone = phone.startsWith("+1") ? phone : `+1${phone}`;
+
+        await twilioClient.messages.create({
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: formattedPhone,
+          body: `Hey love! Your appointment with Mya is confirmed for ${booking.date} at ${displayTime} 💅
 📍2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV
-DM @myasnailsbaby if you need anything!`,
-        key: process.env.TEXTBELT_API_KEY,
-      }),
-    });
-        
-        const smsResult = await smsResponse.json();
-        if (!smsResult.success) {
-          console.error("SMS failed:", smsResult);
-        }
+DM @myasnailsbaby if you need anything!
+
+Reply STOP to unsubscribe.`,
+        });
+
+        console.log("✅ Confirmation SMS sent to:", formattedPhone);
       } catch (smsErr) {
         console.error("SMS error:", smsErr?.message || smsErr);
+        // Don't fail the whole request if SMS fails
       }
     }
 

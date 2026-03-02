@@ -145,6 +145,7 @@ setTimeOptions(available);
     const name = data.get("name");
     const instagram = data.get("instagram");
     const phone = data.get("phone");
+    const email = data.get("email");
     const service = data.get("service");
     const artLevel = data.get("artLevel");
     const date = data.get("date");
@@ -178,6 +179,7 @@ setTimeOptions(available);
       pedicure,
       pedicure_type: pedicureType,
       booking_nails: bookingNails,
+      email,
     };
 
     try {
@@ -208,6 +210,7 @@ setTimeOptions(available);
         soakoff,
         referral,
         pedicure,
+        email,
       };
 
       const stripeRes = await fetch("/api/create-checkout-session", {
@@ -343,6 +346,14 @@ setTimeOptions(available);
               pattern="\d{10}"
               inputMode="numeric"
               title="Enter a 10-digit phone number (no dashes or spaces)"
+            />
+
+            <input
+              type="email"
+              name="email"
+              placeholder="Email Address (for booking confirmation)"
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
             />
           </div>
 
