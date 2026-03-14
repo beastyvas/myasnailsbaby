@@ -140,8 +140,11 @@ export default async function handler(req, res) {
 
     // 4) Send email to Mya
     try {
-      await resend.emails.send({
-        from: "Mya's Nails <onboarding@resend.dev>",
+      const emailResult = await resend.emails.send({
+        // ⚠️ CHANGE THIS: Use your verified domain or verified email
+        // Option 1 (with domain): from: "Mya's Nails <bookings@yourdomain.com>"
+        // Option 2 (without domain): from: "myasnailsbaby@gmail.com"
+        from: process.env.RESEND_FROM_EMAIL || "myasnailsbaby@gmail.com",
         to: ["myasnailsbaby@gmail.com"],
         subject: "New Booking Confirmed 💅",
         html: `
@@ -164,8 +167,9 @@ export default async function handler(req, res) {
           <p><strong>Payment Status:</strong> ✅ Paid & Confirmed</p>
         `,
       });
+      console.log("✅ Email sent to Mya:", emailResult.id);
     } catch (emailErr) {
-      console.error("Email failed:", emailErr?.message || emailErr);
+      console.error("❌ Email to Mya failed:", emailErr?.message || emailErr);
       // Continue - email failure shouldn't break user flow
     }
 
@@ -173,8 +177,9 @@ export default async function handler(req, res) {
     if (clientEmail) {
       try {
         const displayTime = booking.start_time ? to12h(booking.start_time) : "your selected time";
-        await resend.emails.send({
-          from: "Mya's Nails <onboarding@resend.dev>",
+        const clientEmailResult = await resend.emails.send({
+          // ⚠️ CHANGE THIS: Use your verified domain or verified email
+          from: process.env.RESEND_FROM_EMAIL || "myasnailsbaby@gmail.com",
           to: [clientEmail],
           subject: "Your Appointment is Confirmed 💅",
           html: `
@@ -239,9 +244,9 @@ export default async function handler(req, res) {
             </div>
           `,
         });
-        console.log("✅ Confirmation email sent to client:", clientEmail);
+        console.log("✅ Confirmation email sent to client:", clientEmail, "ID:", clientEmailResult.id);
       } catch (clientEmailErr) {
-        console.error("Client email failed:", clientEmailErr?.message || clientEmailErr);
+        console.error("❌ Client email failed:", clientEmailErr?.message || clientEmailErr);
         // Don't fail the whole request if email fails
       }
     }
@@ -264,7 +269,7 @@ Reply STOP to unsubscribe.`,
 
         console.log("✅ Confirmation SMS sent to:", formattedPhone);
       } catch (smsErr) {
-        console.error("SMS error:", smsErr?.message || smsErr);
+        console.error("❌ SMS error:", smsErr?.message || smsErr);
         // Don't fail the whole request if SMS fails
       }
     }
@@ -276,7 +281,7 @@ Reply STOP to unsubscribe.`,
     });
 
   } catch (err) {
-    console.error("Confirm payment error:", err?.message || err);
+    console.error("❌ Confirm payment error:", err?.message || err);
     return res.status(500).json({ success: false, error: "Internal server error" });
   }
 }
