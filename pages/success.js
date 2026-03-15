@@ -7,19 +7,44 @@ export default function SuccessPage() {
 
   const [loading, setLoading] = useState(true);
   const [wasConfirmed, setWasConfirmed] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState(null);
+
+  // Helper to format date
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr + "T00:00:00");
+    return date.toLocaleDateString("en-US", { 
+      month: "numeric", 
+      day: "numeric", 
+      year: "2-digit" 
+    });
+  };
+
+  // Helper to format time to 12hr
+  const formatTime = (time24) => {
+    if (!time24) return "";
+    const [hourStr, minuteStr] = time24.split(":");
+    const hour = parseInt(hourStr, 10);
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}${suffix}`;
+  };
 
   useEffect(() => {
     if (!session_id) return;
 
     const alreadyConfirmed = localStorage.getItem(`confirmed_${session_id}`);
-    if (alreadyConfirmed) {
-      console.log("✅ Already confirmed — skip API call and redirect soon");
+    const savedDetails = localStorage.getItem(`booking_details_${session_id}`);
+
+    if (alreadyConfirmed && savedDetails) {
+      console.log("✅ Already confirmed — using saved details");
       setWasConfirmed(true);
+      setBookingDetails(JSON.parse(savedDetails));
       setLoading(false);
 
       setTimeout(() => {
-        router.replace("/index"); // or replace with "/index" if your homepage is literally /index
-      }, 4000);
+        router.replace("/");
+      }, 5000);
       return;
     }
 
@@ -31,14 +56,33 @@ export default function SuccessPage() {
           body: JSON.stringify({ session_id }),
         });
 
-        if (res.ok) {
+        const data = await res.json();
+
+        if (res.ok && data.success) {
           localStorage.setItem(`confirmed_${session_id}`, "true");
+          
+          // Fetch booking details from Stripe session metadata
+          const stripeRes = await fetch(`/api/get-session-details?session_id=${session_id}`);
+          const stripeData = await stripeRes.json();
+          
+          if (stripeData.metadata) {
+            const details = {
+              service: stripeData.metadata.service || "Nail Service",
+              date: stripeData.metadata.date,
+              start_time: stripeData.metadata.start_time,
+            };
+            setBookingDetails(details);
+            localStorage.setItem(`booking_details_${session_id}`, JSON.stringify(details));
+          }
+          
           setLoading(false);
         } else {
           console.error("❌ Payment confirmation failed");
+          setLoading(false);
         }
       } catch (err) {
         console.error("❌ Confirm-payment error:", err.message);
+        setLoading(false);
       }
     };
 
@@ -46,15 +90,67 @@ export default function SuccessPage() {
   }, [session_id, router]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-pink-50 text-center p-6">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 text-center p-6">
       {loading ? (
-        <p className="text-gray-700">Confirming your booking...</p>
+        <div className="space-y-4">
+          <div className="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-gray-700 font-medium">Confirming your booking...</p>
+        </div>
       ) : (
         <div className="max-w-xl mx-auto space-y-6">
-          <h1 className="text-2xl font-bold text-pink-700">Payment Successful! 🎉</h1>
-          <p className="text-gray-800">Your appointment has been confirmed.</p>
+          {/* Main Success Card */}
+          <div className="bg-white rounded-2xl shadow-2xl p-8 border-4 border-pink-300">
+            <div className="mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-2">
+                Payment Successful! 🎉
+              </h1>
+              <p className="text-gray-600">Your appointment is confirmed</p>
+            </div>
 
-          <div className="bg-white border mt-6 rounded-lg p-5 shadow-sm text-left text-sm text-gray-700">
+            {/* Booking Details */}
+            {bookingDetails && (
+              <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-6 mb-6 border-2 border-pink-200">
+                <h2 className="text-lg font-bold text-pink-700 mb-4">📋 Booking Details</h2>
+                <div className="space-y-2 text-left">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 font-medium">Service:</span>
+                    <span className="text-gray-900 font-bold">{bookingDetails.service}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 font-medium">Date:</span>
+                    <span className="text-gray-900 font-bold">{formatDate(bookingDetails.date)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 font-medium">Time:</span>
+                    <span className="text-gray-900 font-bold">{formatTime(bookingDetails.start_time)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-pink-200 mt-2">
+                    <span className="text-gray-600 font-medium">Deposit Paid:</span>
+                    <span className="text-green-600 font-bold">$20 ✓</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-4">
+              <p className="text-sm text-yellow-800 font-medium">
+                📸 <strong>Screenshot this page</strong> for your records!
+              </p>
+            </div>
+
+            <div className="text-sm text-gray-600 space-y-1">
+              <p>📍 2080 E. Flamingo Rd. Suite #106 Room 4</p>
+              <p>📱 DM <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-semibold underline">@myasnailsbaby</a> with questions</p>
+            </div>
+          </div>
+
+          {/* Policies Card */}
+          <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-lg text-left text-sm text-gray-700">
             <h2 className="text-lg font-semibold mb-4 text-pink-700">📌 Important Policies</h2>
             <ul className="space-y-3">
               <li>
@@ -91,7 +187,7 @@ export default function SuccessPage() {
 
           {wasConfirmed && (
             <p className="text-sm text-gray-500 mt-3">
-              You already confirmed this booking. Redirecting you to the booking page...
+              Redirecting you to the home page in a few seconds...
             </p>
           )}
         </div>
