@@ -44,7 +44,7 @@ export default function SuccessPage() {
 
       setTimeout(() => {
         router.replace("/");
-      }, 5000);
+      }, 6000);
       return;
     }
 
@@ -66,10 +66,26 @@ export default function SuccessPage() {
           const stripeData = await stripeRes.json();
           
           if (stripeData.metadata) {
+            const md = stripeData.metadata;
             const details = {
-              service: stripeData.metadata.service || "Nail Service",
-              date: stripeData.metadata.date,
-              start_time: stripeData.metadata.start_time,
+              // Basic info
+              service: md.service || "",
+              date: md.date,
+              start_time: md.start_time,
+              
+              // Nail service details
+              booking_nails: md.booking_nails || "no",
+              artLevel: md.artLevel || "",
+              length: md.length || "",
+              soakoff: md.soakoff || "",
+              
+              // Pedicure details
+              pedicure: md.pedicure || "no",
+              pedicure_type: md.pedicure_type || "",
+              
+              // Other
+              notes: md.notes || "",
+              duration: md.duration || "",
             };
             setBookingDetails(details);
             localStorage.setItem(`booking_details_${session_id}`, JSON.stringify(details));
@@ -88,6 +104,25 @@ export default function SuccessPage() {
 
     confirmPayment();
   }, [session_id, router]);
+
+  // Build services list
+  const getServicesList = () => {
+    if (!bookingDetails) return [];
+    
+    const services = [];
+    
+    // Add nail service
+    if (bookingDetails.booking_nails === "yes" && bookingDetails.service) {
+      services.push(bookingDetails.service);
+    }
+    
+    // Add pedicure
+    if (bookingDetails.pedicure === "yes" && bookingDetails.pedicure_type) {
+      services.push(bookingDetails.pedicure_type);
+    }
+    
+    return services;
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 text-center p-6">
@@ -116,35 +151,83 @@ export default function SuccessPage() {
             {bookingDetails && (
               <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-6 mb-6 border-2 border-pink-200">
                 <h2 className="text-lg font-bold text-pink-700 mb-4">📋 Booking Details</h2>
-                <div className="space-y-2 text-left">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 font-medium">Service:</span>
-                    <span className="text-gray-900 font-bold">{bookingDetails.service}</span>
+                <div className="space-y-3 text-left">
+                  {/* Services */}
+                  <div>
+                    <span className="text-gray-600 font-medium block mb-1">Services:</span>
+                    {getServicesList().map((service, idx) => (
+                      <div key={idx} className="text-gray-900 font-bold bg-white rounded-lg px-3 py-2 mb-1">
+                        💅 {service}
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 font-medium">Date:</span>
-                    <span className="text-gray-900 font-bold">{formatDate(bookingDetails.date)}</span>
+
+                  {/* Date & Time */}
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <span className="text-gray-600 font-medium block text-sm">Date</span>
+                      <span className="text-gray-900 font-bold text-lg">{formatDate(bookingDetails.date)}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600 font-medium block text-sm">Time</span>
+                      <span className="text-gray-900 font-bold text-lg">{formatTime(bookingDetails.start_time)}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 font-medium">Time:</span>
-                    <span className="text-gray-900 font-bold">{formatTime(bookingDetails.start_time)}</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-pink-200 mt-2">
-                    <span className="text-gray-600 font-medium">Deposit Paid:</span>
-                    <span className="text-green-600 font-bold">$20 ✓</span>
+
+                  {/* Nail Details (if booked nails) */}
+                  {bookingDetails.booking_nails === "yes" && (
+                    <div className="border-t border-pink-200 pt-3 mt-3">
+                      <span className="text-gray-600 font-medium block mb-2 text-sm">Nail Details:</span>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        {bookingDetails.artLevel && bookingDetails.artLevel !== "N/A" && (
+                          <div>
+                            <span className="text-gray-500">Art Level:</span>
+                            <span className="ml-2 font-semibold text-gray-900">{bookingDetails.artLevel}</span>
+                          </div>
+                        )}
+                        {bookingDetails.length && bookingDetails.length !== "N/A" && (
+                          <div>
+                            <span className="text-gray-500">Length:</span>
+                            <span className="ml-2 font-semibold text-gray-900">{bookingDetails.length}</span>
+                          </div>
+                        )}
+                        {bookingDetails.soakoff && bookingDetails.soakoff !== "none" && (
+                          <div>
+                            <span className="text-gray-500">Soak-Off:</span>
+                            <span className="ml-2 font-semibold text-gray-900">{bookingDetails.soakoff}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {bookingDetails.notes && (
+                    <div className="border-t border-pink-200 pt-3 mt-3">
+                      <span className="text-gray-600 font-medium block text-sm mb-1">Notes:</span>
+                      <p className="text-gray-700 text-sm italic bg-white rounded-lg px-3 py-2">"{bookingDetails.notes}"</p>
+                    </div>
+                  )}
+
+                  {/* Deposit */}
+                  <div className="border-t-2 border-pink-300 pt-3 mt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 font-medium">Deposit Paid:</span>
+                      <span className="text-green-600 font-bold text-xl">$20 ✓</span>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-4">
-              <p className="text-sm text-yellow-800 font-medium">
-                📸 <strong>Screenshot this page</strong> for your records!
+            <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4 mb-4">
+              <p className="text-sm text-yellow-900 font-bold">
+                📸 Screenshot this page for your records!
               </p>
             </div>
 
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>📍 2080 E. Flamingo Rd. Suite #106 Room 4</p>
+            <div className="text-sm text-gray-600 space-y-2">
+              <p className="font-medium">📍 2080 E. Flamingo Rd. Suite #106 Room 4</p>
               <p>📱 DM <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-semibold underline">@myasnailsbaby</a> with questions</p>
             </div>
           </div>

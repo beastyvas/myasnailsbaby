@@ -141,10 +141,7 @@ export default async function handler(req, res) {
     // 4) Send email to Mya
     try {
       const emailResult = await resend.emails.send({
-        // ⚠️ CHANGE THIS: Use your verified domain or verified email
-        // Option 1 (with domain): from: "Mya's Nails <bookings@yourdomain.com>"
-        // Option 2 (without domain): from: "myasnailsbaby@gmail.com"
-        from: process.env.RESEND_FROM_EMAIL || "myasnailsbaby@gmail.com",
+        from: "Mya's Nails <bookings@myasnailsbaby.com>",
         to: ["myasnailsbaby@gmail.com"],
         subject: "New Booking Confirmed 💅",
         html: `
@@ -178,8 +175,7 @@ export default async function handler(req, res) {
       try {
         const displayTime = booking.start_time ? to12h(booking.start_time) : "your selected time";
         const clientEmailResult = await resend.emails.send({
-          // ⚠️ CHANGE THIS: Use your verified domain or verified email
-          from: process.env.RESEND_FROM_EMAIL || "myasnailsbaby@gmail.com",
+          from: "Mya's Nails <bookings@myasnailsbaby.com>",
           to: [clientEmail],
           subject: "Your Appointment is Confirmed 💅",
           html: `
