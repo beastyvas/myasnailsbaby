@@ -57,7 +57,7 @@ export default function Home() {
     fetchSettings();
   }, []);
 
-  useEffect(() => {
+ useEffect(() => {
     const loadAvailableTimes = async () => {
       if (!selectedDate || !duration) return setTimeOptions([]);
 
@@ -76,31 +76,49 @@ export default function Home() {
       const startHour = parseInt(availabilityData.start_time.split(":")[0]);
       const endHour = parseInt(availabilityData.end_time.split(":")[0]);
 
-   // fetch booked ranges via RPC (works for anon because SECURITY DEFINER)
-const { data: booked, error: bookedErr } = await supabase
-  .rpc('get_booked_slots', { p_date: selectedDate }); // 'YYYY-MM-DD'
+      // fetch booked ranges via RPC (works for anon because SECURITY DEFINER)
+      const { data: booked, error: bookedErr } = await supabase
+        .rpc('get_booked_slots', { p_date: selectedDate });
 
-if (bookedErr) {
-  console.error('Booking RPC error:', bookedErr);
-  return;
-}
+      if (bookedErr) {
+        console.error('Booking RPC error:', bookedErr);
+        return;
+      }
 
-/*
-  booked = [{ start_time: '14:00:00', end_time: '16:00:00' }, ...]
-  Convert to hours and subtract from availability.
-*/
-const bookedRanges = booked.map(({ start_time, end_time }) => {
-  const [sh] = String(start_time).split(':');
-  const [eh] = String(end_time).split(':');
-  return { start: parseInt(sh, 10), end: parseInt(eh, 10) };
-});
+      const bookedRanges = booked.map(({ start_time, end_time }) => {
+        const [sh] = String(start_time).split(':');
+        const [eh] = String(end_time).split(':');
+        return { start: parseInt(sh, 10), end: parseInt(eh, 10) };
+      });
 
-const available = [];
-for (let hour = startHour; hour <= endHour - duration; hour++) {
-  const overlaps = bookedRanges.some(r => hour < r.end && (hour + duration) > r.start);
-  if (!overlaps) available.push(`${String(hour).padStart(2,'0')}:00`);
-}
-setTimeOptions(available);
+      // 🔥 24-HOUR RESTRICTION: Calculate minimum bookable time
+      const now = new Date();
+      const vegasNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+      
+      // 24 hours from now
+      const twentyFourHoursLater = new Date(vegasNow);
+      twentyFourHoursLater.setHours(twentyFourHoursLater.getHours() + 24);
+      
+      const selectedDateTime = new Date(selectedDate + "T00:00:00");
+      
+      let minimumHour = startHour;
+
+      // If selected date is within 24 hours, block early times
+      const hoursDiff = (selectedDateTime - vegasNow) / (1000 * 60 * 60);
+      
+      if (hoursDiff < 24 && hoursDiff >= 0) {
+        const requiredHour = twentyFourHoursLater.getHours();
+        minimumHour = Math.max(requiredHour, startHour);
+        console.log(`⏰ 24hr restriction active: minimum hour is ${minimumHour}`);
+      }
+
+      const available = [];
+      for (let hour = minimumHour; hour <= endHour - duration; hour++) {
+        const overlaps = bookedRanges.some(r => hour < r.end && (hour + duration) > r.start);
+        if (!overlaps) available.push(`${String(hour).padStart(2,'0')}:00`);
+      }
+      
+      setTimeOptions(available);
     }
 
     loadAvailableTimes();
@@ -117,15 +135,40 @@ setTimeOptions(available);
         return;
       }
 
-      const normalized = [
-        ...new Set(data.map((d) => new Date(d.date).toISOString().split("T")[0])),
-      ];
+      // 🔥 Get Vegas time + calculate 24hr minimum
+      const now = new Date();
+      const vegasNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+      
+      const minBookableDate = new Date(vegasNow);
+      minBookableDate.setHours(minBookableDate.getHours() + 24);
+      const minDateStr = minBookableDate.toISOString().split("T")[0];
+
+      // Only show dates 24+ hours away
+      const validDates = data
+        .map((d) => d.date)
+        .filter((date) => date >= minDateStr);
+
+      const normalized = [...new Set(validDates)];
       setAvailableDates(normalized);
+
+      // 🔥 AUTO-CLEANUP: Delete expired dates
+      const pastDates = data
+        .map((d) => d.date)
+        .filter((date) => date < minDateStr);
+
+      if (pastDates.length > 0) {
+        console.log(`🗑️ Auto-deleting ${pastDates.length} expired dates:`, pastDates);
+        
+        fetch('/api/cleanup-old-availability', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dates: pastDates }),
+        }).catch(err => console.error('Cleanup error:', err));
+      }
     };
 
     fetchAvailableDates();
   }, []);
-
   function formatTo12Hour(timeStr) {
     const [hourStr] = timeStr.split(":");
     const hour = parseInt(hourStr);
