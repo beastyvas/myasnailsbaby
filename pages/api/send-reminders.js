@@ -158,18 +158,20 @@ export default async function handler(req, res) {
       
       let result;
       try {
+        // Twilio requires E.164 format (+1XXXXXXXXXX)
+        const toPhone = `+1${b.phone.replace(/\D/g, "")}`;
         await twilio.messages.create({
-          body: `Hi ${b.name}! 💅 This is a reminder that you've got a nail appointment with Mya tomorrow at ${b.start_time}
+          body: `Hi ${b.name}! This is a reminder from Mya's Nails Baby that you have a nail appointment tomorrow at ${b.start_time}.
 
-📍 Address: 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, Nevada
+📍 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, NV
 
-📋 Policy: Please arrive on time. Deposits are non-refundable. Please no extra guests.
+Please arrive on time. Deposits are non-refundable. No extra guests please.
 
 DM @myasnailsbaby if anything changes!
 
-See you soon! 💖`,
+Reply STOP to unsubscribe.`,
           from: process.env.TWILIO_PHONE_NUMBER,
-          to: b.phone,
+          to: toPhone,
         });
         result = { success: true };
       } catch (error) {
