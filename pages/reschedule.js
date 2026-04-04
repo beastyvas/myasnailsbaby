@@ -377,11 +377,12 @@ export default function ReschedulePage() {
             ) : (
               <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
                 <h3 className="font-bold text-yellow-800 mb-2">
-                  ⚠️ Too Late to Reschedule Online
+                  ⚠️ Cannot Reschedule Online
                 </h3>
                 <p className="text-yellow-700 text-sm mb-4">
-                  Your appointment is in less than 48 hours. You can no longer
-                  reschedule online.
+                  {(booking.reschedule_count || 0) >= 2
+                    ? "You've reached the maximum of 2 reschedules."
+                    : "Your appointment is in less than 48 hours. You can no longer reschedule online."}
                 </p>
                 <p className="text-yellow-700 text-sm font-medium">
                   Please DM{" "}
