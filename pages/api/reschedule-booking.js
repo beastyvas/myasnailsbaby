@@ -249,7 +249,34 @@ export default async function handler(req, res) {
         console.log("✅ Reschedule email sent to:", booking.email);
       } catch (emailErr) {
         console.error("❌ Email error:", emailErr);
-        // Don't fail the whole request if email fails
+      }
+    }
+
+    // 10b. Notify Mya about the reschedule
+    const myaEmail = process.env.MYA_EMAIL;
+    if (myaEmail) {
+      try {
+        await resend.emails.send({
+          from: "Mya's Nails <bookings@myasnailsbaby.com>",
+          to: [myaEmail],
+          subject: `📅 Reschedule: ${booking.name}`,
+          html: `
+            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto;">
+              <h2 style="color: #c2185b;">A client rescheduled their appointment</h2>
+              <p><strong>Client:</strong> ${booking.name}</p>
+              <p><strong>Phone:</strong> ${booking.phone}</p>
+              ${booking.email ? `<p><strong>Email:</strong> ${booking.email}</p>` : ""}
+              <p><strong>Service:</strong> ${booking.service}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? " + " + booking.pedicure_type : ""}</p>
+              <hr style="border: 1px solid #f0e6f0; margin: 16px 0;" />
+              <p><strong>Old:</strong> ${formatDateLong(oldDate)} at ${to12h(oldTime)}</p>
+              <p><strong>New:</strong> ${formatDateLong(new_date)} at ${to12h(new_time)}</p>
+              <p style="color: #999; font-size: 12px;">Reschedule #${(booking.reschedule_count || 0) + 1} of 2</p>
+            </div>
+          `,
+        });
+        console.log("✅ Reschedule notification sent to Mya");
+      } catch (myaEmailErr) {
+        console.error("❌ Mya notification email error:", myaEmailErr);
       }
     }
 

@@ -724,8 +724,15 @@ export default function Home() {
               Privacy Policy
             </Link>
             <span className="text-gray-400">•</span>
-            <Link 
-              href="/login" 
+            <Link
+              href="/reschedule"
+              className="text-pink-600 hover:text-pink-700 font-medium transition-colors duration-200"
+            >
+              Reschedule Appointment
+            </Link>
+            <span className="text-gray-400">•</span>
+            <Link
+              href="/login"
               className="text-pink-600 hover:text-pink-700 font-medium transition-colors duration-200"
             >
               Dashboard Login
