@@ -179,63 +179,65 @@ export default async function handler(req, res) {
           to: [clientEmail],
           subject: "Your Appointment is Confirmed 💅",
           html: `
-            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid #f0e6f0;">
+            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fafaf9; border: 1px solid #e7e5e4;">
               <!-- Header -->
-              <div style="background: linear-gradient(135deg, #e91e8c, #f06292); padding: 36px 32px; text-align: center;">
-                <h1 style="color: #fff; margin: 0; font-size: 26px; letter-spacing: 1px;">Mya's Nails Baby 💅</h1>
-                <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">@myasnailsbaby</p>
+              <div style="background: #1c1917; padding: 32px; text-align: center;">
+                <p style="color: #c9848c; margin: 0 0 6px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">MyasNailsBaby</p>
+                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: normal; letter-spacing: 1px;">Appointment Confirmed</h1>
+                <div style="width: 48px; height: 1px; background: linear-gradient(90deg, transparent, #c9848c, #e8b4b8, #c9848c, transparent); margin: 16px auto 0;"></div>
               </div>
 
               <!-- Body -->
-              <div style="padding: 32px;">
-                <h2 style="color: #c2185b; margin: 0 0 8px;">You're all booked, love! ✨</h2>
-                <p style="color: #555; margin: 0 0 24px; font-size: 15px;">Hey ${name}! Your appointment is confirmed. Here are your details:</p>
+              <div style="padding: 32px; background: #ffffff;">
+                <p style="color: #57534e; margin: 0 0 6px; font-size: 14px;">Hi ${name},</p>
+                <p style="color: #1c1917; margin: 0 0 28px; font-size: 16px; font-weight: bold;">You&apos;re all booked in.</p>
 
-                <!-- Booking Details Card -->
-                <div style="background: #fdf2f8; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;">
+                <!-- Booking Details -->
+                <div style="border: 1px solid #e7e5e4; padding: 20px 24px; margin-bottom: 24px; background: #fafaf9;">
+                  <p style="margin: 0 0 14px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Appointment Details</p>
                   <table style="width: 100%; border-collapse: collapse;">
                     <tr>
-                      <td style="padding: 8px 0; color: #999; font-size: 13px; width: 40%;">📅 Date</td>
-                      <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 14px;">${booking.date}</td>
+                      <td style="padding: 7px 0; color: #a8a29e; font-size: 12px; width: 40%; border-bottom: 1px solid #f5f5f4;">Date</td>
+                      <td style="padding: 7px 0; color: #1c1917; font-weight: bold; font-size: 13px; border-bottom: 1px solid #f5f5f4;">${booking.date}</td>
                     </tr>
                     <tr>
-                      <td style="padding: 8px 0; color: #999; font-size: 13px;">⏰ Time</td>
-                      <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 14px;">${displayTime}</td>
+                      <td style="padding: 7px 0; color: #a8a29e; font-size: 12px; border-bottom: 1px solid #f5f5f4;">Time</td>
+                      <td style="padding: 7px 0; color: #1c1917; font-weight: bold; font-size: 13px; border-bottom: 1px solid #f5f5f4;">${displayTime}</td>
                     </tr>
                     <tr>
-                      <td style="padding: 8px 0; color: #999; font-size: 13px;">💅 Service</td>
-                      <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 14px;">${service}</td>
+                      <td style="padding: 7px 0; color: #a8a29e; font-size: 12px; border-bottom: 1px solid #f5f5f4;">Service</td>
+                      <td style="padding: 7px 0; color: #1c1917; font-weight: bold; font-size: 13px; border-bottom: 1px solid #f5f5f4;">${service}</td>
                     </tr>
                     <tr>
-                      <td style="padding: 8px 0; color: #999; font-size: 13px;">💰 Deposit</td>
-                      <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 14px;">$20 ✅ Paid</td>
+                      <td style="padding: 7px 0; color: #a8a29e; font-size: 12px;">Deposit</td>
+                      <td style="padding: 7px 0; color: #9f1239; font-weight: bold; font-size: 13px;">$20 Paid</td>
                     </tr>
                   </table>
                 </div>
 
                 <!-- Location -->
-                <div style="background: #fff8e1; border-left: 4px solid #f06292; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
-                  <p style="margin: 0; color: #555; font-size: 14px;"><strong style="color: #c2185b;">📍 Location</strong><br>
-                  2080 E. Flamingo Rd., Suite #106, Room 4<br>Las Vegas, NV</p>
+                <div style="border-left: 3px solid #9f1239; padding: 14px 18px; margin-bottom: 24px; background: #fafaf9;">
+                  <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Location</p>
+                  <p style="margin: 0; color: #44403c; font-size: 13px; line-height: 1.6;">2080 E. Flamingo Rd., Suite #106, Room 4<br>Las Vegas, NV 89119</p>
                 </div>
 
-                <!-- Policy reminder -->
-                <p style="color: #888; font-size: 13px; margin: 0 0 24px;">
-                  Please remember the $20 deposit is <strong>non-refundable</strong>. If you need to reschedule, DM Mya at least 48 hours in advance.
+                <!-- Policy -->
+                <p style="color: #78716c; font-size: 12px; margin: 0 0 28px; line-height: 1.7; border-top: 1px solid #e7e5e4; padding-top: 20px;">
+                  Your $20 deposit is <strong style="color: #1c1917;">non-refundable</strong>. To reschedule, please contact Mya at least 48 hours before your appointment.
                 </p>
 
                 <!-- CTA -->
-                <div style="text-align: center; margin-bottom: 24px;">
+                <div style="text-align: center;">
                   <a href="https://instagram.com/myasnailsbaby"
-                     style="display: inline-block; background: linear-gradient(135deg, #e91e8c, #f06292); color: #fff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 15px;">
-                    DM @myasnailsbaby 💬
+                     style="display: inline-block; background: #9f1239; color: #fff; padding: 14px 36px; text-decoration: none; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">
+                    DM @myasnailsbaby
                   </a>
                 </div>
               </div>
 
               <!-- Footer -->
-              <div style="background: #fdf2f8; padding: 20px 32px; text-align: center; border-top: 1px solid #f0e6f0;">
-                <p style="margin: 0; color: #bbb; font-size: 12px;">Mya's Nails Baby · Las Vegas, NV · @myasnailsbaby</p>
+              <div style="background: #1c1917; padding: 20px 32px; text-align: center;">
+                <p style="margin: 0; color: #78716c; font-size: 11px; letter-spacing: 1px;">MYASNAILSBABY &middot; LAS VEGAS, NV &middot; @MYASNAILSBABY</p>
               </div>
             </div>
           `,

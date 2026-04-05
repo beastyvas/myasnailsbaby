@@ -217,11 +217,11 @@ export default function Home() {
             MyasNailsBaby
           </h1>
           <nav className="hidden sm:flex items-center space-x-6 text-sm">
-            <a href="#contact" className="text-stone-600 hover:text-stone-900 transition">Contact</a>
-            <a href="#policies" className="text-stone-600 hover:text-stone-900 transition">Policies</a>
-            <a href="#booking" className="text-stone-600 hover:text-stone-900 transition">Book</a>
+            <a href="#contact" className="text-stone-600 hover:text-stone-900 transition nav-slide">Contact</a>
+            <a href="#policies" className="text-stone-600 hover:text-stone-900 transition nav-slide">Policies</a>
+            <a href="#booking" className="text-stone-600 hover:text-stone-900 transition nav-slide">Book</a>
           </nav>
-          <a href="#booking" className="bg-rose-800 hover:bg-rose-900 text-white px-5 py-2 text-sm font-medium transition">
+          <a href="#booking" className="bg-rose-800 hover:bg-rose-900 text-white px-5 py-2 text-sm font-medium transition btn-shimmer active:scale-95">
             BOOK NOW
           </a>
         </div>
@@ -252,7 +252,7 @@ export default function Home() {
               {bioText || "Las Vegas based nail artist specializing in custom designs"}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a href="#booking" className="bg-rose-800 hover:bg-rose-900 text-white px-10 py-3 font-medium transition text-sm tracking-wide">
+              <a href="#booking" className="bg-rose-800 hover:bg-rose-900 text-white px-10 py-3 font-medium transition text-sm tracking-wide btn-shimmer active:scale-95">
                 BOOK AN APPOINTMENT
               </a>
               <a
@@ -494,7 +494,7 @@ export default function Home() {
                   <span className="text-sm text-stone-700">I understand a <strong>$20 non-refundable deposit</strong> is required to confirm my booking.</span>
                 </label>
                 <button type="submit" disabled={isSubmitting}
-                  className={`w-full py-4 font-medium text-sm tracking-wide transition ${isSubmitting ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white"}`}>
+                  className={`w-full py-4 font-medium text-sm tracking-wide transition active:scale-95 ${isSubmitting ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white btn-shimmer"}`}>
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
@@ -534,30 +534,65 @@ export default function Home() {
         <section id="contact" className="py-14 border-b border-stone-200">
           <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Contact Details</h3>
           <div className="grid sm:grid-cols-3 gap-6">
+            {/* Hours */}
             <div className="bg-white border border-stone-200 p-6 card-lift">
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Hours</p>
-              <div className="space-y-1 text-sm text-stone-900">
-                <p><span className="font-medium">Mon:</span> 2:00PM – 8:00PM</p>
-                <p><span className="font-medium">Tue:</span> 8:00AM – 4:00PM</p>
-                <p><span className="font-medium">Thu – Sat:</span> 8:00AM – 4:00PM</p>
-                <p className="text-rose-700 font-medium mt-2">Wed / Sun: Closed</p>
+              <div className="flex items-center gap-2 mb-4">
+                <svg className="w-4 h-4 text-rose-800 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Hours</p>
+              </div>
+              <div className="space-y-1.5 text-sm text-stone-700">
+                <p><span className="font-semibold text-stone-900">Mon</span> · 2:00PM – 8:00PM</p>
+                <p><span className="font-semibold text-stone-900">Tue</span> · 8:00AM – 4:00PM</p>
+                <p><span className="font-semibold text-stone-900">Thu – Sat</span> · 8:00AM – 4:00PM</p>
+                <p className="text-rose-800 font-medium pt-1">Wed / Sun — Closed</p>
               </div>
             </div>
+            {/* Contact */}
             <div className="bg-white border border-stone-200 p-6 card-lift">
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Contact</p>
-              <div className="space-y-2 text-sm text-stone-900">
-                <p>(702) 981-8428</p>
-                <p>myasnailsbaby@gmail.com</p>
-                <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="block hover:text-rose-800 transition">@myasnailsbaby</a>
+              <div className="flex items-center gap-2 mb-4">
+                <svg className="w-4 h-4 text-rose-800 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path d="M2.25 6.338c0-1.01.993-1.761 1.965-1.455l11.197 3.527a1.5 1.5 0 0 1 0 2.855L4.215 14.792C3.243 15.098 2.25 14.347 2.25 13.338V6.338z"/><path d="M2.25 12h19.5"/>
+                </svg>
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Contact</p>
+              </div>
+              <div className="space-y-3 text-sm">
+                <a href="tel:7029818428" className="flex items-center gap-2.5 text-stone-700 hover:text-rose-800 transition contact-icon group">
+                  <svg className="w-3.5 h-3.5 text-stone-400 group-hover:text-rose-800 transition flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.338c0 10.43 8.476 18.9 18.9 18.9.945 0 1.85-.693 1.85-1.64V16.81a1.5 1.5 0 0 0-1.195-1.47l-4.434-.883a1.5 1.5 0 0 0-1.537.677l-.93 1.544a.375.375 0 0 1-.437.163 13.526 13.526 0 0 1-7.516-7.516.375.375 0 0 1 .164-.437l1.544-.93a1.5 1.5 0 0 0 .678-1.537l-.883-4.434A1.5 1.5 0 0 0 7.63 2.25H3.977c-.946 0-1.728.846-1.728 1.838v2.25z"/>
+                  </svg>
+                  (702) 981-8428
+                </a>
+                <a href="mailto:myasnailsbaby@gmail.com" className="flex items-center gap-2.5 text-stone-700 hover:text-rose-800 transition contact-icon group">
+                  <svg className="w-3.5 h-3.5 text-stone-400 group-hover:text-rose-800 transition flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+                  </svg>
+                  myasnailsbaby@gmail.com
+                </a>
+                <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-stone-700 hover:text-rose-800 transition contact-icon group">
+                  <svg className="w-3.5 h-3.5 text-stone-400 group-hover:text-rose-800 transition flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 1.5h8.5A5.25 5.25 0 0 1 21.5 8.75v6.5A5.25 5.25 0 0 1 16.25 20.5h-8.5A5.25 5.25 0 0 1 2.5 15.25v-6.5A5.25 5.25 0 0 1 7.75 3.5zM12 7.25A4.75 4.75 0 1 0 16.75 12 4.75 4.75 0 0 0 12 7.25zM12 8.75a3.25 3.25 0 1 1-3.25 3.25A3.25 3.25 0 0 1 12 8.75zm5.75-.5a1.25 1.25 0 1 1-1.25-1.25 1.25 1.25 0 0 1 1.25 1.25z"/>
+                  </svg>
+                  @myasnailsbaby
+                </a>
               </div>
             </div>
+            {/* Location */}
             <div className="bg-white border border-stone-200 p-6 card-lift">
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Location</p>
-              <p className="text-sm text-stone-900 leading-relaxed">
-                2080 E. Flamingo Rd.<br />
-                Suite #106 Room 4<br />
-                Las Vegas, NV
-              </p>
+              <div className="flex items-center gap-2 mb-4">
+                <svg className="w-4 h-4 text-rose-800 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/>
+                </svg>
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Location</p>
+              </div>
+              <a href="https://maps.google.com/?q=2080+E+Flamingo+Rd+Las+Vegas+NV" target="_blank" rel="noopener noreferrer"
+                className="flex items-start gap-2.5 text-stone-700 hover:text-rose-800 transition contact-icon group text-sm">
+                <svg className="w-3.5 h-3.5 text-stone-400 group-hover:text-rose-800 transition flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/>
+                </svg>
+                <span className="leading-relaxed">2080 E. Flamingo Rd.<br />Suite #106 Room 4<br />Las Vegas, NV</span>
+              </a>
             </div>
           </div>
         </section>
@@ -581,7 +616,7 @@ export default function Home() {
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
 
-        /* Section heading accent underline */
+        /* Rose-gold accent line under section headings */
         .section-title-accent {
           position: relative;
           display: inline-block;
@@ -589,12 +624,20 @@ export default function Home() {
         .section-title-accent::after {
           content: '';
           position: absolute;
-          bottom: -6px;
+          bottom: -10px;
           left: 50%;
           transform: translateX(-50%);
-          width: 48px;
-          height: 2px;
-          background: #9f1239;
+          width: 72px;
+          height: 1.5px;
+          background: linear-gradient(90deg, transparent, #9f1239, #c9848c, #e8b4b8, #c9848c, #9f1239, transparent);
+        }
+
+        /* Standalone rose-gold divider line */
+        .rg-divider {
+          height: 1px;
+          background: linear-gradient(90deg, transparent 0%, #c9848c 30%, #e8b4b8 50%, #c9848c 70%, transparent 100%);
+          margin: 0;
+          opacity: 0.6;
         }
 
         /* Card hover lift */
@@ -602,17 +645,79 @@ export default function Home() {
           transition: box-shadow 0.2s ease, transform 0.2s ease;
         }
         .card-lift:hover {
-          box-shadow: 0 8px 24px rgba(0,0,0,0.09);
-          transform: translateY(-2px);
+          box-shadow: 0 8px 28px rgba(0,0,0,0.10), 0 2px 6px rgba(185,104,121,0.08);
+          transform: translateY(-3px);
         }
 
-        /* Policy card accent on hover */
+        /* Policy card — rose-gold lift + gradient top accent on hover */
         .policy-card {
-          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          position: relative;
+          transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+          overflow: hidden;
+        }
+        .policy-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #9f1239, #c9848c, #e8b4b8, #c9848c, #9f1239, transparent);
+          opacity: 0;
+          transition: opacity 0.25s ease;
+        }
+        .policy-card:hover::before {
+          opacity: 1;
         }
         .policy-card:hover {
-          border-color: #9f1239;
-          box-shadow: 0 4px 16px rgba(159,18,57,0.08);
+          border-color: #c9848c;
+          box-shadow: 0 10px 32px rgba(201,132,140,0.22), 0 2px 8px rgba(159,18,57,0.10);
+          transform: translateY(-5px);
+        }
+
+        /* Button shimmer on hover */
+        .btn-shimmer {
+          position: relative;
+          overflow: hidden;
+        }
+        .btn-shimmer::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 60%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+          transition: left 0.4s ease;
+        }
+        .btn-shimmer:hover::after {
+          left: 150%;
+        }
+
+        /* Nav link underline slide */
+        .nav-slide {
+          position: relative;
+        }
+        .nav-slide::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 0;
+          height: 1px;
+          background: #c9848c;
+          transition: width 0.2s ease;
+        }
+        .nav-slide:hover::after {
+          width: 100%;
+        }
+
+        /* Icon hover in contact cards */
+        .contact-icon {
+          transition: color 0.2s ease;
+        }
+        .contact-icon:hover {
+          color: #9f1239 !important;
         }
         .calendar-wrapper .react-calendar {
           border: none !important;

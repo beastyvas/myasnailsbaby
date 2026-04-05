@@ -25,17 +25,6 @@ function to12h(time24) {
   return `${hour12}:${minuteStr}${suffix}`;
 }
 
-// Helper: Format date
-function formatDate(dateStr) {
-  const date = new Date(dateStr + "T00:00:00");
-  return date.toLocaleDateString("en-US", { 
-    month: "numeric",
-    day: "numeric",
-    year: "2-digit"
-  });
-}
-
-// Helper: Format date for email (long form)
 function formatDateLong(dateStr) {
   const date = new Date(dateStr + "T00:00:00");
   return date.toLocaleDateString("en-US", { 
@@ -182,66 +171,64 @@ export default async function handler(req, res) {
           to: [booking.email],
           subject: "Appointment Rescheduled 💅",
           html: `
-            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid #f0e6f0;">
+            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fafaf9; border: 1px solid #e7e5e4;">
               <!-- Header -->
-              <div style="background: linear-gradient(135deg, #e91e8c, #f06292); padding: 36px 32px; text-align: center;">
-                <h1 style="color: #fff; margin: 0; font-size: 26px; letter-spacing: 1px;">Mya's Nails Baby 💅</h1>
-                <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">@myasnailsbaby</p>
+              <div style="background: #1c1917; padding: 32px; text-align: center;">
+                <p style="color: #c9848c; margin: 0 0 6px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">MyasNailsBaby</p>
+                <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: normal; letter-spacing: 1px;">Appointment Rescheduled</h1>
+                <div style="width: 48px; height: 1px; background: linear-gradient(90deg, transparent, #c9848c, #e8b4b8, #c9848c, transparent); margin: 16px auto 0;"></div>
               </div>
 
               <!-- Body -->
-              <div style="padding: 32px;">
-                <h2 style="color: #c2185b; margin: 0 0 8px;">Your Appointment Has Been Rescheduled! 📅</h2>
-                <p style="color: #555; margin: 0 0 24px; font-size: 15px;">Hey ${booking.name}! Your appointment has been successfully rescheduled:</p>
+              <div style="padding: 32px; background: #ffffff;">
+                <p style="color: #57534e; margin: 0 0 6px; font-size: 14px;">Hi ${booking.name},</p>
+                <p style="color: #1c1917; margin: 0 0 28px; font-size: 15px;">Your appointment has been successfully rescheduled.</p>
 
                 <!-- Old vs New -->
-                <div style="background: #fff8e1; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;">
-                  <div style="margin-bottom: 16px;">
-                    <p style="margin: 0; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Previous</p>
-                    <p style="margin: 4px 0 0; color: #666; font-size: 14px; text-decoration: line-through;">
-                      ${formatDateLong(oldDate)} at ${to12h(oldTime)}
-                    </p>
+                <div style="border: 1px solid #e7e5e4; padding: 20px 24px; margin-bottom: 24px; background: #fafaf9;">
+                  <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e7e5e4;">
+                    <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Previous</p>
+                    <p style="margin: 0; color: #a8a29e; font-size: 13px; text-decoration: line-through;">${formatDateLong(oldDate)} at ${to12h(oldTime)}</p>
                   </div>
                   <div>
-                    <p style="margin: 0; color: #c2185b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">New Appointment</p>
-                    <p style="margin: 4px 0 0; color: #333; font-size: 16px; font-weight: bold;">
-                      ${formatDateLong(new_date)} at ${to12h(new_time)}
-                    </p>
+                    <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #9f1239; text-transform: uppercase; letter-spacing: 2px;">New Appointment</p>
+                    <p style="margin: 0; color: #1c1917; font-size: 15px; font-weight: bold;">${formatDateLong(new_date)} at ${to12h(new_time)}</p>
                   </div>
                 </div>
 
                 <!-- Service Details -->
-                <div style="background: #fdf2f8; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;">
+                <div style="border: 1px solid #e7e5e4; padding: 20px 24px; margin-bottom: 24px; background: #fafaf9;">
+                  <p style="margin: 0 0 14px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Service</p>
                   <table style="width: 100%; border-collapse: collapse;">
                     <tr>
-                      <td style="padding: 8px 0; color: #999; font-size: 13px;">💅 Service</td>
-                      <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 14px; text-align: right;">${booking.service}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? " + " + booking.pedicure_type : ""}</td>
+                      <td style="padding: 6px 0; color: #a8a29e; font-size: 12px; border-bottom: 1px solid #f5f5f4;">Service</td>
+                      <td style="padding: 6px 0; color: #1c1917; font-weight: bold; font-size: 13px; text-align: right; border-bottom: 1px solid #f5f5f4;">${booking.service}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? " + " + booking.pedicure_type : ""}</td>
                     </tr>
                     <tr>
-                      <td style="padding: 8px 0; color: #999; font-size: 13px;">💰 Deposit</td>
-                      <td style="padding: 8px 0; color: #333; font-weight: bold; font-size: 14px; text-align: right;">$20 ✅ Paid</td>
+                      <td style="padding: 6px 0; color: #a8a29e; font-size: 12px;">Deposit</td>
+                      <td style="padding: 6px 0; color: #9f1239; font-weight: bold; font-size: 13px; text-align: right;">$20 Paid</td>
                     </tr>
                   </table>
                 </div>
 
                 <!-- Location -->
-                <div style="background: #fff8e1; border-left: 4px solid #f06292; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
-                  <p style="margin: 0; color: #555; font-size: 14px;"><strong style="color: #c2185b;">📍 Location</strong><br>
-                  2080 E. Flamingo Rd., Suite #106, Room 4<br>Las Vegas, NV</p>
+                <div style="border-left: 3px solid #9f1239; padding: 14px 18px; margin-bottom: 28px; background: #fafaf9;">
+                  <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Location</p>
+                  <p style="margin: 0; color: #44403c; font-size: 13px; line-height: 1.6;">2080 E. Flamingo Rd., Suite #106, Room 4<br>Las Vegas, NV 89119</p>
                 </div>
 
                 <!-- CTA -->
-                <div style="text-align: center; margin-bottom: 24px;">
+                <div style="text-align: center;">
                   <a href="https://instagram.com/myasnailsbaby"
-                     style="display: inline-block; background: linear-gradient(135deg, #e91e8c, #f06292); color: #fff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 15px;">
-                    DM @myasnailsbaby 💬
+                     style="display: inline-block; background: #9f1239; color: #fff; padding: 14px 36px; text-decoration: none; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">
+                    DM @myasnailsbaby
                   </a>
                 </div>
               </div>
 
               <!-- Footer -->
-              <div style="background: #fdf2f8; padding: 20px 32px; text-align: center; border-top: 1px solid #f0e6f0;">
-                <p style="margin: 0; color: #bbb; font-size: 12px;">Mya's Nails Baby · Las Vegas, NV · @myasnailsbaby</p>
+              <div style="background: #1c1917; padding: 20px 32px; text-align: center;">
+                <p style="margin: 0; color: #78716c; font-size: 11px; letter-spacing: 1px;">MYASNAILSBABY &middot; LAS VEGAS, NV &middot; @MYASNAILSBABY</p>
               </div>
             </div>
           `,
@@ -261,16 +248,31 @@ export default async function handler(req, res) {
           to: [myaEmail],
           subject: `📅 Reschedule: ${booking.name}`,
           html: `
-            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto;">
-              <h2 style="color: #c2185b;">A client rescheduled their appointment</h2>
-              <p><strong>Client:</strong> ${booking.name}</p>
-              <p><strong>Phone:</strong> ${booking.phone}</p>
-              ${booking.email ? `<p><strong>Email:</strong> ${booking.email}</p>` : ""}
-              <p><strong>Service:</strong> ${booking.service}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? " + " + booking.pedicure_type : ""}</p>
-              <hr style="border: 1px solid #f0e6f0; margin: 16px 0;" />
-              <p><strong>Old:</strong> ${formatDateLong(oldDate)} at ${to12h(oldTime)}</p>
-              <p><strong>New:</strong> ${formatDateLong(new_date)} at ${to12h(new_time)}</p>
-              <p style="color: #999; font-size: 12px;">Reschedule #${(booking.reschedule_count || 0) + 1} of 2</p>
+            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fafaf9; border: 1px solid #e7e5e4;">
+              <div style="background: #1c1917; padding: 24px 32px;">
+                <p style="color: #c9848c; margin: 0 0 4px; font-size: 10px; letter-spacing: 3px; text-transform: uppercase;">Dashboard Alert</p>
+                <h2 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: normal;">Client Rescheduled</h2>
+              </div>
+              <div style="padding: 28px 32px; background: #ffffff;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                  ${[
+                    ["Client", booking.name],
+                    ["Phone", booking.phone],
+                    ...(booking.email ? [["Email", booking.email]] : []),
+                    ["Service", `${booking.service}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? " + " + booking.pedicure_type : ""}`],
+                  ].map(([k, v]) => `
+                    <tr>
+                      <td style="padding: 7px 0; color: #a8a29e; font-size: 12px; width: 30%; border-bottom: 1px solid #f5f5f4;">${k}</td>
+                      <td style="padding: 7px 0; color: #1c1917; font-size: 13px; font-weight: bold; border-bottom: 1px solid #f5f5f4;">${v}</td>
+                    </tr>`).join("")}
+                </table>
+                <div style="border-left: 3px solid #9f1239; padding: 14px 18px; background: #fafaf9; margin-bottom: 16px;">
+                  <p style="margin: 0 0 8px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Schedule Change</p>
+                  <p style="margin: 0 0 4px; color: #a8a29e; font-size: 12px; text-decoration: line-through;">Was: ${formatDateLong(oldDate)} at ${to12h(oldTime)}</p>
+                  <p style="margin: 0; color: #1c1917; font-size: 14px; font-weight: bold;">Now: ${formatDateLong(new_date)} at ${to12h(new_time)}</p>
+                </div>
+                <p style="margin: 0; color: #a8a29e; font-size: 11px;">Reschedule ${(booking.reschedule_count || 0) + 1} of 2</p>
+              </div>
             </div>
           `,
         });
