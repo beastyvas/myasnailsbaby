@@ -532,7 +532,7 @@ export default function Home() {
         {/* ── TAG ME ── */}
         <section className="py-14 text-center border-b border-stone-200">
           <p className="text-stone-500 text-sm uppercase tracking-widest mb-2">Thank you for booking with me</p>
-          <h3 className="text-5xl text-stone-900 mb-3" style={scriptHeading}>Tag me in your nailfies</h3>
+          <h3 className="text-5xl text-stone-900 mb-3" style={scriptHeading}>Tag me in your nailfies!</h3>
           <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
             className="inline-block border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-6 py-2 text-sm font-medium transition mt-2">
             @myasnailsbaby
