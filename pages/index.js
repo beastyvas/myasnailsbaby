@@ -232,19 +232,28 @@ export default function Home() {
         {/* ── HERO ── */}
         <section className="py-16 text-center border-b border-stone-200">
           <div className="max-w-2xl mx-auto">
-            {profilePicUrl ? (
-              <img
-                src={`https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicUrl}`}
-                alt="Mya - Las Vegas Nail Artist"
-                className="w-40 h-40 object-cover rounded-full mx-auto mb-8 border-4 border-white shadow-xl"
-              />
-            ) : (
-              <img
-                src="/images/mya.png"
-                alt="Mya - Las Vegas Nail Artist"
-                className="w-40 h-40 object-cover rounded-full mx-auto mb-8 border-4 border-white shadow-xl"
-              />
-            )}
+            {/* Rose-gold gradient ring frame */}
+            <div
+              className="mx-auto mb-8"
+              style={{
+                width: "fit-content",
+                background: "linear-gradient(135deg, #9f1239 0%, #c9848c 35%, #e8b4b8 50%, #c9848c 65%, #9f1239 100%)",
+                padding: "3px",
+                borderRadius: "50%",
+                boxShadow: "0 8px 32px rgba(159,18,57,0.20), 0 2px 8px rgba(201,132,140,0.30)",
+              }}
+            >
+              <div style={{ background: "#fff", borderRadius: "50%", padding: "3px" }}>
+                <img
+                  src={profilePicUrl
+                    ? `https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicUrl}`
+                    : "/images/mya.png"}
+                  alt="Mya - Las Vegas Nail Artist"
+                  className="w-44 h-44 sm:w-52 sm:h-52 object-cover block"
+                  style={{ borderRadius: "50%" }}
+                />
+              </div>
+            </div>
             <h2 className="text-6xl sm:text-7xl text-stone-900 mb-4" style={scriptHeading}>
               Your Nail Artist
             </h2>
