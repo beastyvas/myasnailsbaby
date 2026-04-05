@@ -24,15 +24,6 @@ export default function ReschedulePage() {
   const [timeOptions, setTimeOptions] = useState([]);
   const [selectedTime, setSelectedTime] = useState("");
 
-  // Helper: Format phone for display
-  const formatPhoneDisplay = (num) => {
-    const cleaned = num.replace(/\D/g, "");
-    if (cleaned.length === 10) {
-      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    }
-    return num;
-  };
-
   // Helper: Format time to 12hr
   const to12h = (time24) => {
     if (!time24) return "";
@@ -41,17 +32,6 @@ export default function ReschedulePage() {
     const suffix = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 === 0 ? 12 : hour % 12;
     return `${hour12}:${minuteStr}${suffix}`;
-  };
-
-  // Helper: Format date
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr + "T00:00:00");
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
   };
 
   const formatDateShort = (dateStr) => {
@@ -260,155 +240,113 @@ export default function ReschedulePage() {
     }
   };
 
+  const inputCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 placeholder-stone-400 bg-white";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 py-12 px-4">
+    <main className="min-h-screen bg-stone-50">
       <Toaster position="top-center" />
 
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-2">
-            Mya's Nails Baby 💅
-          </h1>
-          <p className="text-gray-600">Reschedule Your Appointment</p>
+      {/* Header */}
+      <header className="bg-white border-b border-stone-200">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold text-stone-900" style={{ fontFamily: "Georgia, serif" }}>MyasNailsBaby</Link>
+          <Link href="/" className="text-sm text-stone-500 hover:text-stone-900 transition">← Back to Home</Link>
+        </div>
+      </header>
+
+      <div className="max-w-lg mx-auto px-6 py-12">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-stone-900 mb-1" style={{ fontFamily: "Georgia, serif" }}>Reschedule</h1>
+          <p className="text-stone-500 text-sm">Update your appointment date or time</p>
         </div>
 
         {/* STEP 1: Phone Lookup */}
         {step === 1 && (
-          <div className="bg-white rounded-2xl shadow-xl p-8 border-4 border-pink-200">
-            <h2 className="text-2xl font-bold text-pink-700 mb-4">
-              Find Your Booking
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Enter the phone number you used when booking:
-            </p>
-
-            <form onSubmit={handleLookup}>
+          <div className="bg-white border border-stone-200 p-8">
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-6">Find Your Booking</h2>
+            <p className="text-stone-700 text-sm mb-6">Enter the phone number you used when booking:</p>
+            <form onSubmit={handleLookup} className="space-y-4">
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="(702) 555-1234"
-                className="w-full px-4 py-3 border-2 border-pink-200 rounded-xl focus:border-pink-500 focus:outline-none text-lg mb-4"
+                placeholder="7021234567"
+                className={inputCls}
                 required
               />
-
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-4 rounded-xl hover:from-pink-600 hover:to-rose-600 transition disabled:opacity-50"
+                className={`w-full py-3 font-medium text-sm tracking-wide transition ${loading ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white"}`}
               >
-                {loading ? "Searching..." : "Find My Booking"}
+                {loading ? "Searching..." : "FIND MY BOOKING"}
               </button>
             </form>
-
-            <div className="mt-6 text-center">
-              <Link href="/" className="text-pink-600 hover:underline text-sm">
-                ← Back to Booking Page
-              </Link>
-            </div>
           </div>
         )}
 
         {/* STEP 2: Show Current Booking */}
         {step === 2 && booking && (
-          <div className="bg-white rounded-2xl shadow-xl p-8 border-4 border-pink-200">
-            <h2 className="text-2xl font-bold text-pink-700 mb-6">
-              📅 Current Appointment
-            </h2>
+          <div className="bg-white border border-stone-200 p-8 space-y-6">
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Current Appointment</h2>
 
-            <div className="bg-pink-50 rounded-xl p-6 mb-6">
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 font-medium">Name:</span>
-                  <span className="font-bold text-gray-900">{booking.name}</span>
+            <div className="space-y-3">
+              {[
+                ["Name", booking.name],
+                ["Service", `${booking.service}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? ` + ${booking.pedicure_type}` : ""}`],
+                ["Date", formatDateShort(booking.date)],
+                ["Time", to12h(booking.start_time)],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between items-center py-2 border-b border-stone-100">
+                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{label}</span>
+                  <span className="font-medium text-stone-900 text-sm">{value}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 font-medium">Service:</span>
-                  <span className="font-bold text-gray-900">
-                    {booking.service}
-                    {booking.pedicure_type && booking.pedicure_type !== "N/A"
-                      ? ` + ${booking.pedicure_type}`
-                      : ""}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 font-medium">Date:</span>
-                  <span className="font-bold text-gray-900">
-                    {formatDateShort(booking.date)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 font-medium">Time:</span>
-                  <span className="font-bold text-gray-900">
-                    {to12h(booking.start_time)}
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
 
-            {/* Can reschedule? */}
             {booking.can_reschedule ? (
               <>
-                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6">
-                  <p className="text-green-800 text-sm">
-                    ✅ You can reschedule this appointment
-                    <br />
-                    <span className="text-xs text-green-600">
-                      ({booking.hours_until} hours until appointment)
-                    </span>
+                <div className="bg-stone-50 border border-stone-200 p-4">
+                  <p className="text-stone-700 text-sm">
+                    You can reschedule this appointment.
+                    {booking.reschedule_count > 0 && (
+                      <span className="block text-stone-500 text-xs mt-1">
+                        Rescheduled {booking.reschedule_count} time(s) — {2 - booking.reschedule_count} remaining.
+                      </span>
+                    )}
                   </p>
                 </div>
-
-                {booking.reschedule_count > 0 && (
-                  <p className="text-sm text-gray-500 mb-4">
-                    You've rescheduled {booking.reschedule_count} time(s). Max 2
-                    allowed.
-                  </p>
-                )}
-
                 <button
                   onClick={handleStartReschedule}
-                  className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-4 rounded-xl hover:from-pink-600 hover:to-rose-600 transition"
+                  className="w-full bg-rose-800 hover:bg-rose-900 text-white py-3 font-medium text-sm tracking-wide transition"
                 >
-                  Choose New Date/Time
+                  CHOOSE NEW DATE & TIME
                 </button>
               </>
             ) : (
-              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
-                <h3 className="font-bold text-yellow-800 mb-2">
-                  ⚠️ Cannot Reschedule Online
-                </h3>
-                <p className="text-yellow-700 text-sm mb-4">
+              <div className="bg-stone-50 border border-stone-200 p-6">
+                <h3 className="font-semibold text-stone-900 mb-2 text-sm">Cannot Reschedule Online</h3>
+                <p className="text-stone-700 text-sm mb-4">
                   {(booking.reschedule_count || 0) >= 2
-                    ? "You've reached the maximum of 2 reschedules."
-                    : "Your appointment is in less than 48 hours. You can no longer reschedule online."}
+                    ? "You've reached the maximum of 2 reschedules for this booking."
+                    : "Your appointment is less than 48 hours away. Online rescheduling is no longer available."}
                 </p>
-                <p className="text-yellow-700 text-sm font-medium">
+                <p className="text-stone-700 text-sm">
                   Please DM{" "}
-                  <a
-                    href="https://instagram.com/myasnailsbaby"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline"
-                  >
+                  <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-rose-800 hover:underline font-medium">
                     @myasnailsbaby
                   </a>{" "}
-                  on Instagram
+                  on Instagram or call (702) 981-8428.
                 </p>
               </div>
             )}
 
-            <div className="mt-6 text-center">
+            <div className="text-center">
               <button
-                onClick={() => {
-                  setStep(1);
-                  setBooking(null);
-                  setPhone("");
-                }}
-                className="text-pink-600 hover:underline text-sm"
+                onClick={() => { setStep(1); setBooking(null); setPhone(""); }}
+                className="text-sm text-stone-500 hover:text-stone-900 transition"
               >
-                ← Search Different Phone Number
+                ← Search different number
               </button>
             </div>
           </div>
@@ -416,56 +354,52 @@ export default function ReschedulePage() {
 
         {/* STEP 3: Pick New Date/Time */}
         {step === 3 && booking && (
-          <div className="bg-white rounded-2xl shadow-xl p-8 border-4 border-pink-200">
-            <h2 className="text-2xl font-bold text-pink-700 mb-6">
-              Choose New Appointment
-            </h2>
+          <div className="bg-white border border-stone-200 p-8 space-y-6">
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Choose New Appointment</h2>
 
-            {/* Calendar */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Select New Date:
-              </label>
-              <Calendar
-                onChange={(date) => {
-                  // Store as YYYY-MM-DD string to avoid timezone/type issues
-                  const y = date.getFullYear();
-                  const m = String(date.getMonth() + 1).padStart(2, "0");
-                  const d = String(date.getDate()).padStart(2, "0");
-                  setSelectedDate(`${y}-${m}-${d}`);
-                }}
-                value={selectedDate ? new Date(selectedDate + "T00:00:00") : null}
-                tileDisabled={({ date }) => {
-                  const dateStr = date.toISOString().split("T")[0];
-                  return !availableDates.includes(dateStr);
-                }}
-                className="mx-auto border-2 border-pink-200 rounded-xl overflow-hidden"
-              />
+            <div>
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Select Date</p>
+              <div className="calendar-wrapper border border-stone-200 p-4">
+                <Calendar
+                  onChange={(date) => {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, "0");
+                    const d = String(date.getDate()).padStart(2, "0");
+                    setSelectedDate(`${y}-${m}-${d}`);
+                  }}
+                  value={selectedDate ? new Date(selectedDate + "T00:00:00") : null}
+                  tileDisabled={({ date }) => {
+                    const dateStr = date.toISOString().split("T")[0];
+                    return !availableDates.includes(dateStr);
+                  }}
+                  tileClassName={({ date }) => {
+                    const iso = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+                    return selectedDate === iso ? "selected-date-clean" : availableDates.includes(iso) ? "available-date-clean" : null;
+                  }}
+                  calendarType="US"
+                  className="w-full"
+                />
+              </div>
             </div>
 
-            {/* Time Options */}
             {selectedDate && (
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Select New Time:
-                </label>
+              <div>
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Select Time</p>
                 {timeOptions.length === 0 ? (
-                  <p className="text-gray-500 text-sm">
-                    No available times for this date
-                  </p>
+                  <p className="text-stone-500 text-sm">No available times for this date.</p>
                 ) : (
-                  <div className="grid grid-cols-3 gap-3">
-                    {timeOptions.map((time) => (
+                  <div className="grid grid-cols-3 gap-2">
+                    {timeOptions.map((t) => (
                       <button
-                        key={time}
-                        onClick={() => setSelectedTime(time)}
-                        className={`py-3 px-4 rounded-lg border-2 font-semibold transition ${
-                          selectedTime === time
-                            ? "bg-pink-500 text-white border-pink-500"
-                            : "bg-white text-gray-700 border-gray-300 hover:border-pink-300"
+                        key={t}
+                        onClick={() => setSelectedTime(t)}
+                        className={`py-3 px-4 border text-sm font-medium transition ${
+                          selectedTime === t
+                            ? "bg-stone-900 text-white border-stone-900"
+                            : "bg-white text-stone-700 border-stone-300 hover:border-stone-900"
                         }`}
                       >
-                        {to12h(time)}
+                        {to12h(t)}
                       </button>
                     ))}
                   </div>
@@ -473,21 +407,17 @@ export default function ReschedulePage() {
               </div>
             )}
 
-            {/* Confirm Button */}
             <button
               onClick={handleConfirmReschedule}
               disabled={!selectedDate || !selectedTime || loading}
-              className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-4 rounded-xl hover:from-pink-600 hover:to-rose-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full py-3 font-medium text-sm tracking-wide transition ${!selectedDate || !selectedTime || loading ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white"}`}
             >
-              {loading ? "Rescheduling..." : "Confirm Reschedule"}
+              {loading ? "Rescheduling..." : "CONFIRM RESCHEDULE"}
             </button>
 
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => setStep(2)}
-                className="text-pink-600 hover:underline text-sm"
-              >
-                ← Back to Booking Details
+            <div className="text-center">
+              <button onClick={() => setStep(2)} className="text-sm text-stone-500 hover:text-stone-900 transition">
+                ← Back to booking details
               </button>
             </div>
           </div>
@@ -495,78 +425,109 @@ export default function ReschedulePage() {
 
         {/* STEP 4: Confirmation */}
         {step === 4 && booking && (
-          <div className="bg-white rounded-2xl shadow-xl p-8 border-4 border-pink-200">
-            <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-12 h-12 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
+          <div className="bg-white border border-stone-200 p-8 space-y-6">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-stone-900 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-3xl font-bold text-green-600 mb-2">
-                Rescheduled! 🎉
-              </h2>
-              <p className="text-gray-600">
-                Your appointment has been successfully rescheduled
-              </p>
+              <h2 className="text-2xl font-bold text-stone-900 mb-1" style={{ fontFamily: "Georgia, serif" }}>Appointment Rescheduled</h2>
+              <p className="text-stone-500 text-sm">Your new appointment is confirmed</p>
             </div>
 
-            <div className="bg-pink-50 rounded-xl p-6 mb-6">
-              <h3 className="font-bold text-pink-700 mb-4">New Appointment:</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Date:</span>
-                  <span className="font-bold text-gray-900">
-                    {formatDateShort(booking.date)}
-                  </span>
+            <div className="space-y-3">
+              {[
+                ["New Date", formatDateShort(booking.date)],
+                ["New Time", to12h(booking.start_time)],
+              ].map(([label, value]) => (
+                <div key={label} className="bg-stone-50 border border-stone-200 p-4 flex justify-between items-center">
+                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{label}</span>
+                  <span className="font-medium text-stone-900 text-sm">{value}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Time:</span>
-                  <span className="font-bold text-gray-900">
-                    {to12h(booking.start_time)}
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
 
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
-              <p className="text-blue-800 text-sm">
-                📧 A confirmation email has been sent to your email
-                {booking.email && `: ${booking.email}`}
-                <br />
-                📱 You'll also receive an SMS confirmation shortly
-              </p>
+            <div className="bg-stone-50 border border-stone-200 p-4 text-sm text-stone-700 space-y-1">
+              <p>A confirmation SMS has been sent to your phone.</p>
+              {booking.email && <p>Confirmation email sent to {booking.email}.</p>}
             </div>
 
-            <div className="text-center space-y-4">
-              <Link
-                href="/"
-                className="block w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-4 rounded-xl hover:from-pink-600 hover:to-rose-600 transition"
-              >
-                Back to Home
-              </Link>
+            <Link href="/" className="block w-full bg-rose-800 hover:bg-rose-900 text-white py-3 font-medium text-sm tracking-wide transition text-center">
+              BACK TO HOME
+            </Link>
 
-              <a
-                href="https://instagram.com/myasnailsbaby"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-pink-600 hover:underline text-sm"
-              >
+            <div className="text-center">
+              <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-sm text-stone-500 hover:text-stone-900 transition">
                 DM @myasnailsbaby with questions
               </a>
             </div>
           </div>
         )}
       </div>
-    </div>
+
+      <style jsx global>{`
+        .calendar-wrapper .react-calendar {
+          border: none !important;
+          font-family: inherit;
+          width: 100%;
+        }
+        .calendar-wrapper .react-calendar__tile {
+          border: 1px solid #e7e5e4 !important;
+          background: white !important;
+          padding: 12px !important;
+          transition: all 0.15s !important;
+          font-size: 13px;
+          color: #57534e;
+        }
+        .calendar-wrapper .react-calendar__tile:hover:enabled {
+          background: #fafaf9 !important;
+          border-color: #78716c !important;
+        }
+        .calendar-wrapper .react-calendar__tile--now {
+          background: #fafaf9 !important;
+          font-weight: 600 !important;
+        }
+        .calendar-wrapper .available-date-clean {
+          background: white !important;
+          color: #1c1917 !important;
+          font-weight: 700 !important;
+          border-color: #78716c !important;
+        }
+        .calendar-wrapper .selected-date-clean {
+          background: #9f1239 !important;
+          color: white !important;
+          font-weight: 700 !important;
+          border-color: #9f1239 !important;
+        }
+        .calendar-wrapper .react-calendar__tile:disabled {
+          background: #fafaf9 !important;
+          color: #d6d3d1 !important;
+          border-color: #f5f5f4 !important;
+          cursor: default !important;
+        }
+        .calendar-wrapper .react-calendar__navigation {
+          background: transparent !important;
+          margin-bottom: 10px !important;
+        }
+        .calendar-wrapper .react-calendar__navigation button {
+          color: #1c1917 !important;
+          font-weight: 600 !important;
+          font-size: 14px;
+        }
+        .calendar-wrapper .react-calendar__navigation button:hover {
+          background: #fafaf9 !important;
+        }
+        .calendar-wrapper .react-calendar__month-view__weekdays {
+          font-weight: 600 !important;
+          color: #78716c !important;
+          font-size: 11px;
+          text-transform: uppercase;
+        }
+        .calendar-wrapper .react-calendar__month-view__weekdays__weekday abbr {
+          text-decoration: none !important;
+        }
+      `}</style>
+    </main>
   );
 }

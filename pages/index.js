@@ -3,7 +3,6 @@
 import confetti from "canvas-confetti";
 import toast, { Toaster } from "react-hot-toast";
 import { useRef, useEffect, useState } from "react";
-import NailGallery from "@/components/NailGallery";
 import { supabase } from "@/utils/supabaseClient";
 import { loadStripe } from "@stripe/stripe-js";
 import { v4 as uuidv4 } from "uuid";
@@ -198,6 +197,7 @@ export default function Home() {
   const inputCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 placeholder-stone-400 bg-white";
   const selectCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 bg-white";
   const sectionHeading = { fontFamily: "Georgia, serif" };
+  const scriptHeading = { fontFamily: "'Great Vibes', cursive", color: "#1c1917" };
 
   return (
     <main className="min-h-screen bg-stone-50">
@@ -245,8 +245,8 @@ export default function Home() {
                 className="w-40 h-40 object-cover rounded-full mx-auto mb-8 border-4 border-white shadow-xl"
               />
             )}
-            <h2 className="text-5xl sm:text-6xl font-bold text-stone-900 mb-4" style={sectionHeading}>
-              Luxury Nail Artistry
+            <h2 className="text-6xl sm:text-7xl text-stone-900 mb-4" style={scriptHeading}>
+              Your Nail Artist
             </h2>
             <p className="text-lg text-stone-600 mb-8 leading-relaxed">
               {bioText || "Las Vegas based nail artist specializing in custom designs"}
@@ -272,9 +272,9 @@ export default function Home() {
 
         {/* ── CONTACT DETAILS ── */}
         <section id="contact" className="py-14 border-b border-stone-200">
-          <h3 className="text-3xl font-bold text-stone-900 text-center mb-10" style={sectionHeading}>Contact Details</h3>
+          <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Contact Details</h3>
           <div className="grid sm:grid-cols-3 gap-6">
-            <div className="bg-white border border-stone-200 p-6">
+            <div className="bg-white border border-stone-200 p-6 card-lift">
               <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Hours</p>
               <div className="space-y-1 text-sm text-stone-900">
                 <p><span className="font-medium">Mon:</span> 2:00PM – 8:00PM</p>
@@ -302,15 +302,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── PORTFOLIO ── */}
-        <section className="py-14 border-b border-stone-200">
-          <h3 className="text-3xl font-bold text-stone-900 text-center mb-10" style={sectionHeading}>Portfolio</h3>
-          <NailGallery />
-        </section>
-
         {/* ── BOOKING POLICIES ── */}
         <section id="policies" className="py-14 border-b border-stone-200">
-          <h3 className="text-3xl font-bold text-stone-900 text-center mb-10" style={sectionHeading}>Booking Policies</h3>
+          <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Booking Policies</h3>
           <div className="grid sm:grid-cols-2 gap-6 mb-10">
             {[
               {
@@ -350,7 +344,7 @@ export default function Home() {
                 body: "Cancellations must be made at least 48 hours in advance to avoid a cancellation fee.",
               },
             ].map(({ icon, title, body }) => (
-              <div key={title} className="bg-white border border-stone-200 p-6">
+              <div key={title} className="bg-white border border-stone-200 p-6 policy-card card-lift">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-9 h-9 bg-stone-100 flex items-center justify-center flex-shrink-0">
                     {icon}
@@ -363,17 +357,18 @@ export default function Home() {
           </div>
 
           {/* Before Your Appointment */}
-          <div className="bg-white border border-stone-200 p-6">
-            <h4 className="font-semibold text-stone-900 text-sm uppercase tracking-wide mb-4">Before Your Appointment</h4>
-            <div className="grid sm:grid-cols-2 gap-3">
+          <div className="bg-white border-l-4 border-rose-800 shadow-lg p-8" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 1.5px 6px rgba(159,18,57,0.08)" }}>
+            <p className="text-xs font-semibold uppercase tracking-widest text-rose-800 mb-1">Please Read</p>
+            <h4 className="text-2xl font-bold text-stone-900 mb-6" style={{ fontFamily: "Georgia, serif" }}>Before Your Appointment</h4>
+            <div className="grid sm:grid-cols-2 gap-4">
               {[
                 "Avoid picking or cutting cuticles",
                 "Avoid removing or picking at old product",
                 "Avoid lotions, oils, and hand creams",
                 "Avoid soaking nails in water at least 2 hrs before",
               ].map((tip) => (
-                <div key={tip} className="flex items-start gap-2 text-sm text-stone-700">
-                  <span className="text-stone-400 mt-0.5">—</span>
+                <div key={tip} className="flex items-start gap-3 text-sm text-stone-700">
+                  <span className="w-5 h-5 rounded-full bg-rose-800 text-white flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">✕</span>
                   <span>{tip}</span>
                 </div>
               ))}
@@ -384,7 +379,7 @@ export default function Home() {
         {/* ── BOOKING FORM ── */}
         <section id="booking" className="py-14 border-b border-stone-200">
           <div className="max-w-2xl mx-auto">
-            <h3 className="text-3xl font-bold text-stone-900 text-center mb-10" style={sectionHeading}>Book an Appointment</h3>
+            <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Book an Appointment</h3>
 
             <form ref={formRef} onSubmit={handleSubmit} className="bg-white border border-stone-200 p-8 space-y-8">
 
@@ -546,7 +541,7 @@ export default function Home() {
 
         {/* ── LOCATION ── */}
         <section className="py-14 border-b border-stone-200">
-          <h3 className="text-3xl font-bold text-stone-900 text-center mb-4" style={sectionHeading}>Location</h3>
+          <h3 className="text-5xl text-stone-900 text-center mb-6 section-title-accent" style={scriptHeading}>Location</h3>
           <p className="text-center text-stone-600 text-sm mb-8">2080 E. Flamingo Rd. Suite #106 Room 4 · Las Vegas, Nevada</p>
           <div className="border border-stone-200 overflow-hidden">
             <iframe
@@ -560,7 +555,7 @@ export default function Home() {
         {/* ── TAG ME ── */}
         <section className="py-14 text-center border-b border-stone-200">
           <p className="text-stone-500 text-sm uppercase tracking-widest mb-2">Thank you for booking with me</p>
-          <h3 className="text-4xl font-bold text-stone-900 mb-3" style={sectionHeading}>Tag me in your nailfies</h3>
+          <h3 className="text-5xl text-stone-900 mb-3" style={scriptHeading}>Tag me in your nailfies</h3>
           <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
             className="inline-block border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-6 py-2 text-sm font-medium transition mt-2">
             @myasnailsbaby
@@ -584,6 +579,41 @@ export default function Home() {
 
       {/* Calendar Styles */}
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+
+        /* Section heading accent underline */
+        .section-title-accent {
+          position: relative;
+          display: inline-block;
+        }
+        .section-title-accent::after {
+          content: '';
+          position: absolute;
+          bottom: -6px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 48px;
+          height: 2px;
+          background: #9f1239;
+        }
+
+        /* Card hover lift */
+        .card-lift {
+          transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .card-lift:hover {
+          box-shadow: 0 8px 24px rgba(0,0,0,0.09);
+          transform: translateY(-2px);
+        }
+
+        /* Policy card accent on hover */
+        .policy-card {
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .policy-card:hover {
+          border-color: #9f1239;
+          box-shadow: 0 4px 16px rgba(159,18,57,0.08);
+        }
         .calendar-wrapper .react-calendar {
           border: none !important;
           font-family: inherit;
