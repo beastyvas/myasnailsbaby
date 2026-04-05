@@ -270,38 +270,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── CONTACT DETAILS ── */}
-        <section id="contact" className="py-14 border-b border-stone-200">
-          <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Contact Details</h3>
-          <div className="grid sm:grid-cols-3 gap-6">
-            <div className="bg-white border border-stone-200 p-6 card-lift">
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Hours</p>
-              <div className="space-y-1 text-sm text-stone-900">
-                <p><span className="font-medium">Mon:</span> 2:00PM – 8:00PM</p>
-                <p><span className="font-medium">Tue:</span> 8:00AM – 4:00PM</p>
-                <p><span className="font-medium">Thu – Sat:</span> 8:00AM – 4:00PM</p>
-                <p className="text-rose-700 font-medium mt-2">Wed / Sun: Closed</p>
-              </div>
-            </div>
-            <div className="bg-white border border-stone-200 p-6">
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Contact</p>
-              <div className="space-y-2 text-sm text-stone-900">
-                <p>(702) 981-8428</p>
-                <p>myasnailsbaby@gmail.com</p>
-                <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="block hover:text-rose-800 transition">@myasnailsbaby</a>
-              </div>
-            </div>
-            <div className="bg-white border border-stone-200 p-6">
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Location</p>
-              <p className="text-sm text-stone-900 leading-relaxed">
-                2080 E. Flamingo Rd.<br />
-                Suite #106 Room 4<br />
-                Las Vegas, NV
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* ── BOOKING POLICIES ── */}
         <section id="policies" className="py-14 border-b border-stone-200">
           <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Booking Policies</h3>
@@ -560,6 +528,38 @@ export default function Home() {
             className="inline-block border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-6 py-2 text-sm font-medium transition mt-2">
             @myasnailsbaby
           </a>
+        </section>
+
+        {/* ── CONTACT DETAILS ── */}
+        <section id="contact" className="py-14 border-b border-stone-200">
+          <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Contact Details</h3>
+          <div className="grid sm:grid-cols-3 gap-6">
+            <div className="bg-white border border-stone-200 p-6 card-lift">
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Hours</p>
+              <div className="space-y-1 text-sm text-stone-900">
+                <p><span className="font-medium">Mon:</span> 2:00PM – 8:00PM</p>
+                <p><span className="font-medium">Tue:</span> 8:00AM – 4:00PM</p>
+                <p><span className="font-medium">Thu – Sat:</span> 8:00AM – 4:00PM</p>
+                <p className="text-rose-700 font-medium mt-2">Wed / Sun: Closed</p>
+              </div>
+            </div>
+            <div className="bg-white border border-stone-200 p-6 card-lift">
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Contact</p>
+              <div className="space-y-2 text-sm text-stone-900">
+                <p>(702) 981-8428</p>
+                <p>myasnailsbaby@gmail.com</p>
+                <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="block hover:text-rose-800 transition">@myasnailsbaby</a>
+              </div>
+            </div>
+            <div className="bg-white border border-stone-200 p-6 card-lift">
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Location</p>
+              <p className="text-sm text-stone-900 leading-relaxed">
+                2080 E. Flamingo Rd.<br />
+                Suite #106 Room 4<br />
+                Las Vegas, NV
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* ── FOOTER ── */}
