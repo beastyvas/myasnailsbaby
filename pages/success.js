@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function SuccessPage() {
   const router = useRouter();
@@ -9,25 +10,19 @@ export default function SuccessPage() {
   const [wasConfirmed, setWasConfirmed] = useState(false);
   const [bookingDetails, setBookingDetails] = useState(null);
 
-  // Helper to format date
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const date = new Date(dateStr + "T00:00:00");
-    return date.toLocaleDateString("en-US", { 
-      month: "numeric", 
-      day: "numeric", 
-      year: "2-digit" 
-    });
+    return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
   };
 
-  // Helper to format time to 12hr
   const formatTime = (time24) => {
     if (!time24) return "";
     const [hourStr, minuteStr] = time24.split(":");
     const hour = parseInt(hourStr, 10);
     const suffix = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-    return `${hour12}${suffix}`;
+    return `${hour12}:${minuteStr || "00"}${suffix}`;
   };
 
   useEffect(() => {
@@ -37,14 +32,10 @@ export default function SuccessPage() {
     const savedDetails = localStorage.getItem(`booking_details_${session_id}`);
 
     if (alreadyConfirmed && savedDetails) {
-      console.log("✅ Already confirmed — using saved details");
       setWasConfirmed(true);
       setBookingDetails(JSON.parse(savedDetails));
       setLoading(false);
-
-      setTimeout(() => {
-        router.replace("/");
-      }, 6000);
+      setTimeout(() => router.replace("/"), 8000);
       return;
     }
 
@@ -55,49 +46,36 @@ export default function SuccessPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ session_id }),
         });
-
         const data = await res.json();
 
         if (res.ok && data.success) {
           localStorage.setItem(`confirmed_${session_id}`, "true");
-          
-          // Fetch booking details from Stripe session metadata
           const stripeRes = await fetch(`/api/get-session-details?session_id=${session_id}`);
           const stripeData = await stripeRes.json();
-          
           if (stripeData.metadata) {
             const md = stripeData.metadata;
             const details = {
-              // Basic info
               service: md.service || "",
               date: md.date,
               start_time: md.start_time,
-              
-              // Nail service details
               booking_nails: md.booking_nails || "no",
               artLevel: md.artLevel || "",
               length: md.length || "",
               soakoff: md.soakoff || "",
-              
-              // Pedicure details
               pedicure: md.pedicure || "no",
               pedicure_type: md.pedicure_type || "",
-              
-              // Other
               notes: md.notes || "",
               duration: md.duration || "",
             };
             setBookingDetails(details);
             localStorage.setItem(`booking_details_${session_id}`, JSON.stringify(details));
           }
-          
           setLoading(false);
         } else {
-          console.error("❌ Payment confirmation failed");
           setLoading(false);
         }
       } catch (err) {
-        console.error("❌ Confirm-payment error:", err.message);
+        console.error("Confirm-payment error:", err.message);
         setLoading(false);
       }
     };
@@ -105,174 +83,140 @@ export default function SuccessPage() {
     confirmPayment();
   }, [session_id, router]);
 
-  // Build services list
   const getServicesList = () => {
     if (!bookingDetails) return [];
-    
     const services = [];
-    
-    // Add nail service
-    if (bookingDetails.booking_nails === "yes" && bookingDetails.service) {
-      services.push(bookingDetails.service);
-    }
-    
-    // Add pedicure
-    if (bookingDetails.pedicure === "yes" && bookingDetails.pedicure_type) {
-      services.push(bookingDetails.pedicure_type);
-    }
-    
+    if (bookingDetails.booking_nails === "yes" && bookingDetails.service) services.push(bookingDetails.service);
+    if (bookingDetails.pedicure === "yes" && bookingDetails.pedicure_type) services.push(bookingDetails.pedicure_type);
     return services;
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 text-center p-6">
+    <main className="min-h-screen bg-stone-50 flex items-center justify-center p-6">
       {loading ? (
-        <div className="space-y-4">
-          <div className="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-gray-700 font-medium">Confirming your booking...</p>
+        <div className="text-center space-y-4">
+          <div className="w-10 h-10 border-2 border-stone-900 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-stone-600 text-sm">Confirming your booking...</p>
         </div>
       ) : (
-        <div className="max-w-xl mx-auto space-y-6">
-          {/* Main Success Card */}
-          <div className="bg-white rounded-2xl shadow-2xl p-8 border-4 border-pink-300">
-            <div className="mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+        <div className="w-full max-w-lg space-y-4">
+
+          {/* Success Card */}
+          <div className="bg-white border border-stone-200 p-8">
+            <div className="text-center mb-8">
+              <div className="w-14 h-14 bg-stone-900 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent mb-2">
-                Payment Successful! 🎉
+              <h1 className="text-2xl font-bold text-stone-900 mb-1" style={{ fontFamily: "Georgia, serif" }}>
+                Booking Confirmed
               </h1>
-              <p className="text-gray-600">Your appointment is confirmed</p>
+              <p className="text-stone-500 text-sm">Your appointment is locked in</p>
             </div>
 
-            {/* Booking Details */}
             {bookingDetails && (
-              <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-6 mb-6 border-2 border-pink-200">
-                <h2 className="text-lg font-bold text-pink-700 mb-4">📋 Booking Details</h2>
-                <div className="space-y-3 text-left">
-                  {/* Services */}
-                  <div>
-                    <span className="text-gray-600 font-medium block mb-1">Services:</span>
-                    {getServicesList().map((service, idx) => (
-                      <div key={idx} className="text-gray-900 font-bold bg-white rounded-lg px-3 py-2 mb-1">
-                        💅 {service}
-                      </div>
+              <div className="space-y-4 mb-6">
+                {/* Services */}
+                {getServicesList().length > 0 && (
+                  <div className="bg-stone-50 border border-stone-200 p-4">
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Services</p>
+                    {getServicesList().map((s, i) => (
+                      <p key={i} className="text-stone-900 font-medium text-sm">{s}</p>
                     ))}
                   </div>
+                )}
 
-                  {/* Date & Time */}
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div>
-                      <span className="text-gray-600 font-medium block text-sm">Date</span>
-                      <span className="text-gray-900 font-bold text-lg">{formatDate(bookingDetails.date)}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600 font-medium block text-sm">Time</span>
-                      <span className="text-gray-900 font-bold text-lg">{formatTime(bookingDetails.start_time)}</span>
+                {/* Date & Time */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-stone-50 border border-stone-200 p-4">
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">Date</p>
+                    <p className="text-stone-900 font-medium text-sm">{formatDate(bookingDetails.date)}</p>
+                  </div>
+                  <div className="bg-stone-50 border border-stone-200 p-4">
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">Time</p>
+                    <p className="text-stone-900 font-medium text-sm">{formatTime(bookingDetails.start_time)}</p>
+                  </div>
+                </div>
+
+                {/* Nail Details */}
+                {bookingDetails.booking_nails === "yes" && (bookingDetails.artLevel || bookingDetails.length || bookingDetails.soakoff) && (
+                  <div className="bg-stone-50 border border-stone-200 p-4">
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Nail Details</p>
+                    <div className="space-y-1 text-sm">
+                      {bookingDetails.artLevel && bookingDetails.artLevel !== "N/A" && (
+                        <p className="text-stone-700"><span className="text-stone-500">Art Level:</span> <span className="font-medium text-stone-900">{bookingDetails.artLevel}</span></p>
+                      )}
+                      {bookingDetails.length && bookingDetails.length !== "N/A" && (
+                        <p className="text-stone-700"><span className="text-stone-500">Length:</span> <span className="font-medium text-stone-900">{bookingDetails.length}</span></p>
+                      )}
+                      {bookingDetails.soakoff && bookingDetails.soakoff !== "none" && (
+                        <p className="text-stone-700"><span className="text-stone-500">Soak-Off:</span> <span className="font-medium text-stone-900">{bookingDetails.soakoff}</span></p>
+                      )}
                     </div>
                   </div>
+                )}
 
-                  {/* Nail Details (if booked nails) */}
-                  {bookingDetails.booking_nails === "yes" && (
-                    <div className="border-t border-pink-200 pt-3 mt-3">
-                      <span className="text-gray-600 font-medium block mb-2 text-sm">Nail Details:</span>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        {bookingDetails.artLevel && bookingDetails.artLevel !== "N/A" && (
-                          <div>
-                            <span className="text-gray-500">Art Level:</span>
-                            <span className="ml-2 font-semibold text-gray-900">{bookingDetails.artLevel}</span>
-                          </div>
-                        )}
-                        {bookingDetails.length && bookingDetails.length !== "N/A" && (
-                          <div>
-                            <span className="text-gray-500">Length:</span>
-                            <span className="ml-2 font-semibold text-gray-900">{bookingDetails.length}</span>
-                          </div>
-                        )}
-                        {bookingDetails.soakoff && bookingDetails.soakoff !== "none" && (
-                          <div>
-                            <span className="text-gray-500">Soak-Off:</span>
-                            <span className="ml-2 font-semibold text-gray-900">{bookingDetails.soakoff}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Notes */}
-                  {bookingDetails.notes && (
-                    <div className="border-t border-pink-200 pt-3 mt-3">
-                      <span className="text-gray-600 font-medium block text-sm mb-1">Notes:</span>
-                      <p className="text-gray-700 text-sm italic bg-white rounded-lg px-3 py-2">"{bookingDetails.notes}"</p>
-                    </div>
-                  )}
-
-                  {/* Deposit */}
-                  <div className="border-t-2 border-pink-300 pt-3 mt-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 font-medium">Deposit Paid:</span>
-                      <span className="text-green-600 font-bold text-xl">$20 ✓</span>
-                    </div>
+                {/* Notes */}
+                {bookingDetails.notes && (
+                  <div className="bg-stone-50 border border-stone-200 p-4">
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">Notes</p>
+                    <p className="text-stone-700 text-sm italic">"{bookingDetails.notes}"</p>
                   </div>
+                )}
+
+                {/* Deposit */}
+                <div className="border-t border-stone-200 pt-4 flex justify-between items-center">
+                  <span className="text-stone-600 text-sm">Deposit Paid</span>
+                  <span className="text-stone-900 font-bold">$20 ✓</span>
                 </div>
               </div>
             )}
 
-            <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4 mb-4">
-              <p className="text-sm text-yellow-900 font-bold">
-                📸 Screenshot this page for your records!
-              </p>
+            <div className="bg-stone-50 border border-stone-200 p-4 text-center mb-4">
+              <p className="text-stone-700 text-sm font-medium">Screenshot this page for your records</p>
             </div>
 
-            <div className="text-sm text-gray-600 space-y-2">
-              <p className="font-medium">📍 2080 E. Flamingo Rd. Suite #106 Room 4</p>
-              <p>📱 DM <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-semibold underline">@myasnailsbaby</a> with questions</p>
+            <div className="text-center space-y-1 text-sm text-stone-600">
+              <p>2080 E. Flamingo Rd. Suite #106 Room 4 · Las Vegas, NV</p>
+              <p>
+                DM{" "}
+                <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-rose-800 font-medium hover:underline">
+                  @myasnailsbaby
+                </a>{" "}
+                with any questions
+              </p>
             </div>
           </div>
 
           {/* Policies Card */}
-          <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-lg text-left text-sm text-gray-700">
-            <h2 className="text-lg font-semibold mb-4 text-pink-700">📌 Important Policies</h2>
-            <ul className="space-y-3">
-              <li>
-                <strong>Booking an Appt.</strong><br />
-                All appointments require a $20 deposit (non-refundable) to secure your spot.
-              </li>
-              <li>
-                <strong>No Show / Cancellation</strong><br />
-                Cancel at least 48 hours ahead for no penalty (deposit goes toward next appt).<br />
-                No-shows or last-minute cancellations are charged 50% of your service.
-              </li>
-              <li>
-                <strong>Late to Appt.</strong><br />
-                5 minute grace period if you communicate your ETA. After that = $10 late fee.<br />
-                If needed, your service may be shortened to stay on schedule.
-              </li>
-              <li>
-                <strong>Squeeze Ins</strong><br />
-                Booking outside regular hours is a squeeze-in and costs 50% extra.
-              </li>
-              <li>
-                <strong>Nail Fix</strong><br />
-                Free within 5 days of service. After that: $10 per nail.
-              </li>
-              <li>
-                <strong>No Guests</strong><br />
-                No guests are allowed unless both are receiving services at the same time.
-              </li>
-            </ul>
-            <p className="mt-5 text-center font-medium">
-              💬 DM <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-pink-600 underline">@myasnailsbaby</a> with any questions or concerns!
-            </p>
+          <div className="bg-white border border-stone-200 p-6">
+            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-4">Important Policies</h2>
+            <div className="space-y-3 text-sm text-stone-700">
+              {[
+                ["Deposit", "Non-refundable $20 deposit required. Applied toward your total service."],
+                ["Cancellation", "Cancel 48+ hours ahead: deposit credited to next visit. Late/no-show: 50% of service charged."],
+                ["Late Arrivals", "5-minute grace period. After that: $10 late fee. Service may be shortened."],
+                ["Nail Repairs", "Free within 5 days. After 5 days: $10 per nail."],
+                ["No Guests", "Only clients receiving services are permitted."],
+              ].map(([title, body]) => (
+                <div key={title}>
+                  <span className="font-semibold text-stone-900">{title}: </span>
+                  <span>{body}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {wasConfirmed && (
-            <p className="text-sm text-gray-500 mt-3">
-              Redirecting you to the home page in a few seconds...
-            </p>
+            <p className="text-center text-xs text-stone-400">Redirecting to home page shortly...</p>
           )}
+
+          <div className="text-center">
+            <Link href="/" className="text-sm text-rose-800 hover:underline font-medium">
+              ← Back to Home
+            </Link>
+          </div>
         </div>
       )}
     </main>
