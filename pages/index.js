@@ -200,12 +200,15 @@ export default function Home() {
   const scriptHeading = { fontFamily: "'Great Vibes', cursive", color: "#1c1917" };
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className={`min-h-screen bg-stone-50${promoEnabled && promoText ? " pb-12" : ""}`}>
       <Toaster position="bottom-center" />
 
-      {/* Promo Banner */}
+      {/* Promo Banner — fixed to bottom */}
       {promoEnabled && promoText && (
-        <div className="bg-rose-800 text-white py-3 px-4 text-center text-sm font-medium">
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 bg-rose-800 text-white text-center text-sm font-medium px-4"
+          style={{ padding: "12px 16px", paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+        >
           {promoText}
         </div>
       )}
@@ -586,22 +589,6 @@ export default function Home() {
                   @myasnailsbaby
                 </a>
               </div>
-            </div>
-            {/* Location */}
-            <div className="bg-white border border-stone-200 p-6 card-lift">
-              <div className="flex items-center gap-2 mb-4">
-                <svg className="w-4 h-4 text-rose-800 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/>
-                </svg>
-                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Location</p>
-              </div>
-              <a href="https://maps.google.com/?q=2080+E+Flamingo+Rd+Las+Vegas+NV" target="_blank" rel="noopener noreferrer"
-                className="flex items-start gap-2.5 text-stone-700 hover:text-rose-800 transition contact-icon group text-sm">
-                <svg className="w-3.5 h-3.5 text-stone-400 group-hover:text-rose-800 transition flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/>
-                </svg>
-                <span className="leading-relaxed">2080 E. Flamingo Rd.<br />Suite #106 Room 4<br />Las Vegas, NV</span>
-              </a>
             </div>
           </div>
         </section>
