@@ -27,7 +27,7 @@ export default async function handler(req, res) {
             currency: "usd",
             product_data: {
               name: "Nail Deposit",
-              description: "Non-refundable $20 deposit to confirm appointment.",
+              description: "$20 deposit to confirm appointment. Refundable if cancelled 48+ hours in advance.",
             },
             unit_amount: 2000,
           },

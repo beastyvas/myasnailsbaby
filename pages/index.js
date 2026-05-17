@@ -602,6 +602,8 @@ export default function Home() {
             <span>·</span>
             <Link href="/reschedule" className="hover:text-stone-700 transition">Reschedule Appointment</Link>
             <span>·</span>
+            <Link href="/cancel-appointment" className="hover:text-stone-700 transition">Cancel Appointment</Link>
+            <span>·</span>
             <Link href="/login" className="hover:text-stone-700 transition">Dashboard Login</Link>
           </div>
         </footer>
