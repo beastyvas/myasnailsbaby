@@ -555,10 +555,10 @@ export default function Home() {
                 <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Hours</p>
               </div>
               <div className="space-y-1.5 text-sm text-stone-700">
-                <p><span className="font-semibold text-stone-900">Mon</span> · 2:00PM – 8:00PM</p>
-                <p><span className="font-semibold text-stone-900">Tue</span> · 8:00AM – 4:00PM</p>
-                <p><span className="font-semibold text-stone-900">Thu – Sat</span> · 8:00AM – 4:00PM</p>
-                <p className="text-rose-800 font-medium pt-1">Wed / Sun — Closed</p>
+                <p><span className="font-semibold text-stone-900">Mon – Tue</span> · 10:00AM – 8:00PM</p>
+                <p><span className="font-semibold text-stone-900">Fri</span> · 8:00AM – 6:00PM</p>
+                <p><span className="font-semibold text-stone-900">Sat</span> · 8:00AM – 4:00PM</p>
+                <p className="text-rose-800 font-medium pt-1">Sun / Wed / Thu — Closed</p>
               </div>
             </div>
             {/* Contact */}
