@@ -505,6 +505,10 @@ export default function Home() {
                   <input type="checkbox" name="confirmPolicy" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
                   <span className="text-sm text-stone-700">I understand a <strong>$20 non-refundable deposit</strong> is required to confirm my booking.</span>
                 </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" name="confirmNoShow" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
+                  <span className="text-sm text-stone-700">I authorize Mya&apos;s Nails Baby to save my card on file and charge a <strong>$25 no-show fee</strong> if I miss my appointment without notice.</span>
+                </label>
                 <button type="submit" disabled={isSubmitting}
                   className={`w-full py-4 font-medium text-sm tracking-wide transition active:scale-95 ${isSubmitting ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white btn-shimmer"}`}>
                   {isSubmitting ? (
