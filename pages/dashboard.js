@@ -317,6 +317,33 @@ function NewAppointmentForm({ onSuccess }) {
   );
 }
 
+// ── Client Notes (inline editable) ───────────────────────────
+function ClientNotes({ phone, initialNotes, currentLabel, onSave, saving }) {
+  const [notes, setNotes] = useState(initialNotes);
+  const dirty = notes !== initialNotes;
+  return (
+    <div>
+      <label className={labelCls}>Notes</label>
+      <textarea
+        rows={2}
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="e.g. prefers coffin shape, allergic to acrylics…"
+        className="w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 placeholder-stone-400 bg-white text-sm resize-none"
+      />
+      {dirty && (
+        <button
+          onClick={() => onSave(notes)}
+          disabled={saving}
+          className="mt-2 text-xs font-semibold text-stone-700 hover:text-stone-900 border border-stone-300 hover:border-stone-900 px-3 py-1.5 transition"
+        >
+          {saving ? "Saving…" : "Save Notes"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── Dashboard ─────────────────────────────────────────────────
 export default function Dashboard() {
   const [ready, setReady] = useState(false);
@@ -346,6 +373,8 @@ export default function Dashboard() {
   const [allBookings, setAllBookings] = useState([]);
   const [expandedClientKey, setExpandedClientKey] = useState(null);
   const [chargingNoShow, setChargingNoShow] = useState(new Set());
+  const [clientProfiles, setClientProfiles] = useState({});
+  const [savingClientLabel, setSavingClientLabel] = useState(new Set());
 
   useEffect(() => {
     (async () => {
@@ -353,7 +382,7 @@ export default function Dashboard() {
       if (session) {
         await Promise.all([
           fetchGallery(), fetchAvailability(), fetchBookings(),
-          fetchBio(), fetchScheduleSettings(),
+          fetchBio(), fetchScheduleSettings(), fetchClientProfiles(),
         ]);
       }
       setReady(true);
@@ -380,6 +409,23 @@ export default function Dashboard() {
       setPromoText(data.promo_text || "");
       setPromoEnabled(data.promo_enabled || false);
     }
+  }
+
+  async function fetchClientProfiles() {
+    const { data, error } = await supabase.from("clients").select("*");
+    if (error) { console.error(error.message); return; }
+    const map = {};
+    (data || []).forEach((c) => { map[c.phone] = c; });
+    setClientProfiles(map);
+  }
+
+  async function saveClientLabel(phone, label, notes) {
+    setSavingClientLabel((prev) => new Set([...prev, phone]));
+    await supabase
+      .from("clients")
+      .upsert({ phone, label: label || null, notes: notes || null }, { onConflict: "phone" });
+    setClientProfiles((prev) => ({ ...prev, [phone]: { ...prev[phone], phone, label, notes } }));
+    setSavingClientLabel((prev) => { const s = new Set(prev); s.delete(phone); return s; });
   }
 
   async function fetchScheduleSettings() {
@@ -933,7 +979,6 @@ export default function Dashboard() {
             c.bookings.push(b);
             if (b.stripe_payment_method_id) c.hasCard = true;
             if (b.no_show_charged) c.noShowsCharged++;
-            // Keep the most complete name/contact info we've seen
             if (!c.email && b.email) c.email = b.email;
             if (!c.instagram && b.instagram) c.instagram = b.instagram;
           });
@@ -942,17 +987,12 @@ export default function Dashboard() {
             .map(([key, c]) => ({ key, ...c }))
             .sort((a, b) => b.bookings.length - a.bookings.length);
 
-          function reputationScore(client) {
-            const paidBookings = client.bookings.filter((b) => b.paid).length;
-            const score = Math.min(100, Math.max(0, paidBookings * 8 - client.noShowsCharged * 35));
-            return score;
-          }
-
-          function reputationLabel(score) {
-            if (score >= 80) return { label: "Great", cls: "bg-green-50 text-green-800 border-green-200" };
-            if (score >= 50) return { label: "Good", cls: "bg-amber-50 text-amber-800 border-amber-200" };
-            return { label: "Risky", cls: "bg-red-50 text-red-800 border-red-200" };
-          }
+          const LABELS = [
+            { value: "",         display: "No Label",  cls: "bg-stone-100 text-stone-600 border-stone-200" },
+            { value: "regular",  display: "Regular",   cls: "bg-green-50 text-green-800 border-green-200" },
+            { value: "vip",      display: "VIP",       cls: "bg-purple-50 text-purple-800 border-purple-200" },
+            { value: "flagged",  display: "Flagged",   cls: "bg-red-50 text-red-800 border-red-200" },
+          ];
 
           return (
             <div className="space-y-4">
@@ -961,7 +1001,6 @@ export default function Dashboard() {
                   <SectionHeading>Clients</SectionHeading>
                   <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-3 py-1">{clientList.length} clients</span>
                 </div>
-                <p className="text-xs text-stone-500 mb-4">Grouped by phone number. Reputation score based on booking history and no-shows.</p>
                 {clientList.length === 0 ? (
                   <p className="text-stone-500 text-sm text-center py-12">No client data yet.</p>
                 ) : (
@@ -970,10 +1009,13 @@ export default function Dashboard() {
                       const isExpanded = expandedClientKey === client.key;
                       const sorted = [...client.bookings].sort((a, b) => new Date(b.date) - new Date(a.date));
                       const latest = sorted[0];
-                      const score = reputationScore(client);
-                      const rep = reputationLabel(score);
+                      const profile = clientProfiles[client.phone] || {};
+                      const currentLabel = profile.label || "";
+                      const labelMeta = LABELS.find((l) => l.value === currentLabel) || LABELS[0];
+
                       return (
                         <div key={client.key} className="border border-stone-200 hover:border-stone-400 transition-colors">
+                          {/* Client row */}
                           <button
                             onClick={() => setExpandedClientKey(isExpanded ? null : client.key)}
                             className="w-full text-left p-5"
@@ -984,7 +1026,14 @@ export default function Dashboard() {
                                   {(client.name || "?").charAt(0).toUpperCase()}
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-semibold text-stone-900 text-sm">{client.name}</p>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="font-semibold text-stone-900 text-sm">{client.name}</p>
+                                    {currentLabel && (
+                                      <span className={`text-xs font-semibold px-2 py-0.5 border ${labelMeta.cls}`}>
+                                        {labelMeta.display}
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                                     {client.phone && <p className="text-xs text-stone-500">{client.phone}</p>}
                                     {client.instagram && <p className="text-xs text-stone-500">@{client.instagram}</p>}
@@ -998,9 +1047,6 @@ export default function Dashboard() {
                                   {latest && <p className="text-xs text-stone-400">Last: {latest.date}</p>}
                                 </div>
                                 <div className="flex flex-col gap-1 items-end">
-                                  <span className={`text-xs font-bold px-2.5 py-1 border ${rep.cls}`}>
-                                    {rep.label} · {score}
-                                  </span>
                                   {client.hasCard && (
                                     <span className="text-xs font-semibold bg-stone-100 text-stone-700 border border-stone-200 px-2 py-0.5">Card on file</span>
                                   )}
@@ -1015,30 +1061,90 @@ export default function Dashboard() {
                             </div>
                           </button>
 
+                          {/* Expanded panel */}
                           {isExpanded && (
-                            <div className="border-t border-stone-200 bg-stone-50 p-5 space-y-2">
-                              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Booking History</p>
-                              {sorted.map((b) => (
-                                <div key={b.id} className="flex items-center justify-between bg-white border border-stone-200 p-3 text-sm">
-                                  <div>
-                                    <p className="font-medium text-stone-900">
-                                      {new Date(b.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
-                                      {b.start_time ? ` · ${formatTime(b.start_time)}` : ""}
-                                    </p>
-                                    <p className="text-xs text-stone-500">
-                                      {[b.service, b.art_level].filter(Boolean).join(" · ") || "—"}
-                                    </p>
-                                  </div>
-                                  <div className="flex flex-col items-end gap-1">
-                                    <span className={`text-xs font-semibold ${b.paid ? "text-green-700" : "text-stone-400"}`}>
-                                      {b.paid ? "Paid $20" : "Unpaid"}
-                                    </span>
-                                    {b.no_show_charged && (
-                                      <span className="text-xs font-semibold text-rose-700">No-show $25</span>
+                            <div className="border-t border-stone-200 bg-stone-50 p-5 space-y-5">
+
+                              {/* Label picker */}
+                              {client.phone && (
+                                <div>
+                                  <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Client Label</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {LABELS.map((l) => (
+                                      <button
+                                        key={l.value}
+                                        disabled={savingClientLabel.has(client.phone)}
+                                        onClick={() => saveClientLabel(client.phone, l.value, profile.notes)}
+                                        className={`text-xs font-semibold px-3 py-1.5 border transition ${
+                                          currentLabel === l.value
+                                            ? l.cls + " ring-2 ring-offset-1 ring-stone-400"
+                                            : "bg-white border-stone-300 text-stone-600 hover:border-stone-900"
+                                        }`}
+                                      >
+                                        {l.display}
+                                      </button>
+                                    ))}
+                                    {savingClientLabel.has(client.phone) && (
+                                      <span className="text-xs text-stone-400 self-center">Saving…</span>
                                     )}
                                   </div>
                                 </div>
-                              ))}
+                              )}
+
+                              {/* Notes */}
+                              {client.phone && (
+                                <ClientNotes
+                                  phone={client.phone}
+                                  initialNotes={profile.notes || ""}
+                                  currentLabel={currentLabel}
+                                  onSave={(notes) => saveClientLabel(client.phone, currentLabel, notes)}
+                                  saving={savingClientLabel.has(client.phone)}
+                                />
+                              )}
+
+                              {/* Booking history */}
+                              <div>
+                                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Booking History</p>
+                                <div className="space-y-2">
+                                  {sorted.map((b) => (
+                                    <div key={b.id} className="flex items-center justify-between bg-white border border-stone-200 p-3 text-sm gap-3">
+                                      <div className="min-w-0">
+                                        <p className="font-medium text-stone-900">
+                                          {new Date(b.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                                          {b.start_time ? ` · ${formatTime(b.start_time)}` : ""}
+                                        </p>
+                                        <p className="text-xs text-stone-500">
+                                          {[b.service, b.art_level].filter(Boolean).join(" · ") || "—"}
+                                        </p>
+                                      </div>
+                                      <div className="flex items-center gap-3 flex-shrink-0">
+                                        <div className="flex flex-col items-end gap-0.5">
+                                          <span className={`text-xs font-semibold ${b.paid ? "text-green-700" : "text-stone-400"}`}>
+                                            {b.paid ? "Paid $20" : "Unpaid"}
+                                          </span>
+                                          {b.no_show_charged && (
+                                            <span className="text-xs font-semibold text-rose-700">No-show $25</span>
+                                          )}
+                                        </div>
+                                        {b.stripe_payment_method_id && !b.no_show_charged && (
+                                          <button
+                                            onClick={() => handleChargeNoShow(b)}
+                                            disabled={chargingNoShow.has(b.id)}
+                                            className={`text-xs font-semibold uppercase tracking-wide transition ${
+                                              chargingNoShow.has(b.id)
+                                                ? "text-amber-400 cursor-wait"
+                                                : "text-amber-700 hover:text-amber-900"
+                                            }`}
+                                          >
+                                            {chargingNoShow.has(b.id) ? "Charging…" : "Charge No-Show"}
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
                             </div>
                           )}
                         </div>
