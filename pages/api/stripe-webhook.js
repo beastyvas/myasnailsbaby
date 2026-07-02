@@ -156,6 +156,18 @@ if (conflicts && conflicts.length > 0) {
 }
 
 
+    // Retrieve saved payment method from the completed payment intent
+    let stripeCustomerId = session.customer || null;
+    let stripePaymentMethodId = null;
+    if (session.payment_intent) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(session.payment_intent);
+        stripePaymentMethodId = pi.payment_method || null;
+      } catch (e) {
+        console.error("⚠️ Could not retrieve payment intent:", e.message);
+      }
+    }
+
     // Insert booking (single source of truth). Store session_id to prevent dupes.
     const insert = {
       // columns: adjust to your exact schema
@@ -180,6 +192,8 @@ if (conflicts && conflicts.length > 0) {
       paid: true,
       confirmed: true,
       session_id: session.id,
+      stripe_customer_id: stripeCustomerId,
+      stripe_payment_method_id: stripePaymentMethodId,
     };
 
     const { error: insertErr } = await supabase.from("bookings").insert([insert]);

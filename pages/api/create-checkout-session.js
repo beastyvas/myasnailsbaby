@@ -2,6 +2,19 @@
 import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+async function findOrCreateCustomer({ email, name, phone }) {
+  if (email) {
+    const existing = await stripe.customers.list({ email, limit: 1 });
+    if (existing.data.length > 0) return existing.data[0].id;
+  }
+  const customer = await stripe.customers.create({
+    name,
+    ...(email ? { email } : {}),
+    metadata: { phone: phone || "" },
+  });
+  return customer.id;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
@@ -19,21 +32,37 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing or invalid booking_id" });
     }
 
+    let customerId;
+    try {
+      customerId = await findOrCreateCustomer({
+        email: bookingMetadata.email,
+        name: bookingMetadata.name,
+        phone: bookingMetadata.phone,
+      });
+    } catch (e) {
+      console.error("⚠️ Could not find/create Stripe customer:", e.message);
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
+      ...(customerId ? { customer: customerId } : {}),
       line_items: [
         {
           price_data: {
             currency: "usd",
             product_data: {
               name: "Nail Deposit",
-              description: "$20 deposit to confirm appointment. Refundable if cancelled 48+ hours in advance.",
+              description:
+                "$20 deposit to confirm your appointment. Refundable if cancelled 48+ hours in advance. By completing this payment you authorize a $25 no-show fee to be charged to this card if you miss your appointment without notice.",
             },
             unit_amount: 2000,
           },
           quantity: 1,
         },
       ],
+      payment_intent_data: {
+        setup_future_usage: "off_session",
+      },
       mode: "payment",
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel`,

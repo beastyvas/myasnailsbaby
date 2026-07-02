@@ -343,6 +343,9 @@ export default function Dashboard() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [scheduleSettings, setScheduleSettings] = useState([]);
   const [savingSchedule, setSavingSchedule] = useState(false);
+  const [allBookings, setAllBookings] = useState([]);
+  const [expandedClientKey, setExpandedClientKey] = useState(null);
+  const [chargingNoShow, setChargingNoShow] = useState(new Set());
 
   useEffect(() => {
     (async () => {
@@ -409,8 +412,10 @@ export default function Dashboard() {
   async function fetchBookings() {
     const { data, error } = await supabase.from("bookings").select("*").order("date", { ascending: true });
     if (error) { console.error(error.message); return; }
+    const all = data || [];
+    setAllBookings(all);
     const now = new Date();
-    const upcoming = (data || []).filter((b) => {
+    const upcoming = all.filter((b) => {
       if (!b.date || !b.start_time) return false;
       const start = typeof b.start_time === "string" && b.start_time.includes("AM")
         ? convertTo24Hr(b.start_time) : b.start_time;
@@ -418,6 +423,28 @@ export default function Dashboard() {
     });
     setBookings(upcoming);
   }
+
+  const handleChargeNoShow = async (booking) => {
+    if (!confirm(`Charge ${booking.name} a $25 no-show fee? This will immediately charge their card on file.`)) return;
+    setChargingNoShow((prev) => new Set([...prev, booking.id]));
+    try {
+      const res = await fetch("/api/charge-noshow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_id: booking.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Charge failed");
+      const patch = { no_show_charged: true, no_show_fee_amount: 2500 };
+      setBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, ...patch } : b));
+      setAllBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, ...patch } : b));
+      alert(`$25 no-show fee charged to ${booking.name}'s card.`);
+    } catch (err) {
+      alert(`Charge failed: ${err.message}`);
+    } finally {
+      setChargingNoShow((prev) => { const s = new Set(prev); s.delete(booking.id); return s; });
+    }
+  };
 
   function formatTime(time24) {
     if (!time24) return "";
@@ -590,6 +617,7 @@ export default function Dashboard() {
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "appointments", label: "Appointments" },
+    { id: "clients", label: "Clients" },
     { id: "gallery", label: "Gallery" },
     { id: "availability", label: "Availability" },
     { id: "schedule", label: "Schedule" },
@@ -847,7 +875,22 @@ export default function Dashboard() {
                                   {isReturning ? "RETURNING" : "NEW CLIENT"}
                                 </span>
                               </div>
-                              <div className="flex gap-4">
+                              <div className="flex gap-4 items-center">
+                                {booking.stripe_payment_method_id && (
+                                  <button
+                                    onClick={() => handleChargeNoShow(booking)}
+                                    disabled={booking.no_show_charged || chargingNoShow.has(booking.id)}
+                                    className={`text-xs font-semibold uppercase tracking-wide transition ${
+                                      booking.no_show_charged
+                                        ? "text-stone-400 cursor-default"
+                                        : chargingNoShow.has(booking.id)
+                                        ? "text-amber-400 cursor-wait"
+                                        : "text-amber-700 hover:text-amber-900"
+                                    }`}
+                                  >
+                                    {booking.no_show_charged ? "No-Show Charged ✓" : chargingNoShow.has(booking.id) ? "Charging…" : "Charge No-Show"}
+                                  </button>
+                                )}
                                 <button onClick={() => setEditingBooking(booking)} className="text-xs font-semibold text-stone-600 hover:text-stone-900 transition uppercase tracking-wide">Edit</button>
                                 <button onClick={() => handleDeleteBooking(booking)} className="text-xs font-semibold text-red-600 hover:text-red-800 transition uppercase tracking-wide">Delete</button>
                               </div>
@@ -868,6 +911,145 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* ── CLIENTS ── */}
+        {activeTab === "clients" && (() => {
+          const clientMap = {};
+          allBookings.forEach((b) => {
+            const key = b.phone || b.email || b.name;
+            if (!key) return;
+            if (!clientMap[key]) {
+              clientMap[key] = {
+                name: b.name,
+                phone: b.phone,
+                email: b.email,
+                instagram: b.instagram,
+                hasCard: false,
+                bookings: [],
+                noShowsCharged: 0,
+              };
+            }
+            const c = clientMap[key];
+            c.bookings.push(b);
+            if (b.stripe_payment_method_id) c.hasCard = true;
+            if (b.no_show_charged) c.noShowsCharged++;
+            // Keep the most complete name/contact info we've seen
+            if (!c.email && b.email) c.email = b.email;
+            if (!c.instagram && b.instagram) c.instagram = b.instagram;
+          });
+
+          const clientList = Object.entries(clientMap)
+            .map(([key, c]) => ({ key, ...c }))
+            .sort((a, b) => b.bookings.length - a.bookings.length);
+
+          function reputationScore(client) {
+            const paidBookings = client.bookings.filter((b) => b.paid).length;
+            const score = Math.min(100, Math.max(0, paidBookings * 8 - client.noShowsCharged * 35));
+            return score;
+          }
+
+          function reputationLabel(score) {
+            if (score >= 80) return { label: "Great", cls: "bg-green-50 text-green-800 border-green-200" };
+            if (score >= 50) return { label: "Good", cls: "bg-amber-50 text-amber-800 border-amber-200" };
+            return { label: "Risky", cls: "bg-red-50 text-red-800 border-red-200" };
+          }
+
+          return (
+            <div className="space-y-4">
+              <div className="bg-white border border-stone-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <SectionHeading>Clients</SectionHeading>
+                  <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-3 py-1">{clientList.length} clients</span>
+                </div>
+                <p className="text-xs text-stone-500 mb-4">Grouped by phone number. Reputation score based on booking history and no-shows.</p>
+                {clientList.length === 0 ? (
+                  <p className="text-stone-500 text-sm text-center py-12">No client data yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {clientList.map((client) => {
+                      const isExpanded = expandedClientKey === client.key;
+                      const sorted = [...client.bookings].sort((a, b) => new Date(b.date) - new Date(a.date));
+                      const latest = sorted[0];
+                      const score = reputationScore(client);
+                      const rep = reputationLabel(score);
+                      return (
+                        <div key={client.key} className="border border-stone-200 hover:border-stone-400 transition-colors">
+                          <button
+                            onClick={() => setExpandedClientKey(isExpanded ? null : client.key)}
+                            className="w-full text-left p-5"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-10 h-10 bg-stone-900 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                  {(client.name || "?").charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-stone-900 text-sm">{client.name}</p>
+                                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                                    {client.phone && <p className="text-xs text-stone-500">{client.phone}</p>}
+                                    {client.instagram && <p className="text-xs text-stone-500">@{client.instagram}</p>}
+                                    {client.email && <p className="text-xs text-stone-400 hidden sm:block">{client.email}</p>}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 flex-shrink-0">
+                                <div className="text-right hidden sm:block">
+                                  <p className="text-xs font-semibold text-stone-900">{client.bookings.length} booking{client.bookings.length !== 1 ? "s" : ""}</p>
+                                  {latest && <p className="text-xs text-stone-400">Last: {latest.date}</p>}
+                                </div>
+                                <div className="flex flex-col gap-1 items-end">
+                                  <span className={`text-xs font-bold px-2.5 py-1 border ${rep.cls}`}>
+                                    {rep.label} · {score}
+                                  </span>
+                                  {client.hasCard && (
+                                    <span className="text-xs font-semibold bg-stone-100 text-stone-700 border border-stone-200 px-2 py-0.5">Card on file</span>
+                                  )}
+                                  {client.noShowsCharged > 0 && (
+                                    <span className="text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5">No-show ×{client.noShowsCharged}</span>
+                                  )}
+                                </div>
+                                <svg className={`w-4 h-4 text-stone-400 transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <path d="M19 9l-7 7-7-7"/>
+                                </svg>
+                              </div>
+                            </div>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="border-t border-stone-200 bg-stone-50 p-5 space-y-2">
+                              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Booking History</p>
+                              {sorted.map((b) => (
+                                <div key={b.id} className="flex items-center justify-between bg-white border border-stone-200 p-3 text-sm">
+                                  <div>
+                                    <p className="font-medium text-stone-900">
+                                      {new Date(b.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+                                      {b.start_time ? ` · ${formatTime(b.start_time)}` : ""}
+                                    </p>
+                                    <p className="text-xs text-stone-500">
+                                      {[b.service, b.art_level].filter(Boolean).join(" · ") || "—"}
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-col items-end gap-1">
+                                    <span className={`text-xs font-semibold ${b.paid ? "text-green-700" : "text-stone-400"}`}>
+                                      {b.paid ? "Paid $20" : "Unpaid"}
+                                    </span>
+                                    {b.no_show_charged && (
+                                      <span className="text-xs font-semibold text-rose-700">No-show $25</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── GALLERY ── */}
         {activeTab === "gallery" && (
