@@ -965,15 +965,7 @@ export default function Dashboard() {
             const key = b.phone || b.email || b.name;
             if (!key) return;
             if (!clientMap[key]) {
-              clientMap[key] = {
-                name: b.name,
-                phone: b.phone,
-                email: b.email,
-                instagram: b.instagram,
-                hasCard: false,
-                bookings: [],
-                noShowsCharged: 0,
-              };
+              clientMap[key] = { name: b.name, phone: b.phone, email: b.email, instagram: b.instagram, hasCard: false, bookings: [], noShowsCharged: 0 };
             }
             const c = clientMap[key];
             c.bookings.push(b);
@@ -988,170 +980,245 @@ export default function Dashboard() {
             .sort((a, b) => b.bookings.length - a.bookings.length);
 
           const LABELS = [
-            { value: "",         display: "No Label",  cls: "bg-stone-100 text-stone-600 border-stone-200" },
-            { value: "regular",  display: "Regular",   cls: "bg-green-50 text-green-800 border-green-200" },
-            { value: "vip",      display: "VIP",       cls: "bg-purple-50 text-purple-800 border-purple-200" },
-            { value: "flagged",  display: "Flagged",   cls: "bg-red-50 text-red-800 border-red-200" },
+            { value: "",        display: "No Label", cls: "bg-stone-100 text-stone-600 border-stone-200" },
+            { value: "regular", display: "Regular",  cls: "bg-green-50 text-green-800 border-green-200" },
+            { value: "vip",     display: "VIP",      cls: "bg-purple-50 text-purple-800 border-purple-200" },
+            { value: "flagged", display: "Flagged",  cls: "bg-red-50 text-red-800 border-red-200" },
           ];
 
-          return (
-            <div className="space-y-4">
-              <div className="bg-white border border-stone-200 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <SectionHeading>Clients</SectionHeading>
-                  <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-3 py-1">{clientList.length} clients</span>
-                </div>
-                {clientList.length === 0 ? (
-                  <p className="text-stone-500 text-sm text-center py-12">No client data yet.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {clientList.map((client) => {
-                      const isExpanded = expandedClientKey === client.key;
-                      const sorted = [...client.bookings].sort((a, b) => new Date(b.date) - new Date(a.date));
-                      const latest = sorted[0];
-                      const profile = clientProfiles[client.phone] || {};
-                      const currentLabel = profile.label || "";
-                      const labelMeta = LABELS.find((l) => l.value === currentLabel) || LABELS[0];
+          const selected = expandedClientKey ? clientList.find((c) => c.key === expandedClientKey) : null;
 
-                      return (
-                        <div key={client.key} className="border border-stone-200 hover:border-stone-400 transition-colors">
-                          {/* Client row */}
+          // ── Client detail panel ──────────────────────────────
+          const DetailPanel = ({ client }) => {
+            const profile = clientProfiles[client.phone] || {};
+            const currentLabel = profile.label || "";
+            const labelMeta = LABELS.find((l) => l.value === currentLabel) || LABELS[0];
+            const sorted = [...client.bookings].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const paidCount = client.bookings.filter((b) => b.paid).length;
+            const totalDeposits = paidCount * 20;
+            const totalNoShowFees = client.noShowsCharged * 25;
+
+            return (
+              <div className="bg-white border border-stone-200 flex flex-col h-full">
+                {/* Header */}
+                <div className="p-6 border-b border-stone-200">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-stone-900 text-white flex items-center justify-center font-bold text-xl flex-shrink-0" style={{ fontFamily: "Georgia, serif" }}>
+                      {(client.name || "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <h3 className="text-lg font-bold text-stone-900">{client.name}</h3>
+                        {currentLabel && (
+                          <span className={`text-xs font-semibold px-2 py-0.5 border ${labelMeta.cls}`}>{labelMeta.display}</span>
+                        )}
+                        {client.hasCard && (
+                          <span className="text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200 px-2 py-0.5">Card on file</span>
+                        )}
+                      </div>
+                      <div className="space-y-0.5">
+                        {client.phone    && <p className="text-sm text-stone-600">{client.phone}</p>}
+                        {client.email    && <p className="text-sm text-stone-500">{client.email}</p>}
+                        {client.instagram && <p className="text-sm text-stone-500">@{client.instagram}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-3 mt-5">
+                    {[
+                      { label: "Visits",    value: client.bookings.length },
+                      { label: "Deposits",  value: `$${totalDeposits}` },
+                      { label: "No-Shows",  value: client.noShowsCharged, warn: client.noShowsCharged > 0 },
+                    ].map(({ label, value, warn }) => (
+                      <div key={label} className="bg-stone-50 border border-stone-200 p-3 text-center">
+                        <p className={`text-xl font-bold ${warn ? "text-rose-800" : "text-stone-900"}`}>{value}</p>
+                        <p className="text-xs text-stone-500 mt-0.5">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Label + Notes */}
+                <div className="p-5 border-b border-stone-200 space-y-4">
+                  <div>
+                    <p className={labelCls}>Label</p>
+                    <div className="flex flex-wrap gap-2">
+                      {LABELS.map((l) => (
+                        <button
+                          key={l.value}
+                          disabled={savingClientLabel.has(client.phone)}
+                          onClick={() => saveClientLabel(client.phone, l.value, profile.notes)}
+                          className={`text-xs font-semibold px-3 py-1.5 border transition ${
+                            currentLabel === l.value
+                              ? l.cls + " ring-2 ring-offset-1 ring-stone-400"
+                              : "bg-white border-stone-300 text-stone-600 hover:border-stone-900"
+                          }`}
+                        >
+                          {l.display}
+                        </button>
+                      ))}
+                      {savingClientLabel.has(client.phone) && (
+                        <span className="text-xs text-stone-400 self-center">Saving…</span>
+                      )}
+                    </div>
+                  </div>
+                  <ClientNotes
+                    phone={client.phone}
+                    initialNotes={profile.notes || ""}
+                    currentLabel={currentLabel}
+                    onSave={(notes) => saveClientLabel(client.phone, currentLabel, notes)}
+                    saving={savingClientLabel.has(client.phone)}
+                  />
+                </div>
+
+                {/* Booking history */}
+                <div className="flex-1 overflow-y-auto p-5">
+                  <p className={`${labelCls} mb-3`}>Booking History</p>
+                  {sorted.length === 0 ? (
+                    <p className="text-stone-400 text-sm">No bookings found.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {sorted.map((b) => {
+                        const details = [
+                          b.service && b.service !== "N/A" && b.service,
+                          b.art_level,
+                          b.length,
+                          b.soakoff && b.soakoff !== "none" && b.soakoff,
+                          b.pedicure === "yes" && (b.pedicure_type || "Pedicure"),
+                          b.duration && `${b.duration}h`,
+                        ].filter(Boolean);
+
+                        return (
+                          <div key={b.id} className="border border-stone-200 p-4 bg-stone-50">
+                            {/* Date / time row */}
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div>
+                                <p className="font-bold text-stone-900 text-sm">
+                                  {new Date(b.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                                </p>
+                                {b.start_time && (
+                                  <p className="text-xs text-stone-500 mt-0.5">{formatTimeRange(b.start_time, b.end_time)}</p>
+                                )}
+                              </div>
+                              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                <span className={`text-xs font-semibold px-2 py-0.5 border ${b.paid ? "bg-green-50 text-green-800 border-green-200" : "bg-stone-100 text-stone-500 border-stone-200"}`}>
+                                  {b.paid ? "Paid $20" : "Unpaid"}
+                                </span>
+                                {b.no_show_charged && (
+                                  <span className="text-xs font-semibold px-2 py-0.5 border bg-rose-50 text-rose-800 border-rose-200">No-show $25</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Service details */}
+                            {details.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mb-3">
+                                {details.map((d, i) => (
+                                  <span key={i} className="text-xs bg-white border border-stone-200 text-stone-700 px-2 py-0.5">{d}</span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Notes */}
+                            {b.notes && (
+                              <p className="text-xs text-stone-500 italic mb-3">&ldquo;{b.notes}&rdquo;</p>
+                            )}
+
+                            {/* Charge button */}
+                            {b.stripe_payment_method_id && !b.no_show_charged && (
+                              <button
+                                onClick={() => handleChargeNoShow(b)}
+                                disabled={chargingNoShow.has(b.id)}
+                                className={`text-xs font-semibold uppercase tracking-wide transition border px-3 py-1.5 ${
+                                  chargingNoShow.has(b.id)
+                                    ? "border-amber-200 text-amber-400 cursor-wait"
+                                    : "border-amber-300 text-amber-700 hover:bg-amber-50"
+                                }`}
+                              >
+                                {chargingNoShow.has(b.id) ? "Charging…" : "Charge $25 No-Show Fee"}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          };
+
+          return (
+            <div>
+              {/* Mobile: back button when a client is selected */}
+              {selected && (
+                <button
+                  onClick={() => setExpandedClientKey(null)}
+                  className="sm:hidden flex items-center gap-2 text-sm font-medium text-stone-600 hover:text-stone-900 mb-4"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                  All Clients
+                </button>
+              )}
+
+              <div className="grid sm:grid-cols-[280px,1fr] gap-4 items-start">
+                {/* Client list — hidden on mobile when detail is open */}
+                <div className={`bg-white border border-stone-200 ${selected ? "hidden sm:block" : ""}`}>
+                  <div className="p-4 border-b border-stone-200 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">All Clients</p>
+                    <span className="text-xs font-semibold text-stone-400">{clientList.length}</span>
+                  </div>
+                  {clientList.length === 0 ? (
+                    <p className="text-stone-400 text-sm text-center py-10">No clients yet.</p>
+                  ) : (
+                    <div className="divide-y divide-stone-100">
+                      {clientList.map((client) => {
+                        const profile = clientProfiles[client.phone] || {};
+                        const currentLabel = profile.label || "";
+                        const labelMeta = LABELS.find((l) => l.value === currentLabel) || LABELS[0];
+                        const isSelected = expandedClientKey === client.key;
+                        return (
                           <button
-                            onClick={() => setExpandedClientKey(isExpanded ? null : client.key)}
-                            className="w-full text-left p-5"
+                            key={client.key}
+                            onClick={() => setExpandedClientKey(client.key)}
+                            className={`w-full text-left px-4 py-3.5 transition hover:bg-stone-50 ${isSelected ? "bg-stone-900 hover:bg-stone-900" : ""}`}
                           >
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-10 h-10 bg-stone-900 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-                                  {(client.name || "?").charAt(0).toUpperCase()}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-semibold text-stone-900 text-sm">{client.name}</p>
-                                    {currentLabel && (
-                                      <span className={`text-xs font-semibold px-2 py-0.5 border ${labelMeta.cls}`}>
-                                        {labelMeta.display}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-                                    {client.phone && <p className="text-xs text-stone-500">{client.phone}</p>}
-                                    {client.instagram && <p className="text-xs text-stone-500">@{client.instagram}</p>}
-                                    {client.email && <p className="text-xs text-stone-400 hidden sm:block">{client.email}</p>}
-                                  </div>
-                                </div>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 flex items-center justify-center font-bold text-xs flex-shrink-0 ${isSelected ? "bg-white text-stone-900" : "bg-stone-900 text-white"}`}>
+                                {(client.name || "?").charAt(0).toUpperCase()}
                               </div>
-                              <div className="flex items-center gap-3 flex-shrink-0">
-                                <div className="text-right hidden sm:block">
-                                  <p className="text-xs font-semibold text-stone-900">{client.bookings.length} booking{client.bookings.length !== 1 ? "s" : ""}</p>
-                                  {latest && <p className="text-xs text-stone-400">Last: {latest.date}</p>}
-                                </div>
-                                <div className="flex flex-col gap-1 items-end">
-                                  {client.hasCard && (
-                                    <span className="text-xs font-semibold bg-stone-100 text-stone-700 border border-stone-200 px-2 py-0.5">Card on file</span>
-                                  )}
-                                  {client.noShowsCharged > 0 && (
-                                    <span className="text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5">No-show ×{client.noShowsCharged}</span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p className={`text-sm font-semibold truncate ${isSelected ? "text-white" : "text-stone-900"}`}>{client.name}</p>
+                                  {currentLabel && (
+                                    <span className={`text-xs font-semibold px-1.5 py-0.5 border flex-shrink-0 ${isSelected ? "bg-white/20 text-white border-white/30" : labelMeta.cls}`}>
+                                      {labelMeta.display}
+                                    </span>
                                   )}
                                 </div>
-                                <svg className={`w-4 h-4 text-stone-400 transition-transform flex-shrink-0 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                  <path d="M19 9l-7 7-7-7"/>
-                                </svg>
+                                <p className={`text-xs truncate mt-0.5 ${isSelected ? "text-stone-300" : "text-stone-500"}`}>
+                                  {client.phone || client.email || "—"}
+                                </p>
                               </div>
+                              <p className={`text-xs font-semibold flex-shrink-0 ${isSelected ? "text-stone-300" : "text-stone-400"}`}>
+                                {client.bookings.length}×
+                              </p>
                             </div>
                           </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
-                          {/* Expanded panel */}
-                          {isExpanded && (
-                            <div className="border-t border-stone-200 bg-stone-50 p-5 space-y-5">
-
-                              {/* Label picker */}
-                              {client.phone && (
-                                <div>
-                                  <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Client Label</p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {LABELS.map((l) => (
-                                      <button
-                                        key={l.value}
-                                        disabled={savingClientLabel.has(client.phone)}
-                                        onClick={() => saveClientLabel(client.phone, l.value, profile.notes)}
-                                        className={`text-xs font-semibold px-3 py-1.5 border transition ${
-                                          currentLabel === l.value
-                                            ? l.cls + " ring-2 ring-offset-1 ring-stone-400"
-                                            : "bg-white border-stone-300 text-stone-600 hover:border-stone-900"
-                                        }`}
-                                      >
-                                        {l.display}
-                                      </button>
-                                    ))}
-                                    {savingClientLabel.has(client.phone) && (
-                                      <span className="text-xs text-stone-400 self-center">Saving…</span>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Notes */}
-                              {client.phone && (
-                                <ClientNotes
-                                  phone={client.phone}
-                                  initialNotes={profile.notes || ""}
-                                  currentLabel={currentLabel}
-                                  onSave={(notes) => saveClientLabel(client.phone, currentLabel, notes)}
-                                  saving={savingClientLabel.has(client.phone)}
-                                />
-                              )}
-
-                              {/* Booking history */}
-                              <div>
-                                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Booking History</p>
-                                <div className="space-y-2">
-                                  {sorted.map((b) => (
-                                    <div key={b.id} className="flex items-center justify-between bg-white border border-stone-200 p-3 text-sm gap-3">
-                                      <div className="min-w-0">
-                                        <p className="font-medium text-stone-900">
-                                          {new Date(b.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
-                                          {b.start_time ? ` · ${formatTime(b.start_time)}` : ""}
-                                        </p>
-                                        <p className="text-xs text-stone-500">
-                                          {[b.service, b.art_level].filter(Boolean).join(" · ") || "—"}
-                                        </p>
-                                      </div>
-                                      <div className="flex items-center gap-3 flex-shrink-0">
-                                        <div className="flex flex-col items-end gap-0.5">
-                                          <span className={`text-xs font-semibold ${b.paid ? "text-green-700" : "text-stone-400"}`}>
-                                            {b.paid ? "Paid $20" : "Unpaid"}
-                                          </span>
-                                          {b.no_show_charged && (
-                                            <span className="text-xs font-semibold text-rose-700">No-show $25</span>
-                                          )}
-                                        </div>
-                                        {b.stripe_payment_method_id && !b.no_show_charged && (
-                                          <button
-                                            onClick={() => handleChargeNoShow(b)}
-                                            disabled={chargingNoShow.has(b.id)}
-                                            className={`text-xs font-semibold uppercase tracking-wide transition ${
-                                              chargingNoShow.has(b.id)
-                                                ? "text-amber-400 cursor-wait"
-                                                : "text-amber-700 hover:text-amber-900"
-                                            }`}
-                                          >
-                                            {chargingNoShow.has(b.id) ? "Charging…" : "Charge No-Show"}
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                {/* Detail panel */}
+                <div className={selected ? "" : "hidden sm:flex sm:items-center sm:justify-center sm:bg-white sm:border sm:border-stone-200 sm:min-h-[400px]"}>
+                  {selected
+                    ? <DetailPanel client={selected} />
+                    : <p className="text-stone-400 text-sm">Select a client to view their profile.</p>
+                  }
+                </div>
               </div>
             </div>
           );
