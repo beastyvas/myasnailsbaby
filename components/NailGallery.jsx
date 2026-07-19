@@ -29,7 +29,7 @@ export default function NailGallery() {
 
   return (
     <section className="mb-6">
-      <h2 className="text-3xl font-bold text-center mt-6 mb-4 text-rose-900">
+      <h2 className="text-3xl font-bold text-center mt-6 mb-4 text-gold-800">
         Nail Gallery ✨
       </h2>
 
@@ -42,7 +42,7 @@ export default function NailGallery() {
               onClick={() => setSelectedImg(fullPublicUrl(item.image_url))}
               className="w-full rounded-lg shadow-sm hover:shadow-md transition-transform duration-300 hover:scale-105 object-cover cursor-pointer"
             />
-            <p className="text-xs text-rose-700 font-medium italic mt-2">{item.caption}</p>
+            <p className="text-xs text-gold-700 font-medium italic mt-2">{item.caption}</p>
           </div>
         ))}
       </div>

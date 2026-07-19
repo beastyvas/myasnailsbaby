@@ -1,36 +1,35 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
 
+@theme {
+  /* ── Ivory & Champagne Gold design system ── */
+  --color-cream-50: #FAF7F1;
+  --color-cream-100: #F4EEE3;
+  --color-cream-200: #E9E1D2;
+  --color-cream-300: #D9CDB8;
+  --color-cream-400: #B3A48E;
+  --color-cream-500: #8C7D68;
+  --color-cream-600: #6E6152;
+  --color-cream-700: #4E453B;
+  --color-cream-800: #3A322B;
+  --color-cream-900: #231D18;
 
+  --color-gold-50: #FBF6EA;
+  --color-gold-200: #EBDDBB;
+  --color-gold-400: #D4BC8B;
+  --color-gold-600: #B08D57;
+  --color-gold-700: #8F7440;
+  --color-gold-800: #755E32;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --color-champagne: #F0E6CF;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-outfit: 'Outfit', sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #FAF7F1;
+  color: #231D18;
+  font-family: 'Outfit', sans-serif;
 }
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 @layer utilities {
   .animate-fade-in {
@@ -44,12 +43,12 @@ body {
 }
 
 .react-calendar__tile--now {
-  background: #ffe4e6 !important; /* light pink highlight */
+  background: #F4EEE3 !important; /* soft cream highlight */
 }
 .react-calendar__tile--active {
-  background: #ec4899 !important; /* pink-500 */
+  background: #8F7440 !important; /* champagne gold */
   color: white !important;
 }
 .bg-pink-100 {
-  background-color: #ffe4e6 !important;
+  background-color: #F4EEE3 !important;
 }

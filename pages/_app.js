@@ -3,7 +3,7 @@ import { Toaster } from "react-hot-toast";
 
 export default function App({ Component, pageProps }) {
   return (
-    <div className="bg-myaPink text-myaText font-outfit min-h-screen">
+    <div className="bg-cream-50 text-cream-900 font-outfit min-h-screen">
       <Toaster position="bottom-center" reverseOrder={false} />
       <Component {...pageProps} />
     </div>

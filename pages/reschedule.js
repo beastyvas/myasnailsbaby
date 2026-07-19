@@ -240,31 +240,31 @@ export default function ReschedulePage() {
     }
   };
 
-  const inputCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 placeholder-stone-400 bg-white";
+  const inputCls = "w-full px-4 py-3 border border-cream-300 focus:border-cream-900 focus:outline-none focus:ring-0 transition text-cream-900 placeholder-cream-400 bg-white";
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-cream-50">
       <Toaster position="top-center" />
 
       {/* Header */}
-      <header className="bg-white border-b border-stone-200">
+      <header className="bg-white border-b border-cream-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-stone-900" style={{ fontFamily: "Georgia, serif" }}>MyasNailsBaby</Link>
-          <Link href="/" className="text-sm text-stone-500 hover:text-stone-900 transition">← Back to Home</Link>
+          <Link href="/" className="text-xl font-bold text-cream-900" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>MyasNailsBaby</Link>
+          <Link href="/" className="text-sm text-cream-500 hover:text-cream-900 transition">← Back to Home</Link>
         </div>
       </header>
 
       <div className="max-w-lg mx-auto px-6 py-12">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-stone-900 mb-1" style={{ fontFamily: "Georgia, serif" }}>Reschedule</h1>
-          <p className="text-stone-500 text-sm">Update your appointment date or time</p>
+          <h1 className="text-4xl font-bold text-cream-900 mb-1" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Reschedule</h1>
+          <p className="text-cream-500 text-sm">Update your appointment date or time</p>
         </div>
 
         {/* STEP 1: Phone Lookup */}
         {step === 1 && (
-          <div className="bg-white border border-stone-200 p-8">
-            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-6">Find Your Booking</h2>
-            <p className="text-stone-700 text-sm mb-6">Enter the phone number you used when booking:</p>
+          <div className="bg-white border border-cream-200 p-8">
+            <h2 className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-6">Find Your Booking</h2>
+            <p className="text-cream-700 text-sm mb-6">Enter the phone number you used when booking:</p>
             <form onSubmit={handleLookup} className="space-y-4">
               <input
                 type="tel"
@@ -277,7 +277,7 @@ export default function ReschedulePage() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3 font-medium text-sm tracking-wide transition ${loading ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white"}`}
+                className={`w-full py-3 font-medium text-sm tracking-wide transition ${loading ? "bg-cream-300 text-cream-500 cursor-not-allowed" : "bg-gold-700 hover:bg-gold-800 text-white"}`}
               >
                 {loading ? "Searching..." : "FIND MY BOOKING"}
               </button>
@@ -287,8 +287,8 @@ export default function ReschedulePage() {
 
         {/* STEP 2: Show Current Booking */}
         {step === 2 && booking && (
-          <div className="bg-white border border-stone-200 p-8 space-y-6">
-            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Current Appointment</h2>
+          <div className="bg-white border border-cream-200 p-8 space-y-6">
+            <h2 className="text-xs font-semibold text-cream-500 uppercase tracking-wider">Current Appointment</h2>
 
             <div className="space-y-3">
               {[
@@ -297,20 +297,20 @@ export default function ReschedulePage() {
                 ["Date", formatDateShort(booking.date)],
                 ["Time", to12h(booking.start_time)],
               ].map(([label, value]) => (
-                <div key={label} className="flex justify-between items-center py-2 border-b border-stone-100">
-                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{label}</span>
-                  <span className="font-medium text-stone-900 text-sm">{value}</span>
+                <div key={label} className="flex justify-between items-center py-2 border-b border-cream-100">
+                  <span className="text-xs font-semibold text-cream-500 uppercase tracking-wider">{label}</span>
+                  <span className="font-medium text-cream-900 text-sm">{value}</span>
                 </div>
               ))}
             </div>
 
             {booking.can_reschedule ? (
               <>
-                <div className="bg-stone-50 border border-stone-200 p-4">
-                  <p className="text-stone-700 text-sm">
+                <div className="bg-cream-50 border border-cream-200 p-4">
+                  <p className="text-cream-700 text-sm">
                     You can reschedule this appointment.
                     {booking.reschedule_count > 0 && (
-                      <span className="block text-stone-500 text-xs mt-1">
+                      <span className="block text-cream-500 text-xs mt-1">
                         Rescheduled {booking.reschedule_count} time(s) — {2 - booking.reschedule_count} remaining.
                       </span>
                     )}
@@ -318,22 +318,22 @@ export default function ReschedulePage() {
                 </div>
                 <button
                   onClick={handleStartReschedule}
-                  className="w-full bg-rose-800 hover:bg-rose-900 text-white py-3 font-medium text-sm tracking-wide transition"
+                  className="w-full bg-gold-700 hover:bg-gold-800 text-white py-3 font-medium text-sm tracking-wide transition"
                 >
                   CHOOSE NEW DATE & TIME
                 </button>
               </>
             ) : (
-              <div className="bg-stone-50 border border-stone-200 p-6">
-                <h3 className="font-semibold text-stone-900 mb-2 text-sm">Cannot Reschedule Online</h3>
-                <p className="text-stone-700 text-sm mb-4">
+              <div className="bg-cream-50 border border-cream-200 p-6">
+                <h3 className="font-semibold text-cream-900 mb-2 text-sm">Cannot Reschedule Online</h3>
+                <p className="text-cream-700 text-sm mb-4">
                   {(booking.reschedule_count || 0) >= 2
                     ? "You've reached the maximum of 2 reschedules for this booking."
                     : "Your appointment is less than 48 hours away. Online rescheduling is no longer available."}
                 </p>
-                <p className="text-stone-700 text-sm">
+                <p className="text-cream-700 text-sm">
                   Please DM{" "}
-                  <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-rose-800 hover:underline font-medium">
+                  <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-gold-700 hover:underline font-medium">
                     @myasnailsbaby
                   </a>{" "}
                   on Instagram or call (702) 981-8428.
@@ -344,7 +344,7 @@ export default function ReschedulePage() {
             <div className="text-center">
               <button
                 onClick={() => { setStep(1); setBooking(null); setPhone(""); }}
-                className="text-sm text-stone-500 hover:text-stone-900 transition"
+                className="text-sm text-cream-500 hover:text-cream-900 transition"
               >
                 ← Search different number
               </button>
@@ -354,12 +354,12 @@ export default function ReschedulePage() {
 
         {/* STEP 3: Pick New Date/Time */}
         {step === 3 && booking && (
-          <div className="bg-white border border-stone-200 p-8 space-y-6">
-            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Choose New Appointment</h2>
+          <div className="bg-white border border-cream-200 p-8 space-y-6">
+            <h2 className="text-xs font-semibold text-cream-500 uppercase tracking-wider">Choose New Appointment</h2>
 
             <div>
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Select Date</p>
-              <div className="calendar-wrapper border border-stone-200 p-4">
+              <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-3">Select Date</p>
+              <div className="calendar-wrapper border border-cream-200 p-4">
                 <Calendar
                   onChange={(date) => {
                     const y = date.getFullYear();
@@ -384,9 +384,9 @@ export default function ReschedulePage() {
 
             {selectedDate && (
               <div>
-                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Select Time</p>
+                <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-3">Select Time</p>
                 {timeOptions.length === 0 ? (
-                  <p className="text-stone-500 text-sm">No available times for this date.</p>
+                  <p className="text-cream-500 text-sm">No available times for this date.</p>
                 ) : (
                   <div className="grid grid-cols-3 gap-2">
                     {timeOptions.map((t) => (
@@ -395,8 +395,8 @@ export default function ReschedulePage() {
                         onClick={() => setSelectedTime(t)}
                         className={`py-3 px-4 border text-sm font-medium transition ${
                           selectedTime === t
-                            ? "bg-stone-900 text-white border-stone-900"
-                            : "bg-white text-stone-700 border-stone-300 hover:border-stone-900"
+                            ? "bg-cream-900 text-white border-cream-900"
+                            : "bg-white text-cream-700 border-cream-300 hover:border-cream-900"
                         }`}
                       >
                         {to12h(t)}
@@ -410,13 +410,13 @@ export default function ReschedulePage() {
             <button
               onClick={handleConfirmReschedule}
               disabled={!selectedDate || !selectedTime || loading}
-              className={`w-full py-3 font-medium text-sm tracking-wide transition ${!selectedDate || !selectedTime || loading ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white"}`}
+              className={`w-full py-3 font-medium text-sm tracking-wide transition ${!selectedDate || !selectedTime || loading ? "bg-cream-300 text-cream-500 cursor-not-allowed" : "bg-gold-700 hover:bg-gold-800 text-white"}`}
             >
               {loading ? "Rescheduling..." : "CONFIRM RESCHEDULE"}
             </button>
 
             <div className="text-center">
-              <button onClick={() => setStep(2)} className="text-sm text-stone-500 hover:text-stone-900 transition">
+              <button onClick={() => setStep(2)} className="text-sm text-cream-500 hover:text-cream-900 transition">
                 ← Back to booking details
               </button>
             </div>
@@ -425,15 +425,15 @@ export default function ReschedulePage() {
 
         {/* STEP 4: Confirmation */}
         {step === 4 && booking && (
-          <div className="bg-white border border-stone-200 p-8 space-y-6">
+          <div className="bg-white border border-cream-200 p-8 space-y-6">
             <div className="text-center">
-              <div className="w-14 h-14 bg-stone-900 flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 bg-cream-900 flex items-center justify-center mx-auto mb-4">
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-stone-900 mb-1" style={{ fontFamily: "Georgia, serif" }}>Appointment Rescheduled</h2>
-              <p className="text-stone-500 text-sm">Your new appointment is confirmed</p>
+              <h2 className="text-2xl font-bold text-cream-900 mb-1" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Appointment Rescheduled</h2>
+              <p className="text-cream-500 text-sm">Your new appointment is confirmed</p>
             </div>
 
             <div className="space-y-3">
@@ -441,24 +441,24 @@ export default function ReschedulePage() {
                 ["New Date", formatDateShort(booking.date)],
                 ["New Time", to12h(booking.start_time)],
               ].map(([label, value]) => (
-                <div key={label} className="bg-stone-50 border border-stone-200 p-4 flex justify-between items-center">
-                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{label}</span>
-                  <span className="font-medium text-stone-900 text-sm">{value}</span>
+                <div key={label} className="bg-cream-50 border border-cream-200 p-4 flex justify-between items-center">
+                  <span className="text-xs font-semibold text-cream-500 uppercase tracking-wider">{label}</span>
+                  <span className="font-medium text-cream-900 text-sm">{value}</span>
                 </div>
               ))}
             </div>
 
-            <div className="bg-stone-50 border border-stone-200 p-4 text-sm text-stone-700 space-y-1">
+            <div className="bg-cream-50 border border-cream-200 p-4 text-sm text-cream-700 space-y-1">
               <p>A confirmation SMS has been sent to your phone.</p>
               {booking.email && <p>Confirmation email sent to {booking.email}.</p>}
             </div>
 
-            <Link href="/" className="block w-full bg-rose-800 hover:bg-rose-900 text-white py-3 font-medium text-sm tracking-wide transition text-center">
+            <Link href="/" className="block w-full bg-gold-700 hover:bg-gold-800 text-white py-3 font-medium text-sm tracking-wide transition text-center">
               BACK TO HOME
             </Link>
 
             <div className="text-center">
-              <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-sm text-stone-500 hover:text-stone-900 transition">
+              <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-sm text-cream-500 hover:text-cream-900 transition">
                 DM @myasnailsbaby with questions
               </a>
             </div>
@@ -473,37 +473,37 @@ export default function ReschedulePage() {
           width: 100%;
         }
         .calendar-wrapper .react-calendar__tile {
-          border: 1px solid #e7e5e4 !important;
+          border: 1px solid #E9E1D2 !important;
           background: white !important;
           padding: 12px !important;
           transition: all 0.15s !important;
           font-size: 13px;
-          color: #57534e;
+          color: #4E453B;
         }
         .calendar-wrapper .react-calendar__tile:hover:enabled {
-          background: #fafaf9 !important;
-          border-color: #78716c !important;
+          background: #FAF7F1 !important;
+          border-color: #8C7D68 !important;
         }
         .calendar-wrapper .react-calendar__tile--now {
-          background: #fafaf9 !important;
+          background: #FAF7F1 !important;
           font-weight: 600 !important;
         }
         .calendar-wrapper .available-date-clean {
           background: white !important;
-          color: #1c1917 !important;
+          color: #231D18 !important;
           font-weight: 700 !important;
-          border-color: #78716c !important;
+          border-color: #8C7D68 !important;
         }
         .calendar-wrapper .selected-date-clean {
-          background: #9f1239 !important;
+          background: #8F7440 !important;
           color: white !important;
           font-weight: 700 !important;
-          border-color: #9f1239 !important;
+          border-color: #8F7440 !important;
         }
         .calendar-wrapper .react-calendar__tile:disabled {
-          background: #fafaf9 !important;
-          color: #d6d3d1 !important;
-          border-color: #f5f5f4 !important;
+          background: #FAF7F1 !important;
+          color: #D9CDB8 !important;
+          border-color: #F4EEE3 !important;
           cursor: default !important;
         }
         .calendar-wrapper .react-calendar__navigation {
@@ -511,16 +511,16 @@ export default function ReschedulePage() {
           margin-bottom: 10px !important;
         }
         .calendar-wrapper .react-calendar__navigation button {
-          color: #1c1917 !important;
+          color: #231D18 !important;
           font-weight: 600 !important;
           font-size: 14px;
         }
         .calendar-wrapper .react-calendar__navigation button:hover {
-          background: #fafaf9 !important;
+          background: #FAF7F1 !important;
         }
         .calendar-wrapper .react-calendar__month-view__weekdays {
           font-weight: 600 !important;
-          color: #78716c !important;
+          color: #8C7D68 !important;
           font-size: 11px;
           text-transform: uppercase;
         }

@@ -171,64 +171,64 @@ export default async function handler(req, res) {
           to: [booking.email],
           subject: "Appointment Rescheduled 💅",
           html: `
-            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fafaf9; border: 1px solid #e7e5e4;">
+            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #FAF7F1; border: 1px solid #E9E1D2;">
               <!-- Header -->
-              <div style="background: #1c1917; padding: 32px; text-align: center;">
-                <p style="color: #c9848c; margin: 0 0 6px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">MyasNailsBaby</p>
+              <div style="background: #231D18; padding: 32px; text-align: center;">
+                <p style="color: #B08D57; margin: 0 0 6px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">MyasNailsBaby</p>
                 <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: normal; letter-spacing: 1px;">Appointment Rescheduled</h1>
-                <div style="width: 48px; height: 1px; background: linear-gradient(90deg, transparent, #c9848c, #e8b4b8, #c9848c, transparent); margin: 16px auto 0;"></div>
+                <div style="width: 48px; height: 1px; background: linear-gradient(90deg, transparent, #B08D57, #F0E6CF, #B08D57, transparent); margin: 16px auto 0;"></div>
               </div>
 
               <!-- Body -->
               <div style="padding: 32px; background: #ffffff;">
-                <p style="color: #57534e; margin: 0 0 6px; font-size: 14px;">Hi ${booking.name},</p>
-                <p style="color: #1c1917; margin: 0 0 28px; font-size: 15px;">Your appointment has been successfully rescheduled.</p>
+                <p style="color: #4E453B; margin: 0 0 6px; font-size: 14px;">Hi ${booking.name},</p>
+                <p style="color: #231D18; margin: 0 0 28px; font-size: 15px;">Your appointment has been successfully rescheduled.</p>
 
                 <!-- Old vs New -->
-                <div style="border: 1px solid #e7e5e4; padding: 20px 24px; margin-bottom: 24px; background: #fafaf9;">
-                  <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e7e5e4;">
-                    <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Previous</p>
-                    <p style="margin: 0; color: #a8a29e; font-size: 13px; text-decoration: line-through;">${formatDateLong(oldDate)} at ${to12h(oldTime)}</p>
+                <div style="border: 1px solid #E9E1D2; padding: 20px 24px; margin-bottom: 24px; background: #FAF7F1;">
+                  <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #E9E1D2;">
+                    <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #B3A48E; text-transform: uppercase; letter-spacing: 2px;">Previous</p>
+                    <p style="margin: 0; color: #B3A48E; font-size: 13px; text-decoration: line-through;">${formatDateLong(oldDate)} at ${to12h(oldTime)}</p>
                   </div>
                   <div>
-                    <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #9f1239; text-transform: uppercase; letter-spacing: 2px;">New Appointment</p>
-                    <p style="margin: 0; color: #1c1917; font-size: 15px; font-weight: bold;">${formatDateLong(new_date)} at ${to12h(new_time)}</p>
+                    <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #8F7440; text-transform: uppercase; letter-spacing: 2px;">New Appointment</p>
+                    <p style="margin: 0; color: #231D18; font-size: 15px; font-weight: bold;">${formatDateLong(new_date)} at ${to12h(new_time)}</p>
                   </div>
                 </div>
 
                 <!-- Service Details -->
-                <div style="border: 1px solid #e7e5e4; padding: 20px 24px; margin-bottom: 24px; background: #fafaf9;">
-                  <p style="margin: 0 0 14px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Service</p>
+                <div style="border: 1px solid #E9E1D2; padding: 20px 24px; margin-bottom: 24px; background: #FAF7F1;">
+                  <p style="margin: 0 0 14px; font-size: 10px; font-weight: bold; color: #B3A48E; text-transform: uppercase; letter-spacing: 2px;">Service</p>
                   <table style="width: 100%; border-collapse: collapse;">
                     <tr>
-                      <td style="padding: 6px 0; color: #a8a29e; font-size: 12px; border-bottom: 1px solid #f5f5f4;">Service</td>
-                      <td style="padding: 6px 0; color: #1c1917; font-weight: bold; font-size: 13px; text-align: right; border-bottom: 1px solid #f5f5f4;">${booking.service}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? " + " + booking.pedicure_type : ""}</td>
+                      <td style="padding: 6px 0; color: #B3A48E; font-size: 12px; border-bottom: 1px solid #F4EEE3;">Service</td>
+                      <td style="padding: 6px 0; color: #231D18; font-weight: bold; font-size: 13px; text-align: right; border-bottom: 1px solid #F4EEE3;">${booking.service}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? " + " + booking.pedicure_type : ""}</td>
                     </tr>
                     <tr>
-                      <td style="padding: 6px 0; color: #a8a29e; font-size: 12px;">Deposit</td>
-                      <td style="padding: 6px 0; color: #9f1239; font-weight: bold; font-size: 13px; text-align: right;">$20 Paid</td>
+                      <td style="padding: 6px 0; color: #B3A48E; font-size: 12px;">Deposit</td>
+                      <td style="padding: 6px 0; color: #8F7440; font-weight: bold; font-size: 13px; text-align: right;">$20 Paid</td>
                     </tr>
                   </table>
                 </div>
 
                 <!-- Location -->
-                <div style="border-left: 3px solid #9f1239; padding: 14px 18px; margin-bottom: 28px; background: #fafaf9;">
-                  <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Location</p>
+                <div style="border-left: 3px solid #8F7440; padding: 14px 18px; margin-bottom: 28px; background: #FAF7F1;">
+                  <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #B3A48E; text-transform: uppercase; letter-spacing: 2px;">Location</p>
                   <p style="margin: 0; color: #44403c; font-size: 13px; line-height: 1.6;">2080 E. Flamingo Rd., Suite #106, Room 4<br>Las Vegas, NV 89119</p>
                 </div>
 
                 <!-- CTA -->
                 <div style="text-align: center;">
                   <a href="https://instagram.com/myasnailsbaby"
-                     style="display: inline-block; background: #9f1239; color: #fff; padding: 14px 36px; text-decoration: none; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">
+                     style="display: inline-block; background: #8F7440; color: #fff; padding: 14px 36px; text-decoration: none; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">
                     DM @myasnailsbaby
                   </a>
                 </div>
               </div>
 
               <!-- Footer -->
-              <div style="background: #1c1917; padding: 20px 32px; text-align: center;">
-                <p style="margin: 0; color: #78716c; font-size: 11px; letter-spacing: 1px;">MYASNAILSBABY &middot; LAS VEGAS, NV &middot; @MYASNAILSBABY</p>
+              <div style="background: #231D18; padding: 20px 32px; text-align: center;">
+                <p style="margin: 0; color: #8C7D68; font-size: 11px; letter-spacing: 1px;">MYASNAILSBABY &middot; LAS VEGAS, NV &middot; @MYASNAILSBABY</p>
               </div>
             </div>
           `,
@@ -248,9 +248,9 @@ export default async function handler(req, res) {
           to: [myaEmail],
           subject: `📅 Reschedule: ${booking.name}`,
           html: `
-            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fafaf9; border: 1px solid #e7e5e4;">
-              <div style="background: #1c1917; padding: 24px 32px;">
-                <p style="color: #c9848c; margin: 0 0 4px; font-size: 10px; letter-spacing: 3px; text-transform: uppercase;">Dashboard Alert</p>
+            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #FAF7F1; border: 1px solid #E9E1D2;">
+              <div style="background: #231D18; padding: 24px 32px;">
+                <p style="color: #B08D57; margin: 0 0 4px; font-size: 10px; letter-spacing: 3px; text-transform: uppercase;">Dashboard Alert</p>
                 <h2 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: normal;">Client Rescheduled</h2>
               </div>
               <div style="padding: 28px 32px; background: #ffffff;">
@@ -262,16 +262,16 @@ export default async function handler(req, res) {
                     ["Service", `${booking.service}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? " + " + booking.pedicure_type : ""}`],
                   ].map(([k, v]) => `
                     <tr>
-                      <td style="padding: 7px 0; color: #a8a29e; font-size: 12px; width: 30%; border-bottom: 1px solid #f5f5f4;">${k}</td>
-                      <td style="padding: 7px 0; color: #1c1917; font-size: 13px; font-weight: bold; border-bottom: 1px solid #f5f5f4;">${v}</td>
+                      <td style="padding: 7px 0; color: #B3A48E; font-size: 12px; width: 30%; border-bottom: 1px solid #F4EEE3;">${k}</td>
+                      <td style="padding: 7px 0; color: #231D18; font-size: 13px; font-weight: bold; border-bottom: 1px solid #F4EEE3;">${v}</td>
                     </tr>`).join("")}
                 </table>
-                <div style="border-left: 3px solid #9f1239; padding: 14px 18px; background: #fafaf9; margin-bottom: 16px;">
-                  <p style="margin: 0 0 8px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Schedule Change</p>
-                  <p style="margin: 0 0 4px; color: #a8a29e; font-size: 12px; text-decoration: line-through;">Was: ${formatDateLong(oldDate)} at ${to12h(oldTime)}</p>
-                  <p style="margin: 0; color: #1c1917; font-size: 14px; font-weight: bold;">Now: ${formatDateLong(new_date)} at ${to12h(new_time)}</p>
+                <div style="border-left: 3px solid #8F7440; padding: 14px 18px; background: #FAF7F1; margin-bottom: 16px;">
+                  <p style="margin: 0 0 8px; font-size: 10px; font-weight: bold; color: #B3A48E; text-transform: uppercase; letter-spacing: 2px;">Schedule Change</p>
+                  <p style="margin: 0 0 4px; color: #B3A48E; font-size: 12px; text-decoration: line-through;">Was: ${formatDateLong(oldDate)} at ${to12h(oldTime)}</p>
+                  <p style="margin: 0; color: #231D18; font-size: 14px; font-weight: bold;">Now: ${formatDateLong(new_date)} at ${to12h(new_time)}</p>
                 </div>
-                <p style="margin: 0; color: #a8a29e; font-size: 11px;">Reschedule ${(booking.reschedule_count || 0) + 1} of 2</p>
+                <p style="margin: 0; color: #B3A48E; font-size: 11px;">Reschedule ${(booking.reschedule_count || 0) + 1} of 2</p>
               </div>
             </div>
           `,

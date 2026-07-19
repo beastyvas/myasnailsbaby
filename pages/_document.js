@@ -4,6 +4,14 @@ export default function Document() {
   return (
     <Html>
       <Head>
+        {/* Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Great+Vibes&family=Outfit:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+
         {/* Basic Meta */}
         <meta name="description" content="Book cute nail sets with Mya in Las Vegas 💅✨" />
 

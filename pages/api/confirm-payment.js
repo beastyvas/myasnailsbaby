@@ -179,65 +179,65 @@ export default async function handler(req, res) {
           to: [clientEmail],
           subject: "Your Appointment is Confirmed 💅",
           html: `
-            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fafaf9; border: 1px solid #e7e5e4;">
+            <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #FAF7F1; border: 1px solid #E9E1D2;">
               <!-- Header -->
-              <div style="background: #1c1917; padding: 32px; text-align: center;">
-                <p style="color: #c9848c; margin: 0 0 6px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">MyasNailsBaby</p>
+              <div style="background: #231D18; padding: 32px; text-align: center;">
+                <p style="color: #B08D57; margin: 0 0 6px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">MyasNailsBaby</p>
                 <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: normal; letter-spacing: 1px;">Appointment Confirmed</h1>
-                <div style="width: 48px; height: 1px; background: linear-gradient(90deg, transparent, #c9848c, #e8b4b8, #c9848c, transparent); margin: 16px auto 0;"></div>
+                <div style="width: 48px; height: 1px; background: linear-gradient(90deg, transparent, #B08D57, #F0E6CF, #B08D57, transparent); margin: 16px auto 0;"></div>
               </div>
 
               <!-- Body -->
               <div style="padding: 32px; background: #ffffff;">
-                <p style="color: #57534e; margin: 0 0 6px; font-size: 14px;">Hi ${name},</p>
-                <p style="color: #1c1917; margin: 0 0 28px; font-size: 16px; font-weight: bold;">You&apos;re all booked in.</p>
+                <p style="color: #4E453B; margin: 0 0 6px; font-size: 14px;">Hi ${name},</p>
+                <p style="color: #231D18; margin: 0 0 28px; font-size: 16px; font-weight: bold;">You&apos;re all booked in.</p>
 
                 <!-- Booking Details -->
-                <div style="border: 1px solid #e7e5e4; padding: 20px 24px; margin-bottom: 24px; background: #fafaf9;">
-                  <p style="margin: 0 0 14px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Appointment Details</p>
+                <div style="border: 1px solid #E9E1D2; padding: 20px 24px; margin-bottom: 24px; background: #FAF7F1;">
+                  <p style="margin: 0 0 14px; font-size: 10px; font-weight: bold; color: #B3A48E; text-transform: uppercase; letter-spacing: 2px;">Appointment Details</p>
                   <table style="width: 100%; border-collapse: collapse;">
                     <tr>
-                      <td style="padding: 7px 0; color: #a8a29e; font-size: 12px; width: 40%; border-bottom: 1px solid #f5f5f4;">Date</td>
-                      <td style="padding: 7px 0; color: #1c1917; font-weight: bold; font-size: 13px; border-bottom: 1px solid #f5f5f4;">${booking.date}</td>
+                      <td style="padding: 7px 0; color: #B3A48E; font-size: 12px; width: 40%; border-bottom: 1px solid #F4EEE3;">Date</td>
+                      <td style="padding: 7px 0; color: #231D18; font-weight: bold; font-size: 13px; border-bottom: 1px solid #F4EEE3;">${booking.date}</td>
                     </tr>
                     <tr>
-                      <td style="padding: 7px 0; color: #a8a29e; font-size: 12px; border-bottom: 1px solid #f5f5f4;">Time</td>
-                      <td style="padding: 7px 0; color: #1c1917; font-weight: bold; font-size: 13px; border-bottom: 1px solid #f5f5f4;">${displayTime}</td>
+                      <td style="padding: 7px 0; color: #B3A48E; font-size: 12px; border-bottom: 1px solid #F4EEE3;">Time</td>
+                      <td style="padding: 7px 0; color: #231D18; font-weight: bold; font-size: 13px; border-bottom: 1px solid #F4EEE3;">${displayTime}</td>
                     </tr>
                     <tr>
-                      <td style="padding: 7px 0; color: #a8a29e; font-size: 12px; border-bottom: 1px solid #f5f5f4;">Service</td>
-                      <td style="padding: 7px 0; color: #1c1917; font-weight: bold; font-size: 13px; border-bottom: 1px solid #f5f5f4;">${service}</td>
+                      <td style="padding: 7px 0; color: #B3A48E; font-size: 12px; border-bottom: 1px solid #F4EEE3;">Service</td>
+                      <td style="padding: 7px 0; color: #231D18; font-weight: bold; font-size: 13px; border-bottom: 1px solid #F4EEE3;">${service}</td>
                     </tr>
                     <tr>
-                      <td style="padding: 7px 0; color: #a8a29e; font-size: 12px;">Deposit</td>
-                      <td style="padding: 7px 0; color: #9f1239; font-weight: bold; font-size: 13px;">$20 Paid</td>
+                      <td style="padding: 7px 0; color: #B3A48E; font-size: 12px;">Deposit</td>
+                      <td style="padding: 7px 0; color: #8F7440; font-weight: bold; font-size: 13px;">$20 Paid</td>
                     </tr>
                   </table>
                 </div>
 
                 <!-- Location -->
-                <div style="border-left: 3px solid #9f1239; padding: 14px 18px; margin-bottom: 24px; background: #fafaf9;">
-                  <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Location</p>
+                <div style="border-left: 3px solid #8F7440; padding: 14px 18px; margin-bottom: 24px; background: #FAF7F1;">
+                  <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #B3A48E; text-transform: uppercase; letter-spacing: 2px;">Location</p>
                   <p style="margin: 0; color: #44403c; font-size: 13px; line-height: 1.6;">2080 E. Flamingo Rd., Suite #106, Room 4<br>Las Vegas, NV 89119</p>
                 </div>
 
                 <!-- Policy -->
-                <p style="color: #78716c; font-size: 12px; margin: 0 0 28px; line-height: 1.7; border-top: 1px solid #e7e5e4; padding-top: 20px;">
-                  Your $20 deposit is <strong style="color: #1c1917;">refundable</strong> if you cancel at least 48 hours before your appointment. To cancel or reschedule, visit myasnailsbaby.com or DM @myasnailsbaby.
+                <p style="color: #8C7D68; font-size: 12px; margin: 0 0 28px; line-height: 1.7; border-top: 1px solid #E9E1D2; padding-top: 20px;">
+                  Your $20 deposit is <strong style="color: #231D18;">refundable</strong> if you cancel at least 48 hours before your appointment. To cancel or reschedule, visit myasnailsbaby.com or DM @myasnailsbaby.
                 </p>
 
                 <!-- CTA -->
                 <div style="text-align: center;">
                   <a href="https://instagram.com/myasnailsbaby"
-                     style="display: inline-block; background: #9f1239; color: #fff; padding: 14px 36px; text-decoration: none; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">
+                     style="display: inline-block; background: #8F7440; color: #fff; padding: 14px 36px; text-decoration: none; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">
                     DM @myasnailsbaby
                   </a>
                 </div>
               </div>
 
               <!-- Footer -->
-              <div style="background: #1c1917; padding: 20px 32px; text-align: center;">
-                <p style="margin: 0; color: #78716c; font-size: 11px; letter-spacing: 1px;">MYASNAILSBABY &middot; LAS VEGAS, NV &middot; @MYASNAILSBABY</p>
+              <div style="background: #231D18; padding: 20px 32px; text-align: center;">
+                <p style="margin: 0; color: #8C7D68; font-size: 11px; letter-spacing: 1px;">MYASNAILSBABY &middot; LAS VEGAS, NV &middot; @MYASNAILSBABY</p>
               </div>
             </div>
           `,

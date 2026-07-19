@@ -135,9 +135,9 @@ export default async function handler(req, res) {
   if (booking.email) {
     try {
       const refundRow = refundIssued
-        ? `<tr><td style="padding:7px 0;color:#a8a29e;font-size:12px;border-bottom:1px solid #f5f5f4;">Refund</td><td style="padding:7px 0;color:#166534;font-weight:bold;font-size:13px;border-bottom:1px solid #f5f5f4;">$20 refund initiated (5–10 business days)</td></tr>`
+        ? `<tr><td style="padding:7px 0;color:#B3A48E;font-size:12px;border-bottom:1px solid #F4EEE3;">Refund</td><td style="padding:7px 0;color:#166534;font-weight:bold;font-size:13px;border-bottom:1px solid #F4EEE3;">$20 refund initiated (5–10 business days)</td></tr>`
         : booking.paid
-        ? `<tr><td style="padding:7px 0;color:#a8a29e;font-size:12px;border-bottom:1px solid #f5f5f4;">Deposit</td><td style="padding:7px 0;color:#9f1239;font-weight:bold;font-size:13px;border-bottom:1px solid #f5f5f4;">Non-refundable (cancelled within 48 hrs)</td></tr>`
+        ? `<tr><td style="padding:7px 0;color:#B3A48E;font-size:12px;border-bottom:1px solid #F4EEE3;">Deposit</td><td style="padding:7px 0;color:#8F7440;font-weight:bold;font-size:13px;border-bottom:1px solid #F4EEE3;">Non-refundable (cancelled within 48 hrs)</td></tr>`
         : "";
 
       await resend.emails.send({
@@ -145,45 +145,45 @@ export default async function handler(req, res) {
         to: [booking.email],
         subject: "Your Appointment Has Been Cancelled",
         html: `
-          <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;background:#fafaf9;border:1px solid #e7e5e4;">
-            <div style="background:#1c1917;padding:32px;text-align:center;">
-              <p style="color:#c9848c;margin:0 0 6px;font-size:11px;letter-spacing:3px;text-transform:uppercase;">MyasNailsBaby</p>
+          <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;background:#FAF7F1;border:1px solid #E9E1D2;">
+            <div style="background:#231D18;padding:32px;text-align:center;">
+              <p style="color:#B08D57;margin:0 0 6px;font-size:11px;letter-spacing:3px;text-transform:uppercase;">MyasNailsBaby</p>
               <h1 style="color:#ffffff;margin:0;font-size:28px;font-weight:normal;letter-spacing:1px;">Appointment Cancelled</h1>
-              <div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,#c9848c,#e8b4b8,#c9848c,transparent);margin:16px auto 0;"></div>
+              <div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,#B08D57,#F0E6CF,#B08D57,transparent);margin:16px auto 0;"></div>
             </div>
             <div style="padding:32px;background:#ffffff;">
-              <p style="color:#57534e;margin:0 0 6px;font-size:14px;">Hi ${booking.name},</p>
-              <p style="color:#1c1917;margin:0 0 28px;font-size:16px;font-weight:bold;">Your appointment has been cancelled.</p>
-              <div style="border:1px solid #e7e5e4;padding:20px 24px;margin-bottom:24px;background:#fafaf9;">
-                <p style="margin:0 0 14px;font-size:10px;font-weight:bold;color:#a8a29e;text-transform:uppercase;letter-spacing:2px;">Cancelled Appointment</p>
+              <p style="color:#4E453B;margin:0 0 6px;font-size:14px;">Hi ${booking.name},</p>
+              <p style="color:#231D18;margin:0 0 28px;font-size:16px;font-weight:bold;">Your appointment has been cancelled.</p>
+              <div style="border:1px solid #E9E1D2;padding:20px 24px;margin-bottom:24px;background:#FAF7F1;">
+                <p style="margin:0 0 14px;font-size:10px;font-weight:bold;color:#B3A48E;text-transform:uppercase;letter-spacing:2px;">Cancelled Appointment</p>
                 <table style="width:100%;border-collapse:collapse;">
                   <tr>
-                    <td style="padding:7px 0;color:#a8a29e;font-size:12px;width:40%;border-bottom:1px solid #f5f5f4;">Date</td>
-                    <td style="padding:7px 0;color:#1c1917;font-weight:bold;font-size:13px;border-bottom:1px solid #f5f5f4;">${booking.date}</td>
+                    <td style="padding:7px 0;color:#B3A48E;font-size:12px;width:40%;border-bottom:1px solid #F4EEE3;">Date</td>
+                    <td style="padding:7px 0;color:#231D18;font-weight:bold;font-size:13px;border-bottom:1px solid #F4EEE3;">${booking.date}</td>
                   </tr>
                   <tr>
-                    <td style="padding:7px 0;color:#a8a29e;font-size:12px;border-bottom:1px solid #f5f5f4;">Time</td>
-                    <td style="padding:7px 0;color:#1c1917;font-weight:bold;font-size:13px;border-bottom:1px solid #f5f5f4;">${to12h(booking.start_time)}</td>
+                    <td style="padding:7px 0;color:#B3A48E;font-size:12px;border-bottom:1px solid #F4EEE3;">Time</td>
+                    <td style="padding:7px 0;color:#231D18;font-weight:bold;font-size:13px;border-bottom:1px solid #F4EEE3;">${to12h(booking.start_time)}</td>
                   </tr>
                   <tr>
-                    <td style="padding:7px 0;color:#a8a29e;font-size:12px;border-bottom:1px solid #f5f5f4;">Service</td>
-                    <td style="padding:7px 0;color:#1c1917;font-weight:bold;font-size:13px;border-bottom:1px solid #f5f5f4;">${booking.service}</td>
+                    <td style="padding:7px 0;color:#B3A48E;font-size:12px;border-bottom:1px solid #F4EEE3;">Service</td>
+                    <td style="padding:7px 0;color:#231D18;font-weight:bold;font-size:13px;border-bottom:1px solid #F4EEE3;">${booking.service}</td>
                   </tr>
                   ${refundRow}
                 </table>
               </div>
-              <p style="color:#78716c;font-size:12px;margin:0 0 28px;line-height:1.7;border-top:1px solid #e7e5e4;padding-top:20px;">
+              <p style="color:#8C7D68;font-size:12px;margin:0 0 28px;line-height:1.7;border-top:1px solid #E9E1D2;padding-top:20px;">
                 We hope to see you again soon. Book a new appointment anytime at myasnailsbaby.com.
               </p>
               <div style="text-align:center;">
                 <a href="https://instagram.com/myasnailsbaby"
-                   style="display:inline-block;background:#9f1239;color:#fff;padding:14px 36px;text-decoration:none;font-size:13px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">
+                   style="display:inline-block;background:#8F7440;color:#fff;padding:14px 36px;text-decoration:none;font-size:13px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">
                   DM @myasnailsbaby
                 </a>
               </div>
             </div>
-            <div style="background:#1c1917;padding:20px 32px;text-align:center;">
-              <p style="margin:0;color:#78716c;font-size:11px;letter-spacing:1px;">MYASNAILSBABY &middot; LAS VEGAS, NV &middot; @MYASNAILSBABY</p>
+            <div style="background:#231D18;padding:20px 32px;text-align:center;">
+              <p style="margin:0;color:#8C7D68;font-size:11px;letter-spacing:1px;">MYASNAILSBABY &middot; LAS VEGAS, NV &middot; @MYASNAILSBABY</p>
             </div>
           </div>
         `,

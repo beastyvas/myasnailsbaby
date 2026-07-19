@@ -25,28 +25,28 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-stone-50 flex items-center justify-center p-6">
+    <main className="min-h-screen bg-cream-50 flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-stone-900 mb-1" style={{ fontFamily: "Georgia, serif" }}>
+          <h1 className="text-3xl font-bold text-cream-900 mb-1" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
             MyasNailsBaby
           </h1>
-          <p className="text-stone-500 text-sm">Dashboard Login</p>
+          <p className="text-cream-500 text-sm">Dashboard Login</p>
         </div>
 
         {/* Form */}
-        <div className="bg-white border border-stone-200 p-8">
+        <div className="bg-white border border-cream-200 p-8">
           <form onSubmit={onSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+              <label htmlFor="email" className="block text-xs font-semibold text-cream-500 uppercase tracking-wider mb-2">
                 Email Address
               </label>
               <input
                 id="email"
                 type="email"
-                className="w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none transition text-stone-900 placeholder-stone-400"
+                className="w-full px-4 py-3 border border-cream-300 focus:border-cream-900 focus:outline-none transition text-cream-900 placeholder-cream-400"
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -55,13 +55,13 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+              <label htmlFor="password" className="block text-xs font-semibold text-cream-500 uppercase tracking-wider mb-2">
                 Password
               </label>
               <input
                 id="password"
                 type="password"
-                className="w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none transition text-stone-900 placeholder-stone-400"
+                className="w-full px-4 py-3 border border-cream-300 focus:border-cream-900 focus:outline-none transition text-cream-900 placeholder-cream-400"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -79,7 +79,7 @@ export default function LoginPage() {
               type="submit"
               disabled={isLoading}
               className={`w-full py-3 font-medium text-sm tracking-wide transition ${
-                isLoading ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white"
+                isLoading ? "bg-cream-300 text-cream-500 cursor-not-allowed" : "bg-gold-700 hover:bg-gold-800 text-white"
               }`}
             >
               {isLoading ? "Signing In..." : "SIGN IN"}
@@ -88,7 +88,7 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center mt-6">
-          <Link href="/" className="text-xs text-stone-400 hover:text-stone-700 transition">
+          <Link href="/" className="text-xs text-cream-400 hover:text-cream-700 transition">
             ← Back to Home
           </Link>
         </div>

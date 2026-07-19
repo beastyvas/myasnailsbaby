@@ -101,18 +101,18 @@ export default function CancelAppointmentPage() {
   const refundEligible = hoursUntil > 48 && booking?.paid;
 
   const inputCls =
-    "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 placeholder-stone-400 bg-white";
+    "w-full px-4 py-3 border border-cream-300 focus:border-cream-900 focus:outline-none focus:ring-0 transition text-cream-900 placeholder-cream-400 bg-white";
 
   return (
-    <main className="min-h-screen bg-stone-50">
+    <main className="min-h-screen bg-cream-50">
       <Toaster position="top-center" />
 
-      <header className="bg-white border-b border-stone-200">
+      <header className="bg-white border-b border-cream-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-stone-900" style={{ fontFamily: "Georgia, serif" }}>
+          <Link href="/" className="text-xl font-bold text-cream-900" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
             MyasNailsBaby
           </Link>
-          <Link href="/" className="text-sm text-stone-500 hover:text-stone-900 transition">
+          <Link href="/" className="text-sm text-cream-500 hover:text-cream-900 transition">
             ← Back to Home
           </Link>
         </div>
@@ -120,19 +120,19 @@ export default function CancelAppointmentPage() {
 
       <div className="max-w-lg mx-auto px-6 py-12">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-stone-900 mb-1" style={{ fontFamily: "Georgia, serif" }}>
+          <h1 className="text-4xl font-bold text-cream-900 mb-1" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
             Cancel Appointment
           </h1>
-          <p className="text-stone-500 text-sm">Cancel your upcoming appointment</p>
+          <p className="text-cream-500 text-sm">Cancel your upcoming appointment</p>
         </div>
 
         {/* STEP 1: Phone Lookup */}
         {step === 1 && (
-          <div className="bg-white border border-stone-200 p-8">
-            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-6">
+          <div className="bg-white border border-cream-200 p-8">
+            <h2 className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-6">
               Find Your Booking
             </h2>
-            <p className="text-stone-700 text-sm mb-6">
+            <p className="text-cream-700 text-sm mb-6">
               Enter the phone number you used when booking:
             </p>
             <form onSubmit={handleLookup} className="space-y-4">
@@ -149,8 +149,8 @@ export default function CancelAppointmentPage() {
                 disabled={loading}
                 className={`w-full py-3 font-medium text-sm tracking-wide transition ${
                   loading
-                    ? "bg-stone-300 text-stone-500 cursor-not-allowed"
-                    : "bg-rose-800 hover:bg-rose-900 text-white"
+                    ? "bg-cream-300 text-cream-500 cursor-not-allowed"
+                    : "bg-gold-700 hover:bg-gold-800 text-white"
                 }`}
               >
                 {loading ? "Searching..." : "FIND MY BOOKING"}
@@ -161,8 +161,8 @@ export default function CancelAppointmentPage() {
 
         {/* STEP 2: Confirm Cancellation */}
         {step === 2 && booking && (
-          <div className="bg-white border border-stone-200 p-8 space-y-6">
-            <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+          <div className="bg-white border border-cream-200 p-8 space-y-6">
+            <h2 className="text-xs font-semibold text-cream-500 uppercase tracking-wider">
               Your Appointment
             </h2>
 
@@ -182,12 +182,12 @@ export default function CancelAppointmentPage() {
               ].map(([label, value]) => (
                 <div
                   key={label}
-                  className="flex justify-between items-center py-2 border-b border-stone-100"
+                  className="flex justify-between items-center py-2 border-b border-cream-100"
                 >
-                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-cream-500 uppercase tracking-wider">
                     {label}
                   </span>
-                  <span className="font-medium text-stone-900 text-sm">{value}</span>
+                  <span className="font-medium text-cream-900 text-sm">{value}</span>
                 </div>
               ))}
             </div>
@@ -213,8 +213,8 @@ export default function CancelAppointmentPage() {
               </div>
             ) : null}
 
-            <div className="bg-stone-50 border border-stone-200 p-4">
-              <p className="text-stone-700 text-sm">
+            <div className="bg-cream-50 border border-cream-200 p-4">
+              <p className="text-cream-700 text-sm">
                 This action cannot be undone. Your time slot will be released and you will
                 receive a confirmation text.
               </p>
@@ -225,8 +225,8 @@ export default function CancelAppointmentPage() {
               disabled={loading}
               className={`w-full py-3 font-medium text-sm tracking-wide transition ${
                 loading
-                  ? "bg-stone-300 text-stone-500 cursor-not-allowed"
-                  : "bg-stone-900 hover:bg-stone-800 text-white"
+                  ? "bg-cream-300 text-cream-500 cursor-not-allowed"
+                  : "bg-cream-900 hover:bg-cream-800 text-white"
               }`}
             >
               {loading ? "Cancelling..." : "CONFIRM CANCELLATION"}
@@ -239,7 +239,7 @@ export default function CancelAppointmentPage() {
                   setBooking(null);
                   setPhone("");
                 }}
-                className="text-sm text-stone-500 hover:text-stone-900 transition"
+                className="text-sm text-cream-500 hover:text-cream-900 transition"
               >
                 ← Search different number
               </button>
@@ -249,9 +249,9 @@ export default function CancelAppointmentPage() {
 
         {/* STEP 3: Done */}
         {step === 3 && (
-          <div className="bg-white border border-stone-200 p-8 space-y-6">
+          <div className="bg-white border border-cream-200 p-8 space-y-6">
             <div className="text-center">
-              <div className="w-14 h-14 bg-stone-900 flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 bg-cream-900 flex items-center justify-center mx-auto mb-4">
                 <svg
                   className="w-7 h-7 text-white"
                   fill="none"
@@ -267,12 +267,12 @@ export default function CancelAppointmentPage() {
                 </svg>
               </div>
               <h2
-                className="text-2xl font-bold text-stone-900 mb-1"
-                style={{ fontFamily: "Georgia, serif" }}
+                className="text-2xl font-bold text-cream-900 mb-1"
+                style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
               >
                 Appointment Cancelled
               </h2>
-              <p className="text-stone-500 text-sm">
+              <p className="text-cream-500 text-sm">
                 Your appointment has been successfully cancelled
               </p>
             </div>
@@ -285,18 +285,18 @@ export default function CancelAppointmentPage() {
                 </p>
               </div>
             ) : booking?.paid ? (
-              <div className="bg-stone-50 border border-stone-200 p-4 text-sm text-stone-700">
+              <div className="bg-cream-50 border border-cream-200 p-4 text-sm text-cream-700">
                 <p>Your $20 deposit was not refunded (cancelled within 48 hours).</p>
               </div>
             ) : null}
 
-            <div className="bg-stone-50 border border-stone-200 p-4 text-sm text-stone-700">
+            <div className="bg-cream-50 border border-cream-200 p-4 text-sm text-cream-700">
               <p>A confirmation text has been sent to your phone.</p>
             </div>
 
             <Link
               href="/"
-              className="block w-full bg-rose-800 hover:bg-rose-900 text-white py-3 font-medium text-sm tracking-wide transition text-center"
+              className="block w-full bg-gold-700 hover:bg-gold-800 text-white py-3 font-medium text-sm tracking-wide transition text-center"
             >
               BACK TO HOME
             </Link>
@@ -306,7 +306,7 @@ export default function CancelAppointmentPage() {
                 href="https://instagram.com/myasnailsbaby"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-stone-500 hover:text-stone-900 transition"
+                className="text-sm text-cream-500 hover:text-cream-900 transition"
               >
                 DM @myasnailsbaby with questions
               </a>
