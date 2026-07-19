@@ -45,6 +45,20 @@ export default function Home() {
     fetchGallery();
   }, []);
 
+  // Scroll-reveal: fade/slide elements in as they enter the viewport
+  useEffect(() => {
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in-view"); io.unobserve(e.target); } }),
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+    );
+    const observeAll = () => document.querySelectorAll("[data-reveal]:not(.in-view)").forEach((el) => io.observe(el));
+    observeAll();
+    const mo = new MutationObserver(observeAll);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => { io.disconnect(); mo.disconnect(); };
+  }, []);
+
   useEffect(() => {
     let d = 0;
     if (bookingNails === "yes") d += 2;
@@ -251,25 +265,27 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6">
+      {/* ── HERO — full-bleed editorial ── */}
+      <section className="relative overflow-hidden bg-cream-50">
+        {/* Ghost script word */}
+        <span className="hero-ghost" aria-hidden="true">Mya</span>
 
-        {/* ── HERO — editorial split ── */}
-        <section className="py-16 sm:py-24 border-b border-cream-200">
-          <div className="grid sm:grid-cols-[1.2fr_1fr] gap-12 sm:gap-16 items-center">
+        <div className="max-w-6xl mx-auto px-6 relative min-h-[82vh] flex items-center py-16 sm:py-20">
+          <div className="grid sm:grid-cols-[1.2fr_1fr] gap-12 sm:gap-16 items-center w-full">
             {/* Left: statement */}
             <div className="text-center sm:text-left order-2 sm:order-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-700 mb-6">
+              <p className="hero-rise hero-d1 text-[11px] font-semibold uppercase tracking-[0.35em] text-gold-700 mb-6">
                 Las Vegas Nail Artistry
               </p>
-              <h2 className="text-5xl sm:text-6xl lg:text-7xl text-cream-900 leading-[1.05] mb-4" style={sectionHeading}>
+              <h2 className="hero-rise hero-d2 text-6xl sm:text-7xl lg:text-8xl text-cream-900 leading-[0.95] mb-5" style={sectionHeading}>
                 Beautiful nails,
-                <span className="block mt-2 text-gold-700" style={scriptHeadingGold}>made just for you</span>
+                <span className="block mt-3 text-gold-700 text-5xl sm:text-6xl lg:text-7xl" style={scriptHeadingGold}>made just for you</span>
               </h2>
-              <p className="text-base sm:text-lg text-cream-600 mb-10 leading-relaxed max-w-md mx-auto sm:mx-0">
+              <p className="hero-rise hero-d3 text-base sm:text-lg text-cream-600 mb-10 leading-relaxed max-w-md mx-auto sm:mx-0">
                 {bioText || "Las Vegas based nail artist specializing in custom designs"}
               </p>
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <a href="#booking" className="w-full sm:w-auto text-center bg-gold-700 hover:bg-gold-800 text-white px-10 py-4 text-[11px] font-semibold uppercase tracking-[0.25em] transition btn-shimmer active:scale-95">
+              <div className="hero-rise hero-d4 flex flex-col sm:flex-row items-center gap-4">
+                <a href="#booking" className="btn-lift w-full sm:w-auto text-center bg-gold-700 hover:bg-gold-800 text-white px-10 py-4 text-[11px] font-semibold uppercase tracking-[0.25em] transition btn-shimmer">
                   Book an Appointment
                 </a>
                 <a
@@ -285,7 +301,7 @@ export default function Home() {
                 </a>
               </div>
               {/* Trust row */}
-              <div className="mt-12 pt-8 border-t border-cream-200 flex items-center justify-center sm:justify-start gap-8 text-[10px] font-semibold uppercase tracking-[0.2em] text-cream-500">
+              <div className="hero-rise hero-d5 mt-12 pt-8 border-t border-cream-200 flex items-center justify-center sm:justify-start gap-8 text-[10px] font-semibold uppercase tracking-[0.2em] text-cream-500">
                 <span>Custom Designs</span>
                 <span className="w-1 h-1 rounded-full bg-gold-400" />
                 <span>Secure Booking</span>
@@ -294,8 +310,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: arch portrait */}
-            <div className="order-1 sm:order-2 flex justify-center">
+            {/* Right: arch portrait + rotating stamp */}
+            <div className="order-1 sm:order-2 flex justify-center hero-rise hero-d2">
               <div className="relative">
                 {/* offset gold frame */}
                 <div className="absolute -top-4 -right-4 w-full h-full arch-frame border border-gold-400" aria-hidden="true" />
@@ -315,90 +331,164 @@ export default function Home() {
                     className="w-64 h-80 sm:w-72 sm:h-96 object-cover block arch-frame"
                   />
                 </div>
+                {/* Rotating stamp */}
+                <div className="stamp-spin absolute -bottom-8 -left-10 w-28 h-28 hidden sm:block" aria-hidden="true">
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    <defs>
+                      <path id="stampCircle" d="M 50,50 m -38,0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0" />
+                    </defs>
+                    <circle cx="50" cy="50" r="49" fill="#FAF7F1" stroke="#D4BC8B" strokeWidth="1" />
+                    <circle cx="50" cy="50" r="28" fill="none" stroke="#D4BC8B" strokeWidth="0.75" />
+                    <text style={{ fontSize: "10.5px", letterSpacing: "2.5px", fill: "#8F7440", fontFamily: "Outfit, sans-serif", fontWeight: 600 }}>
+                      <textPath href="#stampCircle">MYA&apos;S NAILS BABY · LAS VEGAS ·</textPath>
+                    </text>
+                    <text x="50" y="57" textAnchor="middle" style={{ fontSize: "20px", fill: "#B08D57", fontFamily: "'Great Vibes', cursive" }}>M</text>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll cue */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-2" aria-hidden="true">
+          <span className="text-[9px] font-semibold uppercase tracking-[0.3em] text-cream-400">Scroll</span>
+          <span className="scroll-cue-line" />
+        </div>
+      </section>
+
+      {/* ── MARQUEE ── */}
+      <div className="bg-white border-y border-cream-200 overflow-hidden py-5 select-none" aria-hidden="true">
+        <div className="marquee-track whitespace-nowrap">
+          {[0, 1].map((i) => (
+            <span key={i} className="inline-block text-2xl sm:text-3xl italic text-cream-300 tracking-wide" style={sectionHeading}>
+              Custom Sets <span className="text-gold-400 not-italic mx-4">✦</span> Gel-X <span className="text-gold-400 not-italic mx-4">✦</span> Acrylic <span className="text-gold-400 not-italic mx-4">✦</span> Hard Gel <span className="text-gold-400 not-italic mx-4">✦</span> Nail Art <span className="text-gold-400 not-italic mx-4">✦</span> Pedicures <span className="text-gold-400 not-italic mx-4">✦</span> Las Vegas <span className="text-gold-400 not-italic mx-4">✦</span>{" "}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div>
+
+        {/* ── RECENT WORK — white band, asymmetric grid ── */}
+        {galleryItems.length > 0 && (
+          <section id="work" className="bg-white py-20 sm:py-28">
+            <div className="max-w-6xl mx-auto px-6">
+              <div className="flex items-end justify-between mb-12" data-reveal>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-gold-700 mb-3">01 — The Portfolio</p>
+                  <h3 className="text-5xl sm:text-6xl text-cream-900" style={sectionHeading}>Recent <span className="italic text-gold-700">Work</span></h3>
+                </div>
+                <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
+                  className="hidden sm:block text-[11px] font-semibold uppercase tracking-[0.2em] text-cream-600 hover:text-gold-700 transition nav-slide">
+                  View More on Instagram
+                </a>
+              </div>
+
+              {/* Desktop: asymmetric editorial grid */}
+              <div className="hidden sm:grid grid-cols-3 gap-4 auto-rows-[260px]">
+                {galleryItems.map((item, i) => (
+                  <div
+                    key={item.id}
+                    data-reveal
+                    style={{ transitionDelay: `${(i % 3) * 90}ms` }}
+                    className={`group relative overflow-hidden bg-cream-100 ${i === 0 ? "row-span-2" : ""} ${i === 3 ? "col-span-2" : ""}`}
+                  >
+                    <img
+                      src={`https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${item.image_url}`}
+                      alt={item.caption || "Nail design"}
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+                      loading="lazy"
+                    />
+                    {item.caption && (
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-cream-900/75 to-transparent px-5 pt-10 pb-4 translate-y-3 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-400">
+                        <p className="text-white text-base italic" style={sectionHeading}>{item.caption}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Mobile: horizontal snap scroll */}
+              <div className="sm:hidden -mx-6 px-6 flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide" data-reveal>
+                {galleryItems.map((item) => (
+                  <div key={item.id} className="snap-center flex-shrink-0 w-[75vw] relative overflow-hidden bg-cream-100">
+                    <img
+                      src={`https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${item.image_url}`}
+                      alt={item.caption || "Nail design"}
+                      className="w-full aspect-[4/5] object-cover"
+                      loading="lazy"
+                    />
+                    {item.caption && (
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-cream-900/75 to-transparent px-4 pt-8 pb-3">
+                        <p className="text-white text-sm italic" style={sectionHeading}>{item.caption}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── BOOKING POLICIES — ivory, offset editorial ── */}
+        <section id="policies" className="bg-cream-50 py-20 sm:py-28">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="grid sm:grid-cols-[1fr_2fr] gap-10 sm:gap-16">
+              <div data-reveal>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-gold-700 mb-3">02 — The Fine Print</p>
+                <h3 className="text-5xl sm:text-6xl text-cream-900 leading-tight" style={sectionHeading}>
+                  Booking<br /><span className="italic text-gold-700">Policies</span>
+                </h3>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-x-12 gap-y-12">
+                {[
+                  {
+                    num: "01",
+                    title: "Appointments",
+                    body: "All appointments require a deposit to secure your spot and must be booked at least 24 hours in advance.",
+                  },
+                  {
+                    num: "02",
+                    title: "Deposit",
+                    body: "A non-refundable $20 deposit is required at the time of booking to secure your appointment.",
+                  },
+                  {
+                    num: "03",
+                    title: "Late Arrivals",
+                    body: "Arriving more than 5 minutes late may result in a shortened service or need to reschedule. $10 late fee applies.",
+                  },
+                  {
+                    num: "04",
+                    title: "Cancellation",
+                    body: "Cancellations must be made at least 48 hours in advance to avoid a cancellation fee.",
+                  },
+                ].map(({ num, title, body }, i) => (
+                  <div key={title} className="flex gap-5" data-reveal style={{ transitionDelay: `${i * 90}ms` }}>
+                    <span className="text-5xl leading-none text-gold-400 select-none" style={sectionHeading}>{num}</span>
+                    <div className="pt-1">
+                      <h4 className="font-semibold text-cream-900 text-xs uppercase tracking-[0.2em] mb-2.5">{title}</h4>
+                      <p className="text-sm text-cream-600 leading-relaxed">{body}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── RECENT WORK ── */}
-        {galleryItems.length > 0 && (
-          <section id="work" className="py-16 sm:py-20 border-b border-cream-200">
-            <div className="flex items-end justify-between mb-10">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-700 mb-3">The Portfolio</p>
-                <h3 className="text-4xl sm:text-5xl text-cream-900" style={sectionHeading}>Recent Work</h3>
-              </div>
-              <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
-                className="hidden sm:block text-[11px] font-semibold uppercase tracking-[0.2em] text-cream-600 hover:text-gold-700 transition nav-slide">
-                View More on Instagram
-              </a>
+        {/* ── BEFORE YOUR APPOINTMENT — full-bleed espresso ── */}
+        <section className="bg-cream-900 py-16 sm:py-20 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-px" style={{ background: "linear-gradient(90deg, transparent, #B08D57, #F0E6CF, #B08D57, transparent)" }} />
+          <div className="max-w-6xl mx-auto px-6 grid sm:grid-cols-[1fr_1.6fr] gap-10 sm:gap-16 items-center">
+            <div data-reveal>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-gold-400 mb-3">Please Read</p>
+              <h4 className="text-4xl sm:text-5xl leading-tight" style={{ ...sectionHeading, color: "#F0E6CF" }}>
+                Before Your<br /><span className="italic">Appointment</span>
+              </h4>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              {galleryItems.map((item) => (
-                <div key={item.id} className="group relative overflow-hidden bg-cream-100">
-                  <img
-                    src={`https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${item.image_url}`}
-                    alt={item.caption || "Nail design"}
-                    className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  {item.caption && (
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-cream-900/70 to-transparent px-4 pt-8 pb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <p className="text-white text-sm italic" style={sectionHeading}>{item.caption}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── BOOKING POLICIES ── */}
-        <section id="policies" className="py-16 sm:py-20 border-b border-cream-200">
-          <div className="text-center mb-14">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-700 mb-3">The Fine Print</p>
-            <h3 className="text-4xl sm:text-5xl text-cream-900" style={sectionHeading}>Booking Policies</h3>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-x-16 gap-y-12 mb-16 max-w-4xl mx-auto">
-            {[
-              {
-                num: "01",
-                title: "Appointments",
-                body: "All appointments require a deposit to secure your spot and must be booked at least 24 hours in advance.",
-              },
-              {
-                num: "02",
-                title: "Deposit",
-                body: "A non-refundable $20 deposit is required at the time of booking to secure your appointment.",
-              },
-              {
-                num: "03",
-                title: "Late Arrivals",
-                body: "Arriving more than 5 minutes late may result in a shortened service or need to reschedule. $10 late fee applies.",
-              },
-              {
-                num: "04",
-                title: "Cancellation",
-                body: "Cancellations must be made at least 48 hours in advance to avoid a cancellation fee.",
-              },
-            ].map(({ num, title, body }) => (
-              <div key={title} className="flex gap-6">
-                <span className="text-5xl leading-none text-gold-400 select-none" style={sectionHeading}>{num}</span>
-                <div className="pt-1">
-                  <h4 className="font-semibold text-cream-900 text-xs uppercase tracking-[0.2em] mb-2.5">{title}</h4>
-                  <p className="text-sm text-cream-600 leading-relaxed">{body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Before Your Appointment — espresso moment */}
-          <div className="bg-cream-900 p-8 sm:p-12 max-w-4xl mx-auto relative overflow-hidden">
-            <div className="absolute top-0 inset-x-0 h-px" style={{ background: "linear-gradient(90deg, transparent, #B08D57, #F0E6CF, #B08D57, transparent)" }} />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-400 mb-2">Please Read</p>
-            <h4 className="text-3xl mb-8" style={{ ...sectionHeading, color: "#F0E6CF" }}>Before Your Appointment</h4>
-            <div className="grid sm:grid-cols-2 gap-5">
+            <div className="grid sm:grid-cols-2 gap-5" data-reveal style={{ transitionDelay: "120ms" }}>
               {[
                 "Avoid picking or cutting cuticles",
                 "Avoid removing or picking at old product",
@@ -414,13 +504,13 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── BOOKING FORM ── */}
-        <section id="booking" className="py-16 sm:py-20 border-b border-cream-200">
-          <div className="grid lg:grid-cols-[1fr_1.6fr] gap-12 lg:gap-16 items-start">
+        {/* ── BOOKING FORM — white band ── */}
+        <section id="booking" className="bg-white py-20 sm:py-28">
+          <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-[1fr_1.6fr] gap-12 lg:gap-16 items-start">
 
             {/* Left rail — intro */}
-            <div className="lg:sticky lg:top-28">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-700 mb-3">Reservations</p>
+            <div className="lg:sticky lg:top-28" data-reveal>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-gold-700 mb-3">03 — Reservations</p>
               <h3 className="text-4xl sm:text-5xl text-cream-900 mb-3" style={sectionHeading}>
                 Book an
                 <span className="block text-gold-700 mt-1" style={scriptHeadingGold}>Appointment</span>
@@ -449,7 +539,8 @@ export default function Home() {
             </div>
 
             {/* Right — the form */}
-            <form ref={formRef} onSubmit={handleSubmit} className="bg-white border border-cream-200 p-8 sm:p-10 space-y-8 shadow-sm">
+            <form ref={formRef} onSubmit={handleSubmit} data-reveal style={{ transitionDelay: "120ms" }}
+              className="bg-cream-50 p-8 sm:p-10 space-y-8" >
 
               {/* Personal Info */}
               <div className="space-y-4">
@@ -608,12 +699,12 @@ export default function Home() {
         </section>
 
         {/* ── VISIT — contact + location merged ── */}
-        <section id="contact" className="py-16 sm:py-20 border-b border-cream-200">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+        <section id="contact" className="bg-cream-50 py-20 sm:py-28">
+          <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
             {/* Left: details */}
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-700 mb-3">Visit the Studio</p>
-              <h3 className="text-4xl sm:text-5xl text-cream-900 mb-8" style={sectionHeading}>Contact & Location</h3>
+            <div data-reveal>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-gold-700 mb-3">04 — Visit the Studio</p>
+              <h3 className="text-5xl sm:text-6xl text-cream-900 mb-8 leading-tight" style={sectionHeading}>Contact &<br /><span className="italic text-gold-700">Location</span></h3>
 
               <p className="text-lg text-cream-700 mb-10 leading-relaxed" style={sectionHeading}>
                 2080 E. Flamingo Rd. Suite #106 Room 4<br />Las Vegas, Nevada
@@ -642,17 +733,18 @@ export default function Home() {
 
               <div className="border-t border-cream-200 pt-6">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cream-500 mb-4">Studio Hours</p>
-                <div className="space-y-2 text-sm text-cream-700 max-w-xs">
-                  <p className="flex justify-between"><span className="font-semibold text-cream-900">Mon – Tue</span><span>10:00AM – 8:00PM</span></p>
-                  <p className="flex justify-between"><span className="font-semibold text-cream-900">Fri</span><span>8:00AM – 6:00PM</span></p>
-                  <p className="flex justify-between"><span className="font-semibold text-cream-900">Sat</span><span>8:00AM – 4:00PM</span></p>
-                  <p className="flex justify-between text-gold-700 font-medium"><span>Sun / Wed / Thu</span><span>Closed</span></p>
+                <div className="space-y-3 text-sm text-cream-700 max-w-sm">
+                  <p className="flex items-baseline gap-2"><span className="font-semibold text-cream-900 whitespace-nowrap">Mon – Tue</span><span className="flex-1 border-b border-dotted border-cream-300" /><span>10:00AM – 8:00PM</span></p>
+                  <p className="flex items-baseline gap-2"><span className="font-semibold text-cream-900 whitespace-nowrap">Fri</span><span className="flex-1 border-b border-dotted border-cream-300" /><span>8:00AM – 6:00PM</span></p>
+                  <p className="flex items-baseline gap-2"><span className="font-semibold text-cream-900 whitespace-nowrap">Sat</span><span className="flex-1 border-b border-dotted border-cream-300" /><span>8:00AM – 4:00PM</span></p>
+                  <p className="flex items-baseline gap-2 text-gold-700 font-medium"><span className="whitespace-nowrap">Sun / Wed / Thu</span><span className="flex-1 border-b border-dotted border-cream-300" /><span>Closed</span></p>
                 </div>
               </div>
             </div>
 
             {/* Right: tinted map */}
-            <div className="border border-cream-200 overflow-hidden h-full min-h-[360px]">
+            <div className="overflow-hidden h-full min-h-[420px] relative" data-reveal style={{ transitionDelay: "120ms" }}>
+              <div className="absolute top-0 inset-x-0 h-1 z-10" style={{ background: "linear-gradient(90deg, #8F7440, #D4BC8B, #F0E6CF, #D4BC8B, #8F7440)" }} />
               <iframe
                 title="Location"
                 className="map-tinted w-full h-full min-h-[360px]"
@@ -664,13 +756,15 @@ export default function Home() {
         </section>
 
         {/* ── TAG ME ── */}
-        <section className="py-16 sm:py-20 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-cream-500 mb-3">Thank you for booking with me</p>
-          <h3 className="text-5xl sm:text-6xl text-cream-900 mb-6" style={scriptHeading}>Tag me in your nailfies!</h3>
-          <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
-            className="inline-block border border-cream-300 text-cream-700 hover:border-gold-600 hover:text-gold-700 px-8 py-3 text-[11px] font-semibold uppercase tracking-[0.25em] transition">
-            @myasnailsbaby
-          </a>
+        <section className="bg-white py-20 sm:py-24 text-center">
+          <div className="max-w-6xl mx-auto px-6" data-reveal>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-cream-500 mb-4">Thank you for booking with me</p>
+            <h3 className="text-6xl sm:text-7xl text-cream-900 mb-8" style={scriptHeading}>Tag me in your nailfies!</h3>
+            <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
+              className="btn-lift inline-block border border-cream-300 text-cream-700 hover:border-gold-600 hover:text-gold-700 px-10 py-3.5 text-[11px] font-semibold uppercase tracking-[0.25em] transition">
+              @myasnailsbaby
+            </a>
+          </div>
         </section>
 
       </div>
@@ -678,7 +772,16 @@ export default function Home() {
       {/* ── FOOTER — espresso ── */}
       <footer className="bg-cream-900 relative">
         <div className="absolute top-0 inset-x-0 h-px" style={{ background: "linear-gradient(90deg, transparent, #B08D57, #F0E6CF, #B08D57, transparent)" }} />
-        <div className="max-w-6xl mx-auto px-6 py-14">
+        <div className="max-w-6xl mx-auto px-6 py-16">
+          {/* Script CTA */}
+          <div className="text-center mb-16" data-reveal>
+            <a href="#booking" className="group inline-block">
+              <p className="text-5xl sm:text-6xl transition-colors" style={{ fontFamily: "'Great Vibes', cursive", color: "#F0E6CF" }}>
+                Book your appointment
+              </p>
+              <span className="block mx-auto mt-4 h-px w-24 group-hover:w-48 transition-all duration-500" style={{ background: "linear-gradient(90deg, transparent, #D4BC8B, transparent)" }} />
+            </a>
+          </div>
           <div className="grid sm:grid-cols-[1.5fr_1fr_1fr] gap-10 mb-12">
             <div>
               <p className="text-4xl mb-3" style={{ fontFamily: "'Great Vibes', cursive", color: "#F0E6CF" }}>Mya&apos;s Nails Baby</p>
@@ -715,6 +818,99 @@ export default function Home() {
         /* Arch portrait frame */
         .arch-frame {
           border-radius: 999px 999px 0 0;
+        }
+
+        /* ── Motion system ── */
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(28px);
+          transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        [data-reveal].in-view {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* Hero load cascade */
+        .hero-rise {
+          opacity: 0;
+          animation: heroRise 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .hero-d1 { animation-delay: 0.05s; }
+        .hero-d2 { animation-delay: 0.15s; }
+        .hero-d3 { animation-delay: 0.3s; }
+        .hero-d4 { animation-delay: 0.45s; }
+        .hero-d5 { animation-delay: 0.6s; }
+        @keyframes heroRise {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Ghost script word behind hero */
+        .hero-ghost {
+          position: absolute;
+          top: 50%;
+          left: -2%;
+          transform: translateY(-58%);
+          font-family: 'Great Vibes', cursive;
+          font-size: clamp(280px, 34vw, 560px);
+          line-height: 1;
+          color: #8F7440;
+          opacity: 0.055;
+          pointer-events: none;
+          user-select: none;
+          white-space: nowrap;
+        }
+
+        /* Rotating stamp */
+        .stamp-spin svg { animation: stampSpin 22s linear infinite; }
+        @keyframes stampSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        /* Scroll cue */
+        .scroll-cue-line {
+          display: block;
+          width: 1px;
+          height: 44px;
+          background: linear-gradient(180deg, #B08D57, transparent);
+          animation: cuePulse 2.2s ease-in-out infinite;
+        }
+        @keyframes cuePulse {
+          0%, 100% { opacity: 0.35; transform: scaleY(0.7); transform-origin: top; }
+          50% { opacity: 1; transform: scaleY(1); transform-origin: top; }
+        }
+
+        /* Marquee */
+        .marquee-track {
+          display: inline-block;
+          animation: marqueeScroll 32s linear infinite;
+        }
+        .marquee-track:hover { animation-play-state: paused; }
+        @keyframes marqueeScroll {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+
+        /* Button lift */
+        .btn-lift {
+          transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+        .btn-lift:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 28px rgba(143, 116, 64, 0.25);
+        }
+        .btn-lift:active { transform: translateY(0) scale(0.98); }
+
+        /* Hide scrollbar on snap strips */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Respect reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+          [data-reveal], .hero-rise { opacity: 1 !important; transform: none !important; animation: none !important; transition: none !important; }
+          .stamp-spin svg, .marquee-track, .scroll-cue-line { animation: none !important; }
         }
 
         /* Sepia-toned map to match palette */

@@ -25,10 +25,20 @@
   --font-outfit: 'Outfit', sans-serif;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+
 body {
   background: #FAF7F1;
   color: #231D18;
   font-family: 'Outfit', sans-serif;
+}
+
+::selection {
+  background: #F0E6CF;
+  color: #231D18;
 }
 
 @layer utilities {
