@@ -1162,7 +1162,7 @@ export default function Dashboard() {
                 </button>
               )}
 
-              <div className="grid sm:grid-cols-[280px,1fr] gap-4 items-start">
+              <div className="grid sm:grid-cols-[280px_1fr] gap-4 items-start">
                 {/* Client list — hidden on mobile when detail is open */}
                 <div className={`bg-white border border-cream-200 ${selected ? "hidden sm:block" : ""}`}>
                   <div className="p-4 border-b border-cream-200 flex items-center justify-between">

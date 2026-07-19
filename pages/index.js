@@ -31,6 +31,19 @@ export default function Home() {
   const [isReturning, setIsReturning] = useState(false);
   const [bookingNails, setBookingNails] = useState("");
   const [pedicureType, setPedicureType] = useState("");
+  const [galleryItems, setGalleryItems] = useState([]);
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      const { data, error } = await supabase
+        .from("gallery")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(6);
+      if (!error && data) setGalleryItems(data);
+    };
+    fetchGallery();
+  }, []);
 
   useEffect(() => {
     let d = 0;
@@ -198,6 +211,7 @@ export default function Home() {
   const selectCls = "w-full px-4 py-3 border border-cream-300 focus:border-gold-600 focus:outline-none focus:ring-0 transition text-cream-900 bg-white";
   const sectionHeading = { fontFamily: "'Cormorant Garamond', Georgia, serif" };
   const scriptHeading = { fontFamily: "'Great Vibes', cursive", color: "#231D18" };
+  const scriptHeadingGold = { fontFamily: "'Great Vibes', cursive", color: "#8F7440" };
 
   return (
     <main className={`min-h-screen bg-cream-50${promoEnabled && promoText ? " pb-12" : ""}`}>
@@ -213,142 +227,186 @@ export default function Home() {
         </div>
       )}
 
+      {/* Announcement Bar */}
+      <div className="bg-cream-900 text-center py-2 px-4">
+        <p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: "#F0E6CF" }}>
+          Las Vegas · By Appointment Only
+        </p>
+      </div>
+
       {/* Sticky Header */}
-      <header className="bg-white/90 backdrop-blur-sm border-b border-cream-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-cream-900" style={sectionHeading}>
-            MyasNailsBaby
+      <header className="bg-cream-50/90 backdrop-blur-md border-b border-cream-200 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <h1 className="text-2xl text-cream-900 tracking-wide" style={sectionHeading}>
+            Mya&apos;s Nails <span className="italic text-gold-700">Baby</span>
           </h1>
-          <nav className="hidden sm:flex items-center space-x-6 text-sm">
-            <a href="#contact" className="text-cream-600 hover:text-cream-900 transition nav-slide">Contact</a>
-            <a href="#policies" className="text-cream-600 hover:text-cream-900 transition nav-slide">Policies</a>
-            <a href="#booking" className="text-cream-600 hover:text-cream-900 transition nav-slide">Book</a>
+          <nav className="hidden sm:flex items-center gap-8 text-[11px] font-semibold uppercase tracking-[0.2em]">
+            <a href="#work" className="text-cream-600 hover:text-gold-700 transition nav-slide">Work</a>
+            <a href="#policies" className="text-cream-600 hover:text-gold-700 transition nav-slide">Policies</a>
+            <a href="#contact" className="text-cream-600 hover:text-gold-700 transition nav-slide">Contact</a>
           </nav>
-          <a href="#booking" className="bg-cream-900 hover:bg-gold-700 text-white px-5 py-2 text-sm font-medium tracking-widest transition btn-shimmer active:scale-95">
-            BOOK NOW
+          <a href="#booking" className="bg-cream-900 hover:bg-gold-700 text-white px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] transition btn-shimmer active:scale-95">
+            Book Now
           </a>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto px-6">
 
-        {/* ── HERO ── */}
-        <section className="py-16 text-center border-b border-cream-200">
-          <div className="max-w-2xl mx-auto">
-            {/* Rose-gold gradient ring frame */}
-            <div
-              className="mx-auto mb-8"
-              style={{
-                width: "fit-content",
-                background: "linear-gradient(135deg, #8F7440 0%, #B08D57 35%, #F0E6CF 50%, #B08D57 65%, #8F7440 100%)",
-                padding: "3px",
-                borderRadius: "50%",
-                boxShadow: "0 8px 32px rgba(143,116,64,0.20), 0 2px 8px rgba(212,188,139,0.30)",
-              }}
-            >
-              <div style={{ background: "#fff", borderRadius: "50%", padding: "3px" }}>
-                <img
-                  src={profilePicUrl
-                    ? `https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicUrl}`
-                    : "/images/mya.png"}
-                  alt="Mya - Las Vegas Nail Artist"
-                  className="w-44 h-44 sm:w-52 sm:h-52 object-cover block"
-                  style={{ borderRadius: "50%" }}
-                />
+        {/* ── HERO — editorial split ── */}
+        <section className="py-16 sm:py-24 border-b border-cream-200">
+          <div className="grid sm:grid-cols-[1.2fr_1fr] gap-12 sm:gap-16 items-center">
+            {/* Left: statement */}
+            <div className="text-center sm:text-left order-2 sm:order-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-700 mb-6">
+                Las Vegas Nail Artistry
+              </p>
+              <h2 className="text-5xl sm:text-6xl lg:text-7xl text-cream-900 leading-[1.05] mb-4" style={sectionHeading}>
+                Beautiful nails,
+                <span className="block mt-2 text-gold-700" style={scriptHeadingGold}>made just for you</span>
+              </h2>
+              <p className="text-base sm:text-lg text-cream-600 mb-10 leading-relaxed max-w-md mx-auto sm:mx-0">
+                {bioText || "Las Vegas based nail artist specializing in custom designs"}
+              </p>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <a href="#booking" className="w-full sm:w-auto text-center bg-gold-700 hover:bg-gold-800 text-white px-10 py-4 text-[11px] font-semibold uppercase tracking-[0.25em] transition btn-shimmer active:scale-95">
+                  Book an Appointment
+                </a>
+                <a
+                  href="https://instagram.com/myasnailsbaby"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-cream-700 hover:text-gold-700 px-2 py-3 text-[11px] font-semibold uppercase tracking-[0.25em] transition nav-slide"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 1.5h8.5A5.25 5.25 0 0 1 21.5 8.75v6.5A5.25 5.25 0 0 1 16.25 20.5h-8.5A5.25 5.25 0 0 1 2.5 15.25v-6.5A5.25 5.25 0 0 1 7.75 3.5zM12 7.25A4.75 4.75 0 1 0 16.75 12 4.75 4.75 0 0 0 12 7.25zM12 8.75a3.25 3.25 0 1 1-3.25 3.25A3.25 3.25 0 0 1 12 8.75zm5.75-.5a1.25 1.25 0 1 1-1.25-1.25 1.25 1.25 0 0 1 1.25 1.25z"/>
+                  </svg>
+                  @myasnailsbaby
+                </a>
+              </div>
+              {/* Trust row */}
+              <div className="mt-12 pt-8 border-t border-cream-200 flex items-center justify-center sm:justify-start gap-8 text-[10px] font-semibold uppercase tracking-[0.2em] text-cream-500">
+                <span>Custom Designs</span>
+                <span className="w-1 h-1 rounded-full bg-gold-400" />
+                <span>Secure Booking</span>
+                <span className="w-1 h-1 rounded-full bg-gold-400" />
+                <span>By Appointment</span>
               </div>
             </div>
-            <h2 className="text-6xl sm:text-7xl text-cream-900 mb-4" style={scriptHeading}>
-              Your Nail Artist
-            </h2>
-            <p className="text-lg text-cream-600 mb-8 leading-relaxed">
-              {bioText || "Las Vegas based nail artist specializing in custom designs"}
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a href="#booking" className="bg-gold-700 hover:bg-gold-800 text-white px-10 py-3 font-medium transition text-sm tracking-wide btn-shimmer active:scale-95">
-                BOOK AN APPOINTMENT
-              </a>
-              <a
-                href="https://instagram.com/myasnailsbaby"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center border border-cream-300 text-cream-700 hover:border-gold-600 hover:text-gold-700 px-8 py-3 font-medium text-sm tracking-wide transition"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 1.5h8.5A5.25 5.25 0 0 1 21.5 8.75v6.5A5.25 5.25 0 0 1 16.25 20.5h-8.5A5.25 5.25 0 0 1 2.5 15.25v-6.5A5.25 5.25 0 0 1 7.75 3.5zM12 7.25A4.75 4.75 0 1 0 16.75 12 4.75 4.75 0 0 0 12 7.25zM12 8.75a3.25 3.25 0 1 1-3.25 3.25A3.25 3.25 0 0 1 12 8.75zm5.75-.5a1.25 1.25 0 1 1-1.25-1.25 1.25 1.25 0 0 1 1.25 1.25z"/>
-                </svg>
-                @myasnailsbaby
-              </a>
+
+            {/* Right: arch portrait */}
+            <div className="order-1 sm:order-2 flex justify-center">
+              <div className="relative">
+                {/* offset gold frame */}
+                <div className="absolute -top-4 -right-4 w-full h-full arch-frame border border-gold-400" aria-hidden="true" />
+                <div
+                  className="arch-frame overflow-hidden relative"
+                  style={{
+                    background: "linear-gradient(135deg, #8F7440 0%, #B08D57 35%, #F0E6CF 50%, #B08D57 65%, #8F7440 100%)",
+                    padding: "3px",
+                    boxShadow: "0 24px 64px rgba(143,116,64,0.22), 0 4px 16px rgba(212,188,139,0.25)",
+                  }}
+                >
+                  <img
+                    src={profilePicUrl
+                      ? `https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicUrl}`
+                      : "/images/mya.png"}
+                    alt="Mya - Las Vegas Nail Artist"
+                    className="w-64 h-80 sm:w-72 sm:h-96 object-cover block arch-frame"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
+        {/* ── RECENT WORK ── */}
+        {galleryItems.length > 0 && (
+          <section id="work" className="py-16 sm:py-20 border-b border-cream-200">
+            <div className="flex items-end justify-between mb-10">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-700 mb-3">The Portfolio</p>
+                <h3 className="text-4xl sm:text-5xl text-cream-900" style={sectionHeading}>Recent Work</h3>
+              </div>
+              <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
+                className="hidden sm:block text-[11px] font-semibold uppercase tracking-[0.2em] text-cream-600 hover:text-gold-700 transition nav-slide">
+                View More on Instagram
+              </a>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              {galleryItems.map((item) => (
+                <div key={item.id} className="group relative overflow-hidden bg-cream-100">
+                  <img
+                    src={`https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${item.image_url}`}
+                    alt={item.caption || "Nail design"}
+                    className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  {item.caption && (
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-cream-900/70 to-transparent px-4 pt-8 pb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <p className="text-white text-sm italic" style={sectionHeading}>{item.caption}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* ── BOOKING POLICIES ── */}
-        <section id="policies" className="py-14 border-b border-cream-200">
-          <h3 className="text-5xl text-cream-900 text-center mb-12 section-title-accent" style={scriptHeading}>Booking Policies</h3>
-          <div className="grid sm:grid-cols-2 gap-6 mb-10">
+        <section id="policies" className="py-16 sm:py-20 border-b border-cream-200">
+          <div className="text-center mb-14">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-700 mb-3">The Fine Print</p>
+            <h3 className="text-4xl sm:text-5xl text-cream-900" style={sectionHeading}>Booking Policies</h3>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-x-16 gap-y-12 mb-16 max-w-4xl mx-auto">
             {[
               {
-                icon: (
-                  <svg className="w-5 h-5 text-gold-700" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-                  </svg>
-                ),
+                num: "01",
                 title: "Appointments",
                 body: "All appointments require a deposit to secure your spot and must be booked at least 24 hours in advance.",
               },
               {
-                icon: (
-                  <svg className="w-5 h-5 text-gold-700" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                  </svg>
-                ),
+                num: "02",
                 title: "Deposit",
                 body: "A non-refundable $20 deposit is required at the time of booking to secure your appointment.",
               },
               {
-                icon: (
-                  <svg className="w-5 h-5 text-gold-700" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                  </svg>
-                ),
+                num: "03",
                 title: "Late Arrivals",
                 body: "Arriving more than 5 minutes late may result in a shortened service or need to reschedule. $10 late fee applies.",
               },
               {
-                icon: (
-                  <svg className="w-5 h-5 text-gold-700" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
-                  </svg>
-                ),
+                num: "04",
                 title: "Cancellation",
                 body: "Cancellations must be made at least 48 hours in advance to avoid a cancellation fee.",
               },
-            ].map(({ icon, title, body }) => (
-              <div key={title} className="bg-white border border-cream-200 p-6 policy-card card-lift">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 bg-gold-50 flex items-center justify-center flex-shrink-0">
-                    {icon}
-                  </div>
-                  <h4 className="font-semibold text-cream-900 text-sm uppercase tracking-[0.15em]">{title}</h4>
+            ].map(({ num, title, body }) => (
+              <div key={title} className="flex gap-6">
+                <span className="text-5xl leading-none text-gold-400 select-none" style={sectionHeading}>{num}</span>
+                <div className="pt-1">
+                  <h4 className="font-semibold text-cream-900 text-xs uppercase tracking-[0.2em] mb-2.5">{title}</h4>
+                  <p className="text-sm text-cream-600 leading-relaxed">{body}</p>
                 </div>
-                <p className="text-sm text-cream-700 leading-relaxed">{body}</p>
               </div>
             ))}
           </div>
 
-          {/* Before Your Appointment */}
-          <div className="bg-white border-l-4 border-gold-700 shadow-lg p-8" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 1.5px 6px rgba(143,116,64,0.08)" }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-700 mb-1">Please Read</p>
-            <h4 className="text-2xl font-bold text-cream-900 mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Before Your Appointment</h4>
-            <div className="grid sm:grid-cols-2 gap-4">
+          {/* Before Your Appointment — espresso moment */}
+          <div className="bg-cream-900 p-8 sm:p-12 max-w-4xl mx-auto relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-px" style={{ background: "linear-gradient(90deg, transparent, #B08D57, #F0E6CF, #B08D57, transparent)" }} />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-400 mb-2">Please Read</p>
+            <h4 className="text-3xl mb-8" style={{ ...sectionHeading, color: "#F0E6CF" }}>Before Your Appointment</h4>
+            <div className="grid sm:grid-cols-2 gap-5">
               {[
                 "Avoid picking or cutting cuticles",
                 "Avoid removing or picking at old product",
                 "Avoid lotions, oils, and hand creams",
                 "Avoid soaking nails in water at least 2 hrs before",
               ].map((tip) => (
-                <div key={tip} className="flex items-start gap-3 text-sm text-cream-700">
-                  <span className="w-5 h-5 rounded-full bg-gold-700 text-white flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">✕</span>
+                <div key={tip} className="flex items-start gap-4 text-sm" style={{ color: "#E9E1D2" }}>
+                  <span className="w-5 h-5 border border-gold-600 text-gold-400 flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold">✕</span>
                   <span>{tip}</span>
                 </div>
               ))}
@@ -357,11 +415,41 @@ export default function Home() {
         </section>
 
         {/* ── BOOKING FORM ── */}
-        <section id="booking" className="py-14 border-b border-cream-200">
-          <div className="max-w-2xl mx-auto">
-            <h3 className="text-5xl text-cream-900 text-center mb-12 section-title-accent" style={scriptHeading}>Book an Appointment</h3>
+        <section id="booking" className="py-16 sm:py-20 border-b border-cream-200">
+          <div className="grid lg:grid-cols-[1fr_1.6fr] gap-12 lg:gap-16 items-start">
 
-            <form ref={formRef} onSubmit={handleSubmit} className="bg-white border border-cream-200 p-8 space-y-8">
+            {/* Left rail — intro */}
+            <div className="lg:sticky lg:top-28">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-700 mb-3">Reservations</p>
+              <h3 className="text-4xl sm:text-5xl text-cream-900 mb-3" style={sectionHeading}>
+                Book an
+                <span className="block text-gold-700 mt-1" style={scriptHeadingGold}>Appointment</span>
+              </h3>
+              <p className="text-sm text-cream-600 leading-relaxed mb-8 max-w-sm">
+                Choose your service, pick an open date, and secure your visit with a $20 deposit. You&apos;ll receive a confirmation by text and email.
+              </p>
+              <div className="space-y-4 border-t border-cream-200 pt-6 max-w-sm">
+                <div className="flex justify-between text-sm">
+                  <span className="text-cream-500 uppercase tracking-[0.15em] text-[10px] font-semibold pt-0.5">Mon – Tue</span>
+                  <span className="text-cream-700">10:00AM – 8:00PM</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-cream-500 uppercase tracking-[0.15em] text-[10px] font-semibold pt-0.5">Fri</span>
+                  <span className="text-cream-700">8:00AM – 6:00PM</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-cream-500 uppercase tracking-[0.15em] text-[10px] font-semibold pt-0.5">Sat</span>
+                  <span className="text-cream-700">8:00AM – 4:00PM</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-cream-500 uppercase tracking-[0.15em] text-[10px] font-semibold pt-0.5">Sun / Wed / Thu</span>
+                  <span className="text-gold-700 font-medium">Closed</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right — the form */}
+            <form ref={formRef} onSubmit={handleSubmit} className="bg-white border border-cream-200 p-8 sm:p-10 space-y-8 shadow-sm">
 
               {/* Personal Info */}
               <div className="space-y-4">
@@ -519,99 +607,121 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── LOCATION ── */}
-        <section className="py-14 border-b border-cream-200">
-          <h3 className="text-5xl text-cream-900 text-center mb-6 section-title-accent" style={scriptHeading}>Location</h3>
-          <p className="text-center text-cream-600 text-sm mb-8">2080 E. Flamingo Rd. Suite #106 Room 4 · Las Vegas, Nevada</p>
-          <div className="border border-cream-200 overflow-hidden">
-            <iframe
-              title="Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3226.887402048895!2d-115.1218948!3d36.1136458!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80c8c6d4c4b0e1f5%3A0x1c9624dbd4a87b5b!2s2080%20E%20Flamingo%20Rd%2C%20Las%20Vegas%2C%20NV%2089119!5e0!3m2!1sen!2sus!4v1689200000000!5m2!1sen!2sus"
-              width="100%" height="360" style={{ border: 0 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-            />
+        {/* ── VISIT — contact + location merged ── */}
+        <section id="contact" className="py-16 sm:py-20 border-b border-cream-200">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+            {/* Left: details */}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold-700 mb-3">Visit the Studio</p>
+              <h3 className="text-4xl sm:text-5xl text-cream-900 mb-8" style={sectionHeading}>Contact & Location</h3>
+
+              <p className="text-lg text-cream-700 mb-10 leading-relaxed" style={sectionHeading}>
+                2080 E. Flamingo Rd. Suite #106 Room 4<br />Las Vegas, Nevada
+              </p>
+
+              <div className="space-y-5 mb-10">
+                <a href="tel:7029818428" className="flex items-center gap-3 text-cream-700 hover:text-gold-700 transition group">
+                  <svg className="w-4 h-4 text-gold-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.338c0 10.43 8.476 18.9 18.9 18.9.945 0 1.85-.693 1.85-1.64V16.81a1.5 1.5 0 0 0-1.195-1.47l-4.434-.883a1.5 1.5 0 0 0-1.537.677l-.93 1.544a.375.375 0 0 1-.437.163 13.526 13.526 0 0 1-7.516-7.516.375.375 0 0 1 .164-.437l1.544-.93a1.5 1.5 0 0 0 .678-1.537l-.883-4.434A1.5 1.5 0 0 0 7.63 2.25H3.977c-.946 0-1.728.846-1.728 1.838v2.25z"/>
+                  </svg>
+                  <span className="text-sm tracking-wide">(702) 981-8428</span>
+                </a>
+                <a href="mailto:myasnailsbaby@gmail.com" className="flex items-center gap-3 text-cream-700 hover:text-gold-700 transition group">
+                  <svg className="w-4 h-4 text-gold-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+                  </svg>
+                  <span className="text-sm tracking-wide">myasnailsbaby@gmail.com</span>
+                </a>
+                <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-cream-700 hover:text-gold-700 transition group">
+                  <svg className="w-4 h-4 text-gold-600 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 1.5h8.5A5.25 5.25 0 0 1 21.5 8.75v6.5A5.25 5.25 0 0 1 16.25 20.5h-8.5A5.25 5.25 0 0 1 2.5 15.25v-6.5A5.25 5.25 0 0 1 7.75 3.5zM12 7.25A4.75 4.75 0 1 0 16.75 12 4.75 4.75 0 0 0 12 7.25zM12 8.75a3.25 3.25 0 1 1-3.25 3.25A3.25 3.25 0 0 1 12 8.75zm5.75-.5a1.25 1.25 0 1 1-1.25-1.25 1.25 1.25 0 0 1 1.25 1.25z"/>
+                  </svg>
+                  <span className="text-sm tracking-wide">@myasnailsbaby</span>
+                </a>
+              </div>
+
+              <div className="border-t border-cream-200 pt-6">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cream-500 mb-4">Studio Hours</p>
+                <div className="space-y-2 text-sm text-cream-700 max-w-xs">
+                  <p className="flex justify-between"><span className="font-semibold text-cream-900">Mon – Tue</span><span>10:00AM – 8:00PM</span></p>
+                  <p className="flex justify-between"><span className="font-semibold text-cream-900">Fri</span><span>8:00AM – 6:00PM</span></p>
+                  <p className="flex justify-between"><span className="font-semibold text-cream-900">Sat</span><span>8:00AM – 4:00PM</span></p>
+                  <p className="flex justify-between text-gold-700 font-medium"><span>Sun / Wed / Thu</span><span>Closed</span></p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: tinted map */}
+            <div className="border border-cream-200 overflow-hidden h-full min-h-[360px]">
+              <iframe
+                title="Location"
+                className="map-tinted w-full h-full min-h-[360px]"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3226.887402048895!2d-115.1218948!3d36.1136458!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80c8c6d4c4b0e1f5%3A0x1c9624dbd4a87b5b!2s2080%20E%20Flamingo%20Rd%2C%20Las%20Vegas%2C%20NV%2089119!5e0!3m2!1sen!2sus!4v1689200000000!5m2!1sen!2sus"
+                style={{ border: 0 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
           </div>
         </section>
 
         {/* ── TAG ME ── */}
-        <section className="py-14 text-center border-b border-cream-200">
-          <p className="text-cream-500 text-sm uppercase tracking-widest mb-2">Thank you for booking with me</p>
-          <h3 className="text-5xl text-cream-900 mb-3" style={scriptHeading}>Tag me in your nailfies!</h3>
+        <section className="py-16 sm:py-20 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-cream-500 mb-3">Thank you for booking with me</p>
+          <h3 className="text-5xl sm:text-6xl text-cream-900 mb-6" style={scriptHeading}>Tag me in your nailfies!</h3>
           <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
-            className="inline-block border border-cream-300 text-cream-700 hover:border-cream-900 hover:text-cream-900 px-6 py-2 text-sm font-medium transition mt-2">
+            className="inline-block border border-cream-300 text-cream-700 hover:border-gold-600 hover:text-gold-700 px-8 py-3 text-[11px] font-semibold uppercase tracking-[0.25em] transition">
             @myasnailsbaby
           </a>
         </section>
 
-        {/* ── CONTACT DETAILS ── */}
-        <section id="contact" className="py-14 border-b border-cream-200">
-          <h3 className="text-5xl text-cream-900 text-center mb-12 section-title-accent" style={scriptHeading}>Contact Details</h3>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {/* Hours */}
-            <div className="bg-white border border-cream-200 p-6 card-lift">
-              <div className="flex items-center gap-2 mb-4">
-                <svg className="w-4 h-4 text-gold-700 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                </svg>
-                <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider">Hours</p>
-              </div>
-              <div className="space-y-1.5 text-sm text-cream-700">
-                <p><span className="font-semibold text-cream-900">Mon – Tue</span> · 10:00AM – 8:00PM</p>
-                <p><span className="font-semibold text-cream-900">Fri</span> · 8:00AM – 6:00PM</p>
-                <p><span className="font-semibold text-cream-900">Sat</span> · 8:00AM – 4:00PM</p>
-                <p className="text-gold-700 font-medium pt-1">Sun / Wed / Thu — Closed</p>
-              </div>
-            </div>
-            {/* Contact */}
-            <div className="bg-white border border-cream-200 p-6 card-lift">
-              <div className="flex items-center gap-2 mb-4">
-                <svg className="w-4 h-4 text-gold-700 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                  <path d="M2.25 6.338c0-1.01.993-1.761 1.965-1.455l11.197 3.527a1.5 1.5 0 0 1 0 2.855L4.215 14.792C3.243 15.098 2.25 14.347 2.25 13.338V6.338z"/><path d="M2.25 12h19.5"/>
-                </svg>
-                <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider">Contact</p>
-              </div>
-              <div className="space-y-3 text-sm">
-                <a href="tel:7029818428" className="flex items-center gap-2.5 text-cream-700 hover:text-gold-700 transition contact-icon group">
-                  <svg className="w-3.5 h-3.5 text-cream-400 group-hover:text-gold-700 transition flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.338c0 10.43 8.476 18.9 18.9 18.9.945 0 1.85-.693 1.85-1.64V16.81a1.5 1.5 0 0 0-1.195-1.47l-4.434-.883a1.5 1.5 0 0 0-1.537.677l-.93 1.544a.375.375 0 0 1-.437.163 13.526 13.526 0 0 1-7.516-7.516.375.375 0 0 1 .164-.437l1.544-.93a1.5 1.5 0 0 0 .678-1.537l-.883-4.434A1.5 1.5 0 0 0 7.63 2.25H3.977c-.946 0-1.728.846-1.728 1.838v2.25z"/>
-                  </svg>
-                  (702) 981-8428
-                </a>
-                <a href="mailto:myasnailsbaby@gmail.com" className="flex items-center gap-2.5 text-cream-700 hover:text-gold-700 transition contact-icon group">
-                  <svg className="w-3.5 h-3.5 text-cream-400 group-hover:text-gold-700 transition flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
-                  </svg>
-                  myasnailsbaby@gmail.com
-                </a>
-                <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-cream-700 hover:text-gold-700 transition contact-icon group">
-                  <svg className="w-3.5 h-3.5 text-cream-400 group-hover:text-gold-700 transition flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 1.5h8.5A5.25 5.25 0 0 1 21.5 8.75v6.5A5.25 5.25 0 0 1 16.25 20.5h-8.5A5.25 5.25 0 0 1 2.5 15.25v-6.5A5.25 5.25 0 0 1 7.75 3.5zM12 7.25A4.75 4.75 0 1 0 16.75 12 4.75 4.75 0 0 0 12 7.25zM12 8.75a3.25 3.25 0 1 1-3.25 3.25A3.25 3.25 0 0 1 12 8.75zm5.75-.5a1.25 1.25 0 1 1-1.25-1.25 1.25 1.25 0 0 1 1.25 1.25z"/>
-                  </svg>
-                  @myasnailsbaby
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── FOOTER ── */}
-        <footer className="py-8 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-cream-400">
-            <Link href="/terms" className="hover:text-cream-700 transition">Terms of Service</Link>
-            <span>·</span>
-            <Link href="/privacy" className="hover:text-cream-700 transition">Privacy Policy</Link>
-            <span>·</span>
-            <Link href="/reschedule" className="hover:text-cream-700 transition">Reschedule Appointment</Link>
-            <span>·</span>
-            <Link href="/cancel-appointment" className="hover:text-cream-700 transition">Cancel Appointment</Link>
-            <span>·</span>
-            <Link href="/login" className="hover:text-cream-700 transition">Dashboard Login</Link>
-          </div>
-        </footer>
-
       </div>
+
+      {/* ── FOOTER — espresso ── */}
+      <footer className="bg-cream-900 relative">
+        <div className="absolute top-0 inset-x-0 h-px" style={{ background: "linear-gradient(90deg, transparent, #B08D57, #F0E6CF, #B08D57, transparent)" }} />
+        <div className="max-w-6xl mx-auto px-6 py-14">
+          <div className="grid sm:grid-cols-[1.5fr_1fr_1fr] gap-10 mb-12">
+            <div>
+              <p className="text-4xl mb-3" style={{ fontFamily: "'Great Vibes', cursive", color: "#F0E6CF" }}>Mya&apos;s Nails Baby</p>
+              <p className="text-sm leading-relaxed max-w-xs" style={{ color: "#B3A48E" }}>
+                Custom nail artistry in Las Vegas, Nevada. By appointment only.
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold-400 mb-4">Client Care</p>
+              <div className="space-y-2.5 text-sm">
+                <Link href="/reschedule" className="block transition hover:text-white" style={{ color: "#B3A48E" }}>Reschedule Appointment</Link>
+                <Link href="/cancel-appointment" className="block transition hover:text-white" style={{ color: "#B3A48E" }}>Cancel Appointment</Link>
+                <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="block transition hover:text-white" style={{ color: "#B3A48E" }}>Instagram</a>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold-400 mb-4">Legal</p>
+              <div className="space-y-2.5 text-sm">
+                <Link href="/terms" className="block transition hover:text-white" style={{ color: "#B3A48E" }}>Terms of Service</Link>
+                <Link href="/privacy" className="block transition hover:text-white" style={{ color: "#B3A48E" }}>Privacy Policy</Link>
+                <Link href="/login" className="block transition hover:text-white" style={{ color: "#B3A48E" }}>Dashboard Login</Link>
+              </div>
+            </div>
+          </div>
+          <div className="border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ borderColor: "rgba(179,164,142,0.2)" }}>
+            <p className="text-xs" style={{ color: "#8C7D68" }}>© {new Date().getFullYear()} Mya&apos;s Nails Baby · Las Vegas, NV</p>
+            <p className="text-[10px] uppercase tracking-[0.25em]" style={{ color: "#8C7D68" }}>By Appointment Only</p>
+          </div>
+        </div>
+      </footer>
 
       {/* Calendar Styles */}
       <style jsx global>{`
+        /* Arch portrait frame */
+        .arch-frame {
+          border-radius: 999px 999px 0 0;
+        }
+
+        /* Sepia-toned map to match palette */
+        .map-tinted {
+          filter: sepia(0.25) saturate(0.75) contrast(0.95);
+        }
+
         /* Champagne accent line under section headings */
         .section-title-accent {
           position: relative;
