@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import Link from "next/link";
+import Seo from "@/components/Seo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -26,6 +27,7 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-cream-50 flex items-center justify-center p-6">
+      <Seo path="/login" noindex title="Sign In" description="Dashboard sign-in." />
       <div className="w-full max-w-sm">
 
         {/* Header */}

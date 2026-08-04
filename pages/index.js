@@ -9,6 +9,8 @@ import { v4 as uuidv4 } from "uuid";
 import "react-calendar/dist/Calendar.css";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import Seo from "@/components/Seo";
+import { faqJsonLd, salonJsonLd } from "@/utils/seo";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -229,6 +231,13 @@ export default function Home() {
 
   return (
     <main className={`min-h-screen bg-cream-50${promoEnabled && promoText ? " pb-12" : ""}`}>
+      <Seo
+        path="/"
+        bareTitle
+        title="Mya's Nails Baby | Nail Artist in Las Vegas — Gel-X, Acrylic & Nail Art"
+        description="Custom nail sets by Mya in Las Vegas. Gel-X, acrylic, hard gel, builder gel and hand-painted nail art, plus gel pedicures. Book online with a $20 deposit."
+        jsonLd={[salonJsonLd(), faqJsonLd()]}
+      />
       <Toaster position="bottom-center" toastOptions={{ style: { background: "#231D18", color: "#F0E6CF" } }} />
 
       {/* Promo Banner — fixed to bottom */}

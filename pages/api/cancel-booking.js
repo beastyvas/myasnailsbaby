@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import twilio from "twilio";
+import { sendSms } from "@/utils/sms";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(
@@ -9,10 +9,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 const resend = new Resend(process.env.RESEND_API_KEY);
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
 
 function to12h(time24) {
   if (!time24) return "";
@@ -92,8 +88,7 @@ export default async function handler(req, res) {
   }
 
   // SMS to client
-  try {
-    const formattedPhone = `+1${cleanPhone}`;
+  {
     let refundNote = "";
     if (refundIssued) {
       refundNote = " Your $20 deposit refund has been initiated and should appear in 5-10 business days.";
@@ -101,13 +96,10 @@ export default async function handler(req, res) {
       refundNote = " Your $20 deposit is non-refundable for cancellations within 48 hours of the appointment.";
     }
 
-    await twilioClient.messages.create({
-      body: `Hey ${booking.name}! Your nail appointment with Mya on ${booking.date} @ ${to12h(booking.start_time)} has been cancelled.${refundNote} DM @myasnailsbaby with any questions.`,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: formattedPhone,
-    });
-  } catch (smsErr) {
-    console.error("❌ Client SMS failed:", smsErr.message);
+    await sendSms(
+      cleanPhone,
+      `Hey ${booking.name}! Your nail appointment with Mya on ${booking.date} @ ${to12h(booking.start_time)} has been cancelled.${refundNote} DM @myasnailsbaby with any questions.`
+    );
   }
 
   // Email to Mya

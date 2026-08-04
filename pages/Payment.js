@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
+import Seo from "@/components/Seo";
 
 export default function Payment() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function Payment() {
 
   return (
     <main className="min-h-screen flex items-center justify-center text-center p-6">
+      <Seo path="/Payment" noindex title="Payment" description="Redirecting to secure checkout." />
       <h1 className="text-xl">Redirecting to payment...</h1>
     </main>
   );

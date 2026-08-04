@@ -1,12 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import Seo from "@/components/Seo";
 
 const sectionHeading = { fontFamily: "'Cormorant Garamond', Georgia, serif" };
 
 export default function TermsOfService() {
   return (
     <main className="min-h-screen bg-cream-50">
+      <Seo
+        path="/terms"
+        title="Terms of Service"
+        description="Booking terms for Mya's Nails Baby — deposits, cancellation and rescheduling windows, late arrivals, and no-show fees."
+      />
       {/* Header */}
       <header className="bg-white border-b border-cream-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">

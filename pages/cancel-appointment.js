@@ -3,6 +3,7 @@
 import { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
+import Seo from "@/components/Seo";
 
 export default function CancelAppointmentPage() {
   const [step, setStep] = useState(1); // 1=phone, 2=confirm, 3=done
@@ -105,6 +106,12 @@ export default function CancelAppointmentPage() {
 
   return (
     <main className="min-h-screen bg-cream-50">
+      <Seo
+        path="/cancel-appointment"
+        noindex
+        title="Cancel Your Appointment"
+        description="Cancel your nail appointment with Mya."
+      />
       <Toaster position="top-center" />
 
       <header className="bg-white border-b border-cream-200">

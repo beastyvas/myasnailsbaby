@@ -1,12 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import Seo from "@/components/Seo";
 
 const sectionHeading = { fontFamily: "'Cormorant Garamond', Georgia, serif" };
 
 export default function PrivacyPolicy() {
   return (
     <main className="min-h-screen bg-cream-50">
+      <Seo
+        path="/privacy"
+        title="Privacy Policy"
+        description="How Mya's Nails Baby collects, uses and protects your information, including SMS consent and how to opt out of promotional texts."
+      />
       <header className="bg-white border-b border-cream-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold text-cream-900" style={sectionHeading}>MyasNailsBaby</Link>
@@ -51,7 +57,7 @@ export default function PrivacyPolicy() {
               </div>
               <div>
                 <h3 className="font-semibold text-cream-900 mb-1">2.3 Communication Data</h3>
-                <p className="leading-relaxed">We collect information about your communications with us, including SMS messages sent through Twilio for appointment confirmations, reminders, and updates.</p>
+                <p className="leading-relaxed">We collect information about your communications with us, including SMS messages sent through Textbelt for appointment confirmations, reminders, updates, and occasional offers.</p>
               </div>
             </div>
           </section>
@@ -75,13 +81,14 @@ export default function PrivacyPolicy() {
             <div className="space-y-4 text-cream-700">
               <div>
                 <h3 className="font-semibold text-cream-900 mb-1">4.1 Consent</h3>
-                <p className="leading-relaxed">By providing your mobile phone number during booking, you expressly consent to receive automated SMS text messages from MyasNailsBaby related to your appointment. Messages are sent through Twilio.</p>
+                <p className="leading-relaxed">By providing your mobile phone number during booking, you expressly consent to receive automated SMS text messages from MyasNailsBaby related to your appointment. Messages are sent through Textbelt.</p>
               </div>
               <div>
                 <h3 className="font-semibold text-cream-900 mb-1">4.2 Types of SMS Messages</h3>
                 <ul className="list-disc list-inside space-y-1 ml-4">
                   <li><strong>Transactional:</strong> Booking confirmations, reminders, cancellation and rescheduling notifications</li>
                   <li><strong>Service Updates:</strong> Changes to appointment times, policy updates</li>
+                  <li><strong>Promotional:</strong> Occasional offers inviting you back if it has been a while since your last visit. These are the only messages affected by an opt-out — reply STOP and they stop, while confirmations and reminders for appointments you booked keep coming.</li>
                 </ul>
               </div>
               <div>
@@ -94,7 +101,7 @@ export default function PrivacyPolicy() {
               </div>
               <div>
                 <h3 className="font-semibold text-cream-900 mb-1">4.5 Opting Out</h3>
-                <p className="leading-relaxed">You can opt out at any time by replying STOP to any message, calling (702) 981-8428, or emailing myasnailsbaby@gmail.com. For help, reply HELP to any message.</p>
+                <p className="leading-relaxed">You can opt out of promotional messages at any time by replying STOP to any message, calling (702) 981-8428, or emailing myasnailsbaby@gmail.com. Opting out is honored immediately and permanently. Appointment confirmations, reminders, and cancellation notices for appointments you booked are transactional and continue to be sent. For help, reply HELP to any message.</p>
               </div>
             </div>
           </section>
@@ -103,7 +110,7 @@ export default function PrivacyPolicy() {
             <h2 className="text-xl font-bold text-cream-900 mb-4" style={sectionHeading}>5. Third-Party Service Providers</h2>
             <div className="space-y-3 text-cream-700">
               <div><h3 className="font-semibold text-cream-900 mb-1">5.1 Stripe</h3><p className="leading-relaxed">Payment processing. See stripe.com/privacy.</p></div>
-              <div><h3 className="font-semibold text-cream-900 mb-1">5.2 Twilio</h3><p className="leading-relaxed">SMS messaging. See twilio.com/legal/privacy.</p></div>
+              <div><h3 className="font-semibold text-cream-900 mb-1">5.2 Textbelt</h3><p className="leading-relaxed">SMS messaging. See textbelt.com/privacy.</p></div>
               <div><h3 className="font-semibold text-cream-900 mb-1">5.3 Resend</h3><p className="leading-relaxed">Email delivery for booking confirmations and notifications.</p></div>
               <div><h3 className="font-semibold text-cream-900 mb-1">5.4 Supabase</h3><p className="leading-relaxed">Secure database storage for booking information and appointment history.</p></div>
             </div>
@@ -111,7 +118,7 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-xl font-bold text-cream-900 mb-3" style={sectionHeading}>6. How We Share Your Information</h2>
-            <p className="text-cream-700 leading-relaxed mb-3">We do not sell, rent, or trade your personal information. We share information only with our service providers (Stripe, Twilio, Resend, Supabase) as necessary to deliver our services, when required by law, or with your explicit consent.</p>
+            <p className="text-cream-700 leading-relaxed mb-3">We do not sell, rent, or trade your personal information. We share information only with our service providers (Stripe, Textbelt, Resend, Supabase) as necessary to deliver our services, when required by law, or with your explicit consent.</p>
           </section>
 
           <section>
@@ -161,7 +168,7 @@ export default function PrivacyPolicy() {
             <div className="bg-cream-50 border border-cream-200 p-5">
               <h3 className="font-semibold text-cream-900 mb-2">TCPA Compliance Statement</h3>
               <p className="text-cream-700 leading-relaxed text-sm">
-                By providing your mobile phone number and completing the booking process, you expressly consent to receive automated SMS text messages from MyasNailsBaby at the phone number provided. These messages may include appointment confirmations, reminders, and service-related notifications sent via Twilio. Consent is not a condition of purchase. You may opt out at any time by replying STOP. Message frequency varies. Message and data rates may apply. For help, reply HELP or contact us at (702) 981-8428.
+                By providing your mobile phone number and completing the booking process, you expressly consent to receive automated SMS text messages from MyasNailsBaby at the phone number provided. These messages may include appointment confirmations, reminders, and service-related notifications sent via Textbelt. Consent is not a condition of purchase. You may opt out at any time by replying STOP. Message frequency varies. Message and data rates may apply. For help, reply HELP or contact us at (702) 981-8428.
               </p>
             </div>
           </section>

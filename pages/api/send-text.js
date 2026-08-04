@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
+import { sendSms } from '@/utils/sms';
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
@@ -41,21 +42,11 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid time' });
   }
 
-  const twilio = require('twilio')(
-    process.env.TWILIO_ACCOUNT_SID, 
-    process.env.TWILIO_AUTH_TOKEN
+  const ok = await sendSms(
+    process.env.MYA_PHONE_NUMBER,
+    `📅 New Booking: ${name} on ${date} at ${start_time}`
   );
-
-  try {
-    await twilio.messages.create({
-      body: `📅 New Booking: ${name} on ${date} at ${start_time}`,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: process.env.MYA_PHONE_NUMBER, // ✅ Now uses env variable
-    });
-  } catch (error) {
-    console.error("Twilio error:", error);
-    return res.status(500).json({ success: false, error: error.message });
-  }
+  if (!ok) return res.status(500).json({ success: false, error: "Couldn't send the alert text" });
 
   res.status(200).json({ success: true });
 }

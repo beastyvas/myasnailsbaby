@@ -5,6 +5,7 @@ import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
+import Seo from "@/components/Seo";
 import "react-calendar/dist/Calendar.css";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
@@ -244,6 +245,12 @@ export default function ReschedulePage() {
 
   return (
     <main className="min-h-screen bg-cream-50">
+      <Seo
+        path="/reschedule"
+        noindex
+        title="Reschedule Your Appointment"
+        description="Move your nail appointment with Mya to a new date and time."
+      />
       <Toaster position="top-center" />
 
       {/* Header */}

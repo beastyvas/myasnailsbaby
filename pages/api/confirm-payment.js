@@ -2,12 +2,7 @@
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
-import twilio from "twilio";
-
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+import { sendSms } from "@/utils/sms";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -249,27 +244,20 @@ export default async function handler(req, res) {
       }
     }
 
-    // 6) Send confirmation SMS to client via Twilio
+    // 6) Send confirmation SMS to client
     if (phone) {
-      try {
-        const displayTime = booking.start_time ? to12h(booking.start_time) : "your selected time";
-        const formattedPhone = phone.startsWith("+1") ? phone : `+1${phone}`;
-
-        await twilioClient.messages.create({
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: formattedPhone,
-          body: `Hey love! Your appointment with Mya is confirmed for ${booking.date} at ${displayTime} 💅
+      const displayTime = booking.start_time ? to12h(booking.start_time) : "your selected time";
+      const ok = await sendSms(
+        phone,
+        `Hey love! Your appointment with Mya is confirmed for ${booking.date} at ${displayTime} 💅
 📍2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV
 DM @myasnailsbaby if you need anything!
 
-Reply STOP to unsubscribe.`,
-        });
-
-        console.log("✅ Confirmation SMS sent to:", formattedPhone);
-      } catch (smsErr) {
-        console.error("❌ SMS error:", smsErr?.message || smsErr);
-        // Don't fail the whole request if SMS fails
-      }
+Reply STOP to unsubscribe.`
+      );
+      // A failed text never fails the booking — she's already paid and the
+      // confirmation email has gone out.
+      console.log(ok ? "✅ Confirmation SMS sent" : "❌ Confirmation SMS failed");
     }
 
     return res.status(200).json({ 

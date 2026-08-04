@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import twilio from "twilio";
+import { sendSms } from "@/utils/sms";
 
 // Initialize clients
 const supabase = createClient(
@@ -9,11 +9,6 @@ const supabase = createClient(
 );
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
 
 // Helper: Format time to 12-hour
 function to12h(time24) {
@@ -282,11 +277,9 @@ export default async function handler(req, res) {
       }
     }
 
-    // 11. Send SMS notification via Twilio (if configured)
-    const twilioPhone = `+1${cleanPhone}`; // Twilio requires E.164 format
-    if (twilioPhone && process.env.TWILIO_PHONE_NUMBER) {
-      try {
-        const smsMessage = `Hi ${booking.name}! Your appointment with Mya has been rescheduled:
+    // 11. Send SMS notification
+    if (cleanPhone) {
+      const smsMessage = `Hi ${booking.name}! Your appointment with Mya has been rescheduled:
 
 Old: ${formatDateLong(oldDate)} at ${to12h(oldTime)}
 New: ${formatDateLong(new_date)} at ${to12h(new_time)}
@@ -298,17 +291,10 @@ DM @myasnailsbaby with questions! 💖
 
 Reply STOP to unsubscribe.`;
 
-        await twilioClient.messages.create({
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: twilioPhone,
-          body: smsMessage,
-        });
-
-        console.log("✅ Reschedule SMS sent to:", twilioPhone);
-      } catch (smsErr) {
-        console.error("❌ SMS error:", smsErr);
-        // Don't fail the whole request if SMS fails
-      }
+      // A failed text never fails the reschedule — the move is already saved
+      // and the confirmation email has gone out.
+      const ok = await sendSms(cleanPhone, smsMessage);
+      console.log(ok ? "✅ Reschedule SMS sent" : "❌ Reschedule SMS failed");
     }
 
     return res.status(200).json({

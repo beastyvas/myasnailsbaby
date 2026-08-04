@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
+import { sendSms } from '@/utils/sms';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -76,22 +77,9 @@ export default async function handler(req, res) {
   
   message += `\n📍 Address: 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, Nevada\n\nDM @myasnailsbaby if you have any questions! 💖`;
 
-  try {
-    const twilio = require('twilio')(
-      process.env.TWILIO_ACCOUNT_SID, 
-      process.env.TWILIO_AUTH_TOKEN
-    );
+  const ok = await sendSms(phone, message);
+  if (!ok) return res.status(500).json({ error: 'Failed to send SMS' });
 
-    await twilio.messages.create({
-      body: message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: phone,
-    });
-
-    console.log(`✅ Update SMS sent to ${phone}`);
-    return res.status(200).json({ success: true });
-  } catch (error) {
-    console.error('SMS API error:', error);
-    return res.status(500).json({ error: 'Failed to send SMS' });
-  }
+  console.log(`✅ Update SMS sent to ${phone}`);
+  return res.status(200).json({ success: true });
 }

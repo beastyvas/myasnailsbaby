@@ -1,10 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
-
-// ✅ Initialize Twilio once at module level
-const twilio = require('twilio')(
-  process.env.TWILIO_ACCOUNT_SID, 
-  process.env.TWILIO_AUTH_TOKEN
-);
+import { sendSms } from '@/utils/sms';
 
 // ✅ Safely converts time like "1:25PM" or "2PM" to "13:25:00"
 function convertTo24Hr(timeStr) {
@@ -156,12 +151,9 @@ export default async function handler(req, res) {
     upcoming.map(async (b) => {
       console.log(`📤 Sending reminder to ${b.phone} for booking ${b.id}`);
       
-      let result;
-      try {
-        // Twilio requires E.164 format (+1XXXXXXXXXX)
-        const toPhone = `+1${b.phone.replace(/\D/g, "")}`;
-        await twilio.messages.create({
-          body: `Hi ${b.name}! This is a reminder from Mya's Nails Baby that you have a nail appointment tomorrow at ${b.start_time}.
+      const sent = await sendSms(
+        b.phone,
+        `Hi ${b.name}! This is a reminder from Mya's Nails Baby that you have a nail appointment tomorrow at ${b.start_time}.
 
 📍 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, NV
 
@@ -169,35 +161,28 @@ Please arrive on time. Deposits are non-refundable. No extra guests please.
 
 DM @myasnailsbaby if anything changes!
 
-Reply STOP to unsubscribe.`,
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: toPhone,
-        });
-        result = { success: true };
-      } catch (error) {
-        console.error(`❌ Twilio error for ${b.phone}:`, error.message);
-        result = { success: false, error: error.message };
+Reply STOP to unsubscribe.`
+      );
+
+      if (!sent) {
+        // Leave reminder_sent false so the next run tries again rather than
+        // marking a text that never arrived as delivered.
+        console.error(`❌ Failed to send reminder to ${b.phone}`);
+        return { success: false, booking: b.id, phone: b.phone };
       }
-      
-      console.log(`📨 SMS response for ${b.phone}:`, result);
 
-      if (result.success) {
-        const { error: updateError } = await supabase
-          .from("bookings")
-          .update({ reminder_sent: true })
-          .eq("id", b.id);
+      const { error: updateError } = await supabase
+        .from("bookings")
+        .update({ reminder_sent: true })
+        .eq("id", b.id);
 
-        if (updateError) {
-          console.error(`❌ Failed to mark reminder as sent for ${b.id}:`, updateError);
-        } else {
-          console.log(`✅ Marked reminder as sent for booking ${b.id}`);
-        }
-        
-        return { success: true, booking: b.id, phone: b.phone };
+      if (updateError) {
+        console.error(`❌ Failed to mark reminder as sent for ${b.id}:`, updateError);
       } else {
-        console.error(`❌ Failed to send reminder to ${b.phone}:`, result.error);
-        return { success: false, booking: b.id, phone: b.phone, error: result.error };
+        console.log(`✅ Marked reminder as sent for booking ${b.id}`);
       }
+
+      return { success: true, booking: b.id, phone: b.phone };
     })
   );
 

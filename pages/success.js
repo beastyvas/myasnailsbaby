@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Seo from "@/components/Seo";
 
 export default function SuccessPage() {
   const router = useRouter();
@@ -93,6 +94,12 @@ export default function SuccessPage() {
 
   return (
     <main className="min-h-screen bg-cream-50 flex items-center justify-center p-6">
+      <Seo
+        path="/success"
+        noindex
+        title="Booking Confirmed"
+        description="Your appointment with Mya is confirmed."
+      />
       {loading ? (
         <div className="text-center space-y-4">
           <div className="w-10 h-10 border-2 border-cream-900 border-t-transparent rounded-full animate-spin mx-auto" />
