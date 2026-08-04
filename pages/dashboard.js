@@ -2,23 +2,22 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
-import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
-import { prettyDate, to12h } from "@/utils/time";
 import "react-calendar/dist/Calendar.css";
+import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
-const inputCls = "w-full px-4 py-3 border border-cream-300 focus:border-cream-900 focus:outline-none focus:ring-0 transition text-cream-900 placeholder-cream-400 bg-white text-sm";
-const selectCls = "w-full px-4 py-3 border border-cream-300 focus:border-cream-900 focus:outline-none focus:ring-0 transition text-cream-900 bg-white text-sm";
-const labelCls = "block text-xs font-semibold text-cream-500 uppercase tracking-wider mb-2";
-const btnPrimary = "bg-gold-700 hover:bg-gold-800 text-white px-6 py-3 font-medium text-sm tracking-wide transition disabled:bg-cream-300 disabled:text-cream-500 disabled:cursor-not-allowed";
-const btnSecondary = "border border-cream-300 text-cream-700 hover:border-cream-900 hover:text-cream-900 px-5 py-2.5 font-medium text-sm transition";
+const inputCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 placeholder-stone-400 bg-white text-sm";
+const selectCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 bg-white text-sm";
+const labelCls = "block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2";
+const btnPrimary = "bg-rose-800 hover:bg-rose-900 text-white px-6 py-3 font-medium text-sm tracking-wide transition disabled:bg-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed";
+const btnSecondary = "border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-5 py-2.5 font-medium text-sm transition";
 
 function SectionHeading({ children }) {
   return (
     <div className="flex items-center gap-3 mb-6">
-      <div className="w-0.5 h-6 bg-gold-700 flex-shrink-0" />
-      <h2 className="text-lg font-bold text-cream-900" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{children}</h2>
+      <div className="w-0.5 h-6 bg-rose-800 flex-shrink-0" />
+      <h2 className="text-lg font-bold text-stone-900" style={{ fontFamily: "Georgia, serif" }}>{children}</h2>
     </div>
   );
 }
@@ -201,7 +200,7 @@ function NewAppointmentForm({ onSuccess }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-cream-50 border border-cream-200 p-6">
+    <form onSubmit={handleSubmit} className="space-y-4 bg-stone-50 border border-stone-200 p-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[
           { label: "Name *", key: "name", type: "text", required: true },
@@ -331,13 +330,13 @@ function ClientNotes({ phone, initialNotes, currentLabel, onSave, saving }) {
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         placeholder="e.g. prefers coffin shape, allergic to acrylics…"
-        className="w-full px-4 py-3 border border-cream-300 focus:border-cream-900 focus:outline-none focus:ring-0 transition text-cream-900 placeholder-cream-400 bg-white text-sm resize-none"
+        className="w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 placeholder-stone-400 bg-white text-sm resize-none"
       />
       {dirty && (
         <button
           onClick={() => onSave(notes)}
           disabled={saving}
-          className="mt-2 text-xs font-semibold text-cream-700 hover:text-cream-900 border border-cream-300 hover:border-cream-900 px-3 py-1.5 transition"
+          className="mt-2 text-xs font-semibold text-stone-700 hover:text-stone-900 border border-stone-300 hover:border-stone-900 px-3 py-1.5 transition"
         >
           {saving ? "Saving…" : "Save Notes"}
         </button>
@@ -377,6 +376,7 @@ export default function Dashboard() {
   const [chargingNoShow, setChargingNoShow] = useState(new Set());
   const [clientProfiles, setClientProfiles] = useState({});
   const [savingClientLabel, setSavingClientLabel] = useState(new Set());
+
   const [reactivation, setReactivation] = useState(null);
   const [loadingReactivation, setLoadingReactivation] = useState(false);
   const [sendingCampaign, setSendingCampaign] = useState(false);
@@ -417,10 +417,10 @@ export default function Dashboard() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="w-10 h-10 border-2 border-cream-900 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-cream-600 text-sm">Loading dashboard...</p>
+          <div className="w-10 h-10 border-2 border-stone-900 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-stone-600 text-sm">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -846,29 +846,29 @@ export default function Dashboard() {
   const today = new Date().toISOString().split("T")[0];
 
   return (
-    <main className="min-h-screen bg-cream-100">
+    <main className="min-h-screen bg-stone-100">
       {/* Header */}
-      <header className="bg-white border-b border-cream-200 sticky top-0 z-50">
+      <header className="bg-white border-b border-stone-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-cream-900 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="w-10 h-10 bg-stone-900 flex items-center justify-center overflow-hidden flex-shrink-0">
               {profilePicPreview ? (
                 <img
                   src={`https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicPreview}`}
                   alt="Mya" className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-white text-lg font-bold" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>M</span>
+                <span className="text-white text-lg font-bold" style={{ fontFamily: "Georgia, serif" }}>M</span>
               )}
             </div>
             <div>
-              <h1 className="text-lg font-bold text-cream-900" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Dashboard</h1>
-              <p className="text-xs text-cream-500">MyasNailsBaby</p>
+              <h1 className="text-lg font-bold text-stone-900" style={{ fontFamily: "Georgia, serif" }}>Dashboard</h1>
+              <p className="text-xs text-stone-500">MyasNailsBaby</p>
             </div>
           </div>
           <button
             onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
-            className="text-sm text-cream-500 hover:text-cream-900 transition font-medium"
+            className="text-sm text-stone-500 hover:text-stone-900 transition font-medium"
           >
             Sign Out
           </button>
@@ -879,15 +879,15 @@ export default function Dashboard() {
 
         {/* Tab Navigation */}
         <div className="mb-8 overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-          <div className="flex gap-1 min-w-max sm:min-w-0 bg-white border border-cream-200 p-1">
+          <div className="flex gap-1 min-w-max sm:min-w-0 bg-white border border-stone-200 p-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-shrink-0 px-4 py-2.5 text-sm font-medium transition ${
                   activeTab === tab.id
-                    ? "bg-cream-900 text-white"
-                    : "text-cream-600 hover:text-cream-900 hover:bg-cream-100"
+                    ? "bg-stone-900 text-white"
+                    : "text-stone-600 hover:text-stone-900 hover:bg-stone-100"
                 }`}
               >
                 {tab.label}
@@ -916,37 +916,37 @@ export default function Dashboard() {
                 { label: "Gallery Items", value: gallery.length, accent: false },
                 { label: "Open Slots", value: availability.length, accent: false },
               ].map(({ label, value, accent }) => (
-                <div key={label} className="bg-white border border-cream-200 p-5 stat-card">
-                  <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-2">{label}</p>
-                  <p className={`text-4xl font-bold ${accent ? "text-gold-700" : "text-cream-900"}`}>{value}</p>
+                <div key={label} className="bg-white border border-stone-200 p-5 stat-card">
+                  <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">{label}</p>
+                  <p className={`text-4xl font-bold ${accent ? "text-rose-800" : "text-stone-900"}`}>{value}</p>
                 </div>
               ))}
             </div>
 
             {/* Today's Schedule */}
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Today&apos;s Schedule</SectionHeading>
               {(() => {
                 const todaysBookings = bookings.filter((b) => b.date === today).sort((a, b) => a.start_time.localeCompare(b.start_time));
                 if (todaysBookings.length === 0) {
-                  return <p className="text-cream-500 text-sm py-6 text-center">No appointments today.</p>;
+                  return <p className="text-stone-500 text-sm py-6 text-center">No appointments today.</p>;
                 }
                 return (
                   <div className="space-y-3">
                     {todaysBookings.map((b) => (
-                      <div key={b.id} className="flex items-center justify-between p-4 border border-cream-200 hover:border-gold-700 transition-colors">
+                      <div key={b.id} className="flex items-center justify-between p-4 border border-stone-200 hover:border-rose-800 transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-cream-900 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                          <div className="w-9 h-9 bg-stone-900 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
                             {b.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-semibold text-cream-900 text-sm">{b.name}</p>
-                            <p className="text-xs text-cream-500">{b.service || "—"}</p>
+                            <p className="font-semibold text-stone-900 text-sm">{b.name}</p>
+                            <p className="text-xs text-stone-500">{b.service || "—"}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-cream-900 text-sm">{formatTime(b.start_time)}</p>
-                          <p className="text-xs text-cream-500">{b.duration}h</p>
+                          <p className="font-medium text-stone-900 text-sm">{formatTime(b.start_time)}</p>
+                          <p className="text-xs text-stone-500">{b.duration}h</p>
                         </div>
                       </div>
                     ))}
@@ -956,7 +956,7 @@ export default function Dashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Quick Actions</SectionHeading>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
@@ -966,7 +966,7 @@ export default function Dashboard() {
                   { label: "Settings", tab: "settings" },
                 ].map(({ label, tab }) => (
                   <button key={tab} onClick={() => setActiveTab(tab)}
-                    className="border border-cream-300 text-cream-700 hover:bg-cream-900 hover:text-white hover:border-cream-900 py-3 px-4 text-sm font-medium transition">
+                    className="border border-stone-300 text-stone-700 hover:bg-stone-900 hover:text-white hover:border-stone-900 py-3 px-4 text-sm font-medium transition">
                     {label}
                   </button>
                 ))}
@@ -974,7 +974,7 @@ export default function Dashboard() {
             </div>
 
             {/* Upcoming This Week */}
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Upcoming This Week</SectionHeading>
               {(() => {
                 const now = new Date();
@@ -984,20 +984,20 @@ export default function Dashboard() {
                   const d = new Date(b.date + "T00:00:00");
                   return d >= tomorrow && d <= nextWeek;
                 }).slice(0, 5);
-                if (upcoming.length === 0) return <p className="text-cream-500 text-sm text-center py-4">No appointments coming up this week.</p>;
+                if (upcoming.length === 0) return <p className="text-stone-500 text-sm text-center py-4">No appointments coming up this week.</p>;
                 return (
                   <div className="space-y-2">
                     {upcoming.map((b) => (
-                      <div key={b.id} className="flex items-center justify-between py-3 border-b border-cream-100 last:border-0">
+                      <div key={b.id} className="flex items-center justify-between py-3 border-b border-stone-100 last:border-0">
                         <div>
-                          <p className="font-semibold text-cream-900 text-sm">{b.name}</p>
-                          <p className="text-xs text-cream-500">{b.service || "—"}</p>
+                          <p className="font-semibold text-stone-900 text-sm">{b.name}</p>
+                          <p className="text-xs text-stone-500">{b.service || "—"}</p>
                         </div>
                         <div className="text-right text-sm">
-                          <p className="font-medium text-cream-900">
+                          <p className="font-medium text-stone-900">
                             {new Date(b.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                           </p>
-                          <p className="text-xs text-cream-500">{formatTime(b.start_time)}</p>
+                          <p className="text-xs text-stone-500">{formatTime(b.start_time)}</p>
                         </div>
                       </div>
                     ))}
@@ -1012,12 +1012,12 @@ export default function Dashboard() {
         {activeTab === "appointments" && (
           <div className="space-y-6">
             {/* Add New */}
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <SectionHeading>Add New Appointment</SectionHeading>
                 <button
                   onClick={() => setShowNewAppointmentForm(!showNewAppointmentForm)}
-                  className="text-sm text-gold-700 hover:text-gold-800 font-medium transition"
+                  className="text-sm text-rose-800 hover:text-rose-900 font-medium transition"
                 >
                   {showNewAppointmentForm ? "Cancel" : "+ Add"}
                 </button>
@@ -1028,59 +1028,59 @@ export default function Dashboard() {
             </div>
 
             {/* List */}
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <SectionHeading>Upcoming Appointments</SectionHeading>
-                <span className="text-xs font-semibold text-cream-500 bg-cream-100 px-3 py-1">{bookings.length} total</span>
+                <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-3 py-1">{bookings.length} total</span>
               </div>
 
               {bookings.length === 0 ? (
-                <p className="text-cream-500 text-sm text-center py-12">No upcoming appointments.</p>
+                <p className="text-stone-500 text-sm text-center py-12">No upcoming appointments.</p>
               ) : (
                 <div className="space-y-4">
                   {bookings.map((booking) => {
                     const isReturning = booking.returning === "yes";
                     const editingThis = editingBooking?.id === booking.id;
                     return (
-                      <div key={booking.id} className="border border-cream-200 hover:border-cream-400 transition-colors p-5 booking-card">
+                      <div key={booking.id} className="border border-stone-200 hover:border-stone-400 transition-colors p-5 booking-card">
                         {!editingThis ? (
                           <>
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                               <div>
-                                <h3 className="text-base font-bold text-cream-900">{booking.name}</h3>
+                                <h3 className="text-base font-bold text-stone-900">{booking.name}</h3>
                                 <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
-                                  {booking.instagram && <p className="text-xs text-cream-500">@{booking.instagram}</p>}
-                                  {booking.phone && <p className="text-xs text-cream-500">{booking.phone}</p>}
-                                  {booking.email && <p className="text-xs text-cream-500">{booking.email}</p>}
+                                  {booking.instagram && <p className="text-xs text-stone-500">@{booking.instagram}</p>}
+                                  {booking.phone && <p className="text-xs text-stone-500">{booking.phone}</p>}
+                                  {booking.email && <p className="text-xs text-stone-500">{booking.email}</p>}
                                 </div>
                               </div>
                               <div className="text-left sm:text-right flex-shrink-0">
-                                <p className="font-semibold text-cream-900 text-sm">{booking.date}</p>
-                                <p className="text-xs text-cream-500">{formatTimeRange(booking.start_time, booking.end_time)}</p>
-                                <p className="text-xs text-cream-400">{booking.duration}h appointment</p>
+                                <p className="font-semibold text-stone-900 text-sm">{booking.date}</p>
+                                <p className="text-xs text-stone-500">{formatTimeRange(booking.start_time, booking.end_time)}</p>
+                                <p className="text-xs text-stone-400">{booking.duration}h appointment</p>
                               </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4 text-sm">
                               {booking.service && booking.service !== "N/A" && (
-                                <p className="text-cream-700"><span className="text-cream-400">Service: </span>{booking.service}</p>
+                                <p className="text-stone-700"><span className="text-stone-400">Service: </span>{booking.service}</p>
                               )}
                               {booking.art_level && booking.art_level !== "N/A" && (
-                                <p className="text-cream-700"><span className="text-cream-400">Art: </span>{booking.art_level}</p>
+                                <p className="text-stone-700"><span className="text-stone-400">Art: </span>{booking.art_level}</p>
                               )}
                               {booking.length && booking.length !== "N/A" && (
-                                <p className="text-cream-700"><span className="text-cream-400">Length: </span>{booking.length}</p>
+                                <p className="text-stone-700"><span className="text-stone-400">Length: </span>{booking.length}</p>
                               )}
                               {booking.soakoff && booking.soakoff !== "none" && (
-                                <p className="text-cream-700"><span className="text-cream-400">Soak-Off: </span>{booking.soakoff}</p>
+                                <p className="text-stone-700"><span className="text-stone-400">Soak-Off: </span>{booking.soakoff}</p>
                               )}
                               {booking.pedicure === "yes" && (
-                                <p className="text-cream-700"><span className="text-cream-400">Pedicure: </span>{booking.pedicure_type || "Yes"}</p>
+                                <p className="text-stone-700"><span className="text-stone-400">Pedicure: </span>{booking.pedicure_type || "Yes"}</p>
                               )}
                             </div>
 
                             {booking.notes && (
-                              <div className="mb-4 bg-cream-50 border border-cream-200 p-3 text-sm text-cream-700 italic">
+                              <div className="mb-4 bg-stone-50 border border-stone-200 p-3 text-sm text-stone-700 italic">
                                 &ldquo;{booking.notes}&rdquo;
                               </div>
                             )}
@@ -1090,7 +1090,7 @@ export default function Dashboard() {
                                 <span className={`text-xs font-semibold px-2.5 py-1 border ${booking.paid ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"}`}>
                                   {booking.paid ? "PAID" : "UNPAID"}
                                 </span>
-                                <span className={`text-xs font-semibold px-2.5 py-1 border ${isReturning ? "bg-cream-100 text-cream-700 border-cream-200" : "bg-amber-50 text-amber-800 border-amber-200"}`}>
+                                <span className={`text-xs font-semibold px-2.5 py-1 border ${isReturning ? "bg-stone-100 text-stone-700 border-stone-200" : "bg-amber-50 text-amber-800 border-amber-200"}`}>
                                   {isReturning ? "RETURNING" : "NEW CLIENT"}
                                 </span>
                               </div>
@@ -1101,7 +1101,7 @@ export default function Dashboard() {
                                     disabled={booking.no_show_charged || chargingNoShow.has(booking.id)}
                                     className={`text-xs font-semibold uppercase tracking-wide transition ${
                                       booking.no_show_charged
-                                        ? "text-cream-400 cursor-default"
+                                        ? "text-stone-400 cursor-default"
                                         : chargingNoShow.has(booking.id)
                                         ? "text-amber-400 cursor-wait"
                                         : "text-amber-700 hover:text-amber-900"
@@ -1110,13 +1110,13 @@ export default function Dashboard() {
                                     {booking.no_show_charged ? "No-Show Charged ✓" : chargingNoShow.has(booking.id) ? "Charging…" : "Charge No-Show"}
                                   </button>
                                 )}
-                                <button onClick={() => setEditingBooking(booking)} className="text-xs font-semibold text-cream-600 hover:text-cream-900 transition uppercase tracking-wide">Edit</button>
+                                <button onClick={() => setEditingBooking(booking)} className="text-xs font-semibold text-stone-600 hover:text-stone-900 transition uppercase tracking-wide">Edit</button>
                                 <button onClick={() => handleDeleteBooking(booking)} className="text-xs font-semibold text-red-600 hover:text-red-800 transition uppercase tracking-wide">Delete</button>
                               </div>
                             </div>
 
                             {!isReturning && booking.referral?.trim() && booking.referral !== "MANUAL BLOCK" && (
-                              <p className="mt-3 pt-3 border-t border-cream-100 text-xs text-cream-400">Referred by: {booking.referral}</p>
+                              <p className="mt-3 pt-3 border-t border-stone-100 text-xs text-stone-400">Referred by: {booking.referral}</p>
                             )}
                           </>
                         ) : (
@@ -1153,7 +1153,7 @@ export default function Dashboard() {
             .sort((a, b) => b.bookings.length - a.bookings.length);
 
           const LABELS = [
-            { value: "",        display: "No Label", cls: "bg-cream-100 text-cream-600 border-cream-200" },
+            { value: "",        display: "No Label", cls: "bg-stone-100 text-stone-600 border-stone-200" },
             { value: "regular", display: "Regular",  cls: "bg-green-50 text-green-800 border-green-200" },
             { value: "vip",     display: "VIP",      cls: "bg-purple-50 text-purple-800 border-purple-200" },
             { value: "flagged", display: "Flagged",  cls: "bg-red-50 text-red-800 border-red-200" },
@@ -1172,27 +1172,27 @@ export default function Dashboard() {
             const totalNoShowFees = client.noShowsCharged * 25;
 
             return (
-              <div className="bg-white border border-cream-200 flex flex-col h-full">
+              <div className="bg-white border border-stone-200 flex flex-col h-full">
                 {/* Header */}
-                <div className="p-6 border-b border-cream-200">
+                <div className="p-6 border-b border-stone-200">
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-cream-900 text-white flex items-center justify-center font-bold text-xl flex-shrink-0" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
+                    <div className="w-14 h-14 bg-stone-900 text-white flex items-center justify-center font-bold text-xl flex-shrink-0" style={{ fontFamily: "Georgia, serif" }}>
                       {(client.name || "?").charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <h3 className="text-lg font-bold text-cream-900">{client.name}</h3>
+                        <h3 className="text-lg font-bold text-stone-900">{client.name}</h3>
                         {currentLabel && (
                           <span className={`text-xs font-semibold px-2 py-0.5 border ${labelMeta.cls}`}>{labelMeta.display}</span>
                         )}
                         {client.hasCard && (
-                          <span className="text-xs font-semibold bg-cream-100 text-cream-600 border border-cream-200 px-2 py-0.5">Card on file</span>
+                          <span className="text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200 px-2 py-0.5">Card on file</span>
                         )}
                       </div>
                       <div className="space-y-0.5">
-                        {client.phone    && <p className="text-sm text-cream-600">{client.phone}</p>}
-                        {client.email    && <p className="text-sm text-cream-500">{client.email}</p>}
-                        {client.instagram && <p className="text-sm text-cream-500">@{client.instagram}</p>}
+                        {client.phone    && <p className="text-sm text-stone-600">{client.phone}</p>}
+                        {client.email    && <p className="text-sm text-stone-500">{client.email}</p>}
+                        {client.instagram && <p className="text-sm text-stone-500">@{client.instagram}</p>}
                       </div>
                     </div>
                   </div>
@@ -1204,16 +1204,16 @@ export default function Dashboard() {
                       { label: "Deposits",  value: `$${totalDeposits}` },
                       { label: "No-Shows",  value: client.noShowsCharged, warn: client.noShowsCharged > 0 },
                     ].map(({ label, value, warn }) => (
-                      <div key={label} className="bg-cream-50 border border-cream-200 p-3 text-center">
-                        <p className={`text-xl font-bold ${warn ? "text-gold-700" : "text-cream-900"}`}>{value}</p>
-                        <p className="text-xs text-cream-500 mt-0.5">{label}</p>
+                      <div key={label} className="bg-stone-50 border border-stone-200 p-3 text-center">
+                        <p className={`text-xl font-bold ${warn ? "text-rose-800" : "text-stone-900"}`}>{value}</p>
+                        <p className="text-xs text-stone-500 mt-0.5">{label}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Label + Notes */}
-                <div className="p-5 border-b border-cream-200 space-y-4">
+                <div className="p-5 border-b border-stone-200 space-y-4">
                   <div>
                     <p className={labelCls}>Label</p>
                     <div className="flex flex-wrap gap-2">
@@ -1224,15 +1224,15 @@ export default function Dashboard() {
                           onClick={() => saveClientLabel(client.phone, l.value, profile.notes)}
                           className={`text-xs font-semibold px-3 py-1.5 border transition ${
                             currentLabel === l.value
-                              ? l.cls + " ring-2 ring-offset-1 ring-cream-400"
-                              : "bg-white border-cream-300 text-cream-600 hover:border-cream-900"
+                              ? l.cls + " ring-2 ring-offset-1 ring-stone-400"
+                              : "bg-white border-stone-300 text-stone-600 hover:border-stone-900"
                           }`}
                         >
                           {l.display}
                         </button>
                       ))}
                       {savingClientLabel.has(client.phone) && (
-                        <span className="text-xs text-cream-400 self-center">Saving…</span>
+                        <span className="text-xs text-stone-400 self-center">Saving…</span>
                       )}
                     </div>
                   </div>
@@ -1249,7 +1249,7 @@ export default function Dashboard() {
                 <div className="flex-1 overflow-y-auto p-5">
                   <p className={`${labelCls} mb-3`}>Booking History</p>
                   {sorted.length === 0 ? (
-                    <p className="text-cream-400 text-sm">No bookings found.</p>
+                    <p className="text-stone-400 text-sm">No bookings found.</p>
                   ) : (
                     <div className="space-y-3">
                       {sorted.map((b) => {
@@ -1263,23 +1263,23 @@ export default function Dashboard() {
                         ].filter(Boolean);
 
                         return (
-                          <div key={b.id} className="border border-cream-200 p-4 bg-cream-50">
+                          <div key={b.id} className="border border-stone-200 p-4 bg-stone-50">
                             {/* Date / time row */}
                             <div className="flex items-start justify-between gap-3 mb-3">
                               <div>
-                                <p className="font-bold text-cream-900 text-sm">
+                                <p className="font-bold text-stone-900 text-sm">
                                   {new Date(b.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
                                 </p>
                                 {b.start_time && (
-                                  <p className="text-xs text-cream-500 mt-0.5">{formatTimeRange(b.start_time, b.end_time)}</p>
+                                  <p className="text-xs text-stone-500 mt-0.5">{formatTimeRange(b.start_time, b.end_time)}</p>
                                 )}
                               </div>
                               <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                                <span className={`text-xs font-semibold px-2 py-0.5 border ${b.paid ? "bg-green-50 text-green-800 border-green-200" : "bg-cream-100 text-cream-500 border-cream-200"}`}>
+                                <span className={`text-xs font-semibold px-2 py-0.5 border ${b.paid ? "bg-green-50 text-green-800 border-green-200" : "bg-stone-100 text-stone-500 border-stone-200"}`}>
                                   {b.paid ? "Paid $20" : "Unpaid"}
                                 </span>
                                 {b.no_show_charged && (
-                                  <span className="text-xs font-semibold px-2 py-0.5 border bg-gold-50 text-gold-700 border-gold-200">No-show $25</span>
+                                  <span className="text-xs font-semibold px-2 py-0.5 border bg-rose-50 text-rose-800 border-rose-200">No-show $25</span>
                                 )}
                               </div>
                             </div>
@@ -1288,14 +1288,14 @@ export default function Dashboard() {
                             {details.length > 0 && (
                               <div className="flex flex-wrap gap-1.5 mb-3">
                                 {details.map((d, i) => (
-                                  <span key={i} className="text-xs bg-white border border-cream-200 text-cream-700 px-2 py-0.5">{d}</span>
+                                  <span key={i} className="text-xs bg-white border border-stone-200 text-stone-700 px-2 py-0.5">{d}</span>
                                 ))}
                               </div>
                             )}
 
                             {/* Notes */}
                             {b.notes && (
-                              <p className="text-xs text-cream-500 italic mb-3">&ldquo;{b.notes}&rdquo;</p>
+                              <p className="text-xs text-stone-500 italic mb-3">&ldquo;{b.notes}&rdquo;</p>
                             )}
 
                             {/* Charge button */}
@@ -1328,24 +1328,24 @@ export default function Dashboard() {
               {selected && (
                 <button
                   onClick={() => setExpandedClientKey(null)}
-                  className="sm:hidden flex items-center gap-2 text-sm font-medium text-cream-600 hover:text-cream-900 mb-4"
+                  className="sm:hidden flex items-center gap-2 text-sm font-medium text-stone-600 hover:text-stone-900 mb-4"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
                   All Clients
                 </button>
               )}
 
-              <div className="grid sm:grid-cols-[280px_1fr] gap-4 items-start">
+              <div className="grid sm:grid-cols-[280px,1fr] gap-4 items-start">
                 {/* Client list — hidden on mobile when detail is open */}
-                <div className={`bg-white border border-cream-200 ${selected ? "hidden sm:block" : ""}`}>
-                  <div className="p-4 border-b border-cream-200 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider">All Clients</p>
-                    <span className="text-xs font-semibold text-cream-400">{clientList.length}</span>
+                <div className={`bg-white border border-stone-200 ${selected ? "hidden sm:block" : ""}`}>
+                  <div className="p-4 border-b border-stone-200 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">All Clients</p>
+                    <span className="text-xs font-semibold text-stone-400">{clientList.length}</span>
                   </div>
                   {clientList.length === 0 ? (
-                    <p className="text-cream-400 text-sm text-center py-10">No clients yet.</p>
+                    <p className="text-stone-400 text-sm text-center py-10">No clients yet.</p>
                   ) : (
-                    <div className="divide-y divide-cream-100">
+                    <div className="divide-y divide-stone-100">
                       {clientList.map((client) => {
                         const profile = clientProfiles[client.phone] || {};
                         const currentLabel = profile.label || "";
@@ -1355,26 +1355,26 @@ export default function Dashboard() {
                           <button
                             key={client.key}
                             onClick={() => setExpandedClientKey(client.key)}
-                            className={`w-full text-left px-4 py-3.5 transition hover:bg-cream-50 ${isSelected ? "bg-cream-900 hover:bg-cream-900" : ""}`}
+                            className={`w-full text-left px-4 py-3.5 transition hover:bg-stone-50 ${isSelected ? "bg-stone-900 hover:bg-stone-900" : ""}`}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 flex items-center justify-center font-bold text-xs flex-shrink-0 ${isSelected ? "bg-white text-cream-900" : "bg-cream-900 text-white"}`}>
+                              <div className={`w-8 h-8 flex items-center justify-center font-bold text-xs flex-shrink-0 ${isSelected ? "bg-white text-stone-900" : "bg-stone-900 text-white"}`}>
                                 {(client.name || "?").charAt(0).toUpperCase()}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <p className={`text-sm font-semibold truncate ${isSelected ? "text-white" : "text-cream-900"}`}>{client.name}</p>
+                                  <p className={`text-sm font-semibold truncate ${isSelected ? "text-white" : "text-stone-900"}`}>{client.name}</p>
                                   {currentLabel && (
                                     <span className={`text-xs font-semibold px-1.5 py-0.5 border flex-shrink-0 ${isSelected ? "bg-white/20 text-white border-white/30" : labelMeta.cls}`}>
                                       {labelMeta.display}
                                     </span>
                                   )}
                                 </div>
-                                <p className={`text-xs truncate mt-0.5 ${isSelected ? "text-cream-300" : "text-cream-500"}`}>
+                                <p className={`text-xs truncate mt-0.5 ${isSelected ? "text-stone-300" : "text-stone-500"}`}>
                                   {client.phone || client.email || "—"}
                                 </p>
                               </div>
-                              <p className={`text-xs font-semibold flex-shrink-0 ${isSelected ? "text-cream-300" : "text-cream-400"}`}>
+                              <p className={`text-xs font-semibold flex-shrink-0 ${isSelected ? "text-stone-300" : "text-stone-400"}`}>
                                 {client.bookings.length}×
                               </p>
                             </div>
@@ -1386,10 +1386,10 @@ export default function Dashboard() {
                 </div>
 
                 {/* Detail panel */}
-                <div className={selected ? "" : "hidden sm:flex sm:items-center sm:justify-center sm:bg-white sm:border sm:border-cream-200 sm:min-h-[400px]"}>
+                <div className={selected ? "" : "hidden sm:flex sm:items-center sm:justify-center sm:bg-white sm:border sm:border-stone-200 sm:min-h-[400px]"}>
                   {selected
                     ? <DetailPanel client={selected} />
-                    : <p className="text-cream-400 text-sm">Select a client to view their profile.</p>
+                    : <p className="text-stone-400 text-sm">Select a client to view their profile.</p>
                   }
                 </div>
               </div>
@@ -1416,20 +1416,20 @@ export default function Dashboard() {
           return (
             <div className="space-y-6">
               {campaignMsg && (
-                <div className="bg-gold-50 border border-gold-200 text-cream-800 px-4 py-3 text-sm flex items-start justify-between gap-4">
+                <div className="bg-rose-50 border border-rose-200 text-stone-800 px-4 py-3 text-sm flex items-start justify-between gap-4">
                   <span>{campaignMsg}</span>
-                  <button onClick={() => setCampaignMsg(null)} className="text-cream-400 hover:text-cream-900 flex-shrink-0">✕</button>
+                  <button onClick={() => setCampaignMsg(null)} className="text-stone-400 hover:text-stone-900 flex-shrink-0">✕</button>
                 </div>
               )}
 
               {loadingReactivation && !reactivation ? (
-                <div className="bg-white border border-cream-200 p-10 text-center">
-                  <div className="w-8 h-8 border-2 border-cream-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-cream-500 text-sm">Working out who&apos;s gone quiet...</p>
+                <div className="bg-white border border-stone-200 p-10 text-center">
+                  <div className="w-8 h-8 border-2 border-stone-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-stone-500 text-sm">Working out who&apos;s gone quiet...</p>
                 </div>
               ) : !reactivation ? (
-                <div className="bg-white border border-cream-200 p-10 text-center">
-                  <p className="text-cream-500 text-sm mb-4">Couldn&apos;t load the campaign.</p>
+                <div className="bg-white border border-stone-200 p-10 text-center">
+                  <p className="text-stone-500 text-sm mb-4">Couldn&apos;t load the campaign.</p>
                   <button onClick={fetchReactivation} className={btnSecondary}>Try again</button>
                 </div>
               ) : (
@@ -1442,27 +1442,27 @@ export default function Dashboard() {
                       { label: "Came Back", value: stats?.booked ?? 0 },
                       { label: "Deposits", value: `$${stats?.deposits ?? 0}` },
                     ].map(({ label, value, accent }) => (
-                      <div key={label} className="bg-white border border-cream-200 p-5 stat-card">
-                        <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-2">{label}</p>
-                        <p className={`text-4xl font-bold ${accent ? "text-gold-700" : "text-cream-900"}`}>{value}</p>
+                      <div key={label} className="bg-white border border-stone-200 p-5 stat-card">
+                        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">{label}</p>
+                        <p className={`text-4xl font-bold ${accent ? "text-rose-800" : "text-stone-900"}`}>{value}</p>
                       </div>
                     ))}
                   </div>
 
                   {/* The campaign */}
-                  <div className="bg-white border border-cream-200 p-6">
+                  <div className="bg-white border border-stone-200 p-6">
                     <SectionHeading>Win Them Back</SectionHeading>
 
                     {recipients.length === 0 ? (
-                      <p className="text-cream-500 text-sm leading-relaxed">
+                      <p className="text-stone-500 text-sm leading-relaxed">
                         {liveOffers.length > 0
                           ? `Nobody new is due. ${liveOffers.length} ${liveOffers.length === 1 ? "offer is" : "offers are"} still live — give them time to book.`
                           : `Nobody's due. Clients show up here ${reactivation.dormantAfterDays} days after their last set with nothing on the books.`}
                       </p>
                     ) : (
                       <div className="space-y-5">
-                        <p className="text-sm text-cream-700 leading-relaxed">
-                          <strong className="text-cream-900">{recipients.length} {recipients.length === 1 ? "client hasn't" : "clients haven't"} been in for a while.</strong>{" "}
+                        <p className="text-sm text-stone-700 leading-relaxed">
+                          <strong className="text-stone-900">{recipients.length} {recipients.length === 1 ? "client hasn't" : "clients haven't"} been in for a while.</strong>{" "}
                           Each one gets a single text with their own {reactivation.percentOff}% off code, good for {reactivation.windowDays} days.
                           Change the offer under Settings.
                         </p>
@@ -1470,12 +1470,12 @@ export default function Dashboard() {
                         <div>
                           <button
                             onClick={() => setShowSampleText((v) => !v)}
-                            className="text-xs font-semibold text-gold-700 hover:text-gold-800 uppercase tracking-wider"
+                            className="text-xs font-semibold text-rose-800 hover:text-rose-900 uppercase tracking-wider"
                           >
                             {showSampleText ? "Hide the text" : "See the text they get"}
                           </button>
                           {showSampleText && reactivation.sample && (
-                            <pre className="mt-3 bg-cream-50 border border-cream-200 p-4 text-xs text-cream-700 whitespace-pre-wrap font-sans leading-relaxed">
+                            <pre className="mt-3 bg-stone-50 border border-stone-200 p-4 text-xs text-stone-700 whitespace-pre-wrap font-sans leading-relaxed">
                               {reactivation.sample}
                             </pre>
                           )}
@@ -1483,37 +1483,37 @@ export default function Dashboard() {
 
                         {/* Who's getting it — every row is unticked-able, so a
                             client Mya knows has moved away isn't texted. */}
-                        <div className="border border-cream-200">
-                          <div className="flex items-center justify-between px-4 py-2.5 bg-cream-50 border-b border-cream-200">
-                            <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider">
+                        <div className="border border-stone-200">
+                          <div className="flex items-center justify-between px-4 py-2.5 bg-stone-50 border-b border-stone-200">
+                            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
                               Sending to {chosen.length} of {recipients.length}
                             </p>
                             <button
                               onClick={() => setCampaignPicks(chosen.length === recipients.length ? [] : null)}
-                              className="text-xs font-semibold text-gold-700 hover:text-gold-800"
+                              className="text-xs font-semibold text-rose-800 hover:text-rose-900"
                             >
                               {chosen.length === recipients.length ? "Clear all" : "Select all"}
                             </button>
                           </div>
-                          <div className="divide-y divide-cream-100 max-h-80 overflow-y-auto">
+                          <div className="divide-y divide-stone-100 max-h-80 overflow-y-auto">
                             {recipients.map((r) => (
-                              <label key={r.phone} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-cream-50 transition">
+                              <label key={r.phone} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-stone-50 transition">
                                 <input
                                   type="checkbox"
                                   checked={chosen.includes(r.phone)}
                                   onChange={() => togglePick(r.phone)}
-                                  className="w-4 h-4 accent-gold-700 flex-shrink-0"
+                                  className="w-4 h-4 accent-rose-800 flex-shrink-0"
                                 />
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-cream-900 truncate">{r.name || r.phone}</p>
-                                  <p className="text-xs text-cream-500">
+                                  <p className="text-sm font-medium text-stone-900 truncate">{r.name || r.phone}</p>
+                                  <p className="text-xs text-stone-500">
                                     {r.daysSinceVisit} days since her last set · {r.visits} {r.visits === 1 ? "visit" : "visits"}
                                   </p>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={(e) => { e.preventDefault(); setOptOut(r.phone, true); }}
-                                  className="text-xs text-cream-400 hover:text-red-700 transition flex-shrink-0"
+                                  className="text-xs text-stone-400 hover:text-red-700 transition flex-shrink-0"
                                   title="Never send her promotional texts"
                                 >
                                   Don&apos;t text
@@ -1538,8 +1538,8 @@ export default function Dashboard() {
                       </div>
                     )}
 
-                    <details className="mt-6 text-xs text-cream-500">
-                      <summary className="cursor-pointer text-gold-700 font-semibold uppercase tracking-wider">How this works</summary>
+                    <details className="mt-6 text-xs text-stone-500">
+                      <summary className="cursor-pointer text-rose-800 font-semibold uppercase tracking-wider">How this works</summary>
                       <p className="mt-3 leading-relaxed">
                         Anyone who books from a texted number within {reactivation.windowDays} days is credited automatically —
                         they don&apos;t have to mention the code. Their booking gets stamped with the discount and you get a
@@ -1551,18 +1551,18 @@ export default function Dashboard() {
 
                   {/* Live offers */}
                   {liveOffers.length > 0 && (
-                    <div className="bg-white border border-cream-200 p-6">
+                    <div className="bg-white border border-stone-200 p-6">
                       <SectionHeading>Offers Out There</SectionHeading>
-                      <div className="divide-y divide-cream-100">
+                      <div className="divide-y divide-stone-100">
                         {liveOffers.map((c) => (
                           <div key={c.phone} className="py-3 flex items-center justify-between gap-4">
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-cream-900 truncate">{c.name || c.phone}</p>
-                              <p className="text-xs text-cream-500">
+                              <p className="text-sm font-medium text-stone-900 truncate">{c.name || c.phone}</p>
+                              <p className="text-xs text-stone-500">
                                 {c.offer.percentOff}% off · code {c.offer.code} · expires {new Date(c.offer.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                               </p>
                             </div>
-                            <span className="text-xs font-semibold bg-gold-50 text-gold-800 border border-gold-200 px-2 py-0.5 flex-shrink-0">Waiting</span>
+                            <span className="text-xs font-semibold bg-rose-50 text-rose-900 border border-rose-200 px-2 py-0.5 flex-shrink-0">Waiting</span>
                           </div>
                         ))}
                       </div>
@@ -1571,14 +1571,14 @@ export default function Dashboard() {
 
                   {/* Won back */}
                   {wonBack.length > 0 && (
-                    <div className="bg-white border border-cream-200 p-6">
+                    <div className="bg-white border border-stone-200 p-6">
                       <SectionHeading>Came Back</SectionHeading>
-                      <div className="divide-y divide-cream-100">
+                      <div className="divide-y divide-stone-100">
                         {wonBack.map((c) => (
                           <div key={c.phone} className="py-3 flex items-center justify-between gap-4">
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-cream-900 truncate">{c.name || c.phone}</p>
-                              <p className="text-xs text-cream-500">Honor {c.offer.percentOff}% off · code {c.offer.code}</p>
+                              <p className="text-sm font-medium text-stone-900 truncate">{c.name || c.phone}</p>
+                              <p className="text-xs text-stone-500">Honor {c.offer.percentOff}% off · code {c.offer.code}</p>
                             </div>
                             <span className="text-xs font-semibold bg-green-50 text-green-800 border border-green-200 px-2 py-0.5 flex-shrink-0">Booked</span>
                           </div>
@@ -1589,19 +1589,19 @@ export default function Dashboard() {
 
                   {/* Opted out */}
                   {optedOut.length > 0 && (
-                    <div className="bg-white border border-cream-200 p-6">
+                    <div className="bg-white border border-stone-200 p-6">
                       <SectionHeading>Not Receiving Offers</SectionHeading>
-                      <p className="text-xs text-cream-500 mb-4 leading-relaxed">
+                      <p className="text-xs text-stone-500 mb-4 leading-relaxed">
                         These numbers asked out of promotional texts. They still get confirmations and reminders for
                         appointments they book.
                       </p>
-                      <div className="divide-y divide-cream-100">
+                      <div className="divide-y divide-stone-100">
                         {optedOut.map((c) => (
                           <div key={c.phone} className="py-3 flex items-center justify-between gap-4">
-                            <p className="text-sm text-cream-700 truncate">{c.name || c.phone}</p>
+                            <p className="text-sm text-stone-700 truncate">{c.name || c.phone}</p>
                             <button
                               onClick={() => setOptOut(c.phone, false)}
-                              className="text-xs text-cream-400 hover:text-cream-900 transition flex-shrink-0"
+                              className="text-xs text-stone-400 hover:text-stone-900 transition flex-shrink-0"
                             >
                               Let back in
                             </button>
@@ -1619,19 +1619,19 @@ export default function Dashboard() {
         {/* ── GALLERY ── */}
         {activeTab === "gallery" && (
           <div className="space-y-6">
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Upload New Set</SectionHeading>
               <div className="space-y-5">
                 <div>
                   <label className={labelCls}>Choose Photo</label>
                   <label className="cursor-pointer block">
-                    <div className="border-2 border-dashed border-cream-300 p-8 text-center hover:border-gold-700 hover:bg-cream-50 transition-colors">
+                    <div className="border-2 border-dashed border-stone-300 p-8 text-center hover:border-rose-800 hover:bg-stone-50 transition-colors">
                       {preview ? (
                         <img src={preview} alt="Preview" className="max-h-64 object-cover mx-auto" />
                       ) : (
                         <div>
-                          <p className="text-sm font-medium text-cream-700">Click to upload photo</p>
-                          <p className="text-xs text-cream-400 mt-1">PNG, JPG up to 10MB</p>
+                          <p className="text-sm font-medium text-stone-700">Click to upload photo</p>
+                          <p className="text-xs text-stone-400 mt-1">PNG, JPG up to 10MB</p>
                         </div>
                       )}
                     </div>
@@ -1649,23 +1649,23 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <SectionHeading>Gallery</SectionHeading>
-                <span className="text-xs font-semibold text-cream-500 bg-cream-100 px-3 py-1">{gallery.length} sets</span>
+                <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-3 py-1">{gallery.length} sets</span>
               </div>
               {gallery.length === 0 ? (
-                <p className="text-cream-500 text-sm text-center py-12">No gallery items yet. Upload your first set!</p>
+                <p className="text-stone-500 text-sm text-center py-12">No gallery items yet. Upload your first set!</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {gallery.map((item) => (
-                    <div key={item.id} className="group relative overflow-hidden bg-cream-100 gallery-item">
+                    <div key={item.id} className="group relative overflow-hidden bg-stone-100 gallery-item">
                       <img
                         src={`https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${item.image_url}`}
                         alt={item.caption}
                         className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-cream-900/0 group-hover:bg-cream-900/50 transition-colors duration-300 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/50 transition-colors duration-300 flex items-center justify-center">
                         <button
                           onClick={() => handleDeleteImage(item)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity bg-white text-red-700 text-xs font-semibold px-4 py-2 hover:bg-red-600 hover:text-white transition-colors"
@@ -1673,9 +1673,9 @@ export default function Dashboard() {
                           DELETE
                         </button>
                       </div>
-                      <div className="p-3 border-t border-cream-200">
-                        <p className="text-xs font-medium text-cream-900 truncate">{item.caption}</p>
-                        <p className="text-xs text-cream-400 mt-0.5">{new Date(item.created_at).toLocaleDateString()}</p>
+                      <div className="p-3 border-t border-stone-200">
+                        <p className="text-xs font-medium text-stone-900 truncate">{item.caption}</p>
+                        <p className="text-xs text-stone-400 mt-0.5">{new Date(item.created_at).toLocaleDateString()}</p>
                       </div>
                     </div>
                   ))}
@@ -1688,7 +1688,7 @@ export default function Dashboard() {
         {/* ── AVAILABILITY ── */}
         {activeTab === "availability" && (
           <div className="space-y-6">
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Generate Monthly Availability</SectionHeading>
               <div className="flex flex-wrap gap-4 items-end mb-4">
                 <div>
@@ -1709,12 +1709,12 @@ export default function Dashboard() {
                 </div>
                 <button onClick={generateMonthAvailability} className={btnPrimary}>GENERATE AVAILABILITY</button>
               </div>
-              <div className="bg-cream-50 border border-cream-200 p-4 text-sm text-cream-700">
+              <div className="bg-stone-50 border border-stone-200 p-4 text-sm text-stone-700">
                 <strong>Tip:</strong> Your weekly schedule is configured in the <strong>Schedule</strong> tab. Click Generate to apply it to the selected month.
               </div>
             </div>
 
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Availability Calendar</SectionHeading>
               <div className="calendar-container mb-6">
                 <Calendar
@@ -1731,8 +1731,8 @@ export default function Dashboard() {
 
               {selectedDate && (
                 <>
-                  <div className="border-t border-cream-200 pt-6 mb-6">
-                    <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-4">
+                  <div className="border-t border-stone-200 pt-6 mb-6">
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-4">
                       Add Slot — {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                     </p>
                     <form onSubmit={handleAddSlot} className="flex flex-wrap gap-4 items-end">
@@ -1751,14 +1751,14 @@ export default function Dashboard() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-3">Available Times</p>
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Available Times</p>
                     <div className="space-y-2">
                       {availability.filter((s) => s.date === selectedDate).map((slot) => (
-                        <div key={slot.id} className="flex items-center justify-between border border-cream-200 px-4 py-3 hover:border-cream-400 transition-colors">
+                        <div key={slot.id} className="flex items-center justify-between border border-stone-200 px-4 py-3 hover:border-stone-400 transition-colors">
                           <div className="flex items-center gap-3">
                             <input type="checkbox" checked={selectedIds.includes(slot.id)} onChange={() => toggleSelected(slot.id)}
-                              className="w-4 h-4 accent-gold-700" />
-                            <span className="font-medium text-cream-900 text-sm">{formatTime(slot.start_time)} → {formatTime(slot.end_time)}</span>
+                              className="w-4 h-4 accent-rose-800" />
+                            <span className="font-medium text-stone-900 text-sm">{formatTime(slot.start_time)} → {formatTime(slot.end_time)}</span>
                           </div>
                           <button
                             onClick={async () => {
@@ -1773,7 +1773,7 @@ export default function Dashboard() {
                         </div>
                       ))}
                       {availability.filter((s) => s.date === selectedDate).length === 0 && (
-                        <p className="text-cream-500 text-sm text-center py-4">No slots for this date.</p>
+                        <p className="text-stone-500 text-sm text-center py-4">No slots for this date.</p>
                       )}
                     </div>
                     {selectedIds.length > 0 && (
@@ -1790,46 +1790,46 @@ export default function Dashboard() {
 
         {/* ── SCHEDULE ── */}
         {activeTab === "schedule" && (
-          <div className="bg-white border border-cream-200 p-6">
+          <div className="bg-white border border-stone-200 p-6">
             <SectionHeading>Weekly Schedule</SectionHeading>
-            <p className="text-sm text-cream-600 mb-4">Set default working hours per day. Used when generating availability slots.</p>
+            <p className="text-sm text-stone-600 mb-4">Set default working hours per day. Used when generating availability slots.</p>
             <div className="bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800 mb-6">
               <strong>Note:</strong> Changes only affect future availability generation. Existing slots are not modified.
             </div>
 
             <div className="space-y-3">
               {scheduleSettings.length === 0 ? (
-                <p className="text-cream-500 text-sm">Loading schedule...</p>
+                <p className="text-stone-500 text-sm">Loading schedule...</p>
               ) : (
                 scheduleSettings.map((day, index) => {
                   const dayName = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][day.day_of_week];
                   return (
-                    <div key={day.day_of_week} className={`border p-4 transition-colors ${day.is_open ? "border-cream-300 bg-white" : "border-cream-200 bg-cream-50"}`}>
+                    <div key={day.day_of_week} className={`border p-4 transition-colors ${day.is_open ? "border-stone-300 bg-white" : "border-stone-200 bg-stone-50"}`}>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                         <div className="w-28 flex-shrink-0">
-                          <span className={`text-sm font-bold ${day.is_open ? "text-cream-900" : "text-cream-400"}`}>{dayName}</span>
+                          <span className={`text-sm font-bold ${day.is_open ? "text-stone-900" : "text-stone-400"}`}>{dayName}</span>
                         </div>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input type="checkbox" checked={day.is_open}
                             onChange={(e) => { const u = [...scheduleSettings]; u[index].is_open = e.target.checked; setScheduleSettings(u); }}
-                            className="w-4 h-4 accent-gold-700" />
-                          <span className="text-sm text-cream-700">{day.is_open ? "Open" : "Closed"}</span>
+                            className="w-4 h-4 accent-rose-800" />
+                          <span className="text-sm text-stone-700">{day.is_open ? "Open" : "Closed"}</span>
                         </label>
                         {day.is_open && (
                           <div className="flex items-center gap-4">
                             <div>
-                              <label className="text-xs text-cream-500 mr-2">From</label>
+                              <label className="text-xs text-stone-500 mr-2">From</label>
                               <input type="time" value={day.start_time}
                                 onChange={(e) => { const u = [...scheduleSettings]; u[index].start_time = e.target.value; setScheduleSettings(u); }}
-                                className="border border-cream-300 px-3 py-2 text-sm text-cream-900 focus:border-cream-900 focus:outline-none" />
+                                className="border border-stone-300 px-3 py-2 text-sm text-stone-900 focus:border-stone-900 focus:outline-none" />
                             </div>
                             <div>
-                              <label className="text-xs text-cream-500 mr-2">To</label>
+                              <label className="text-xs text-stone-500 mr-2">To</label>
                               <input type="time" value={day.end_time}
                                 onChange={(e) => { const u = [...scheduleSettings]; u[index].end_time = e.target.value; setScheduleSettings(u); }}
-                                className="border border-cream-300 px-3 py-2 text-sm text-cream-900 focus:border-cream-900 focus:outline-none" />
+                                className="border border-stone-300 px-3 py-2 text-sm text-stone-900 focus:border-stone-900 focus:outline-none" />
                             </div>
-                            <span className="text-xs text-cream-400 hidden sm:block">({formatTime(day.start_time)} – {formatTime(day.end_time)})</span>
+                            <span className="text-xs text-stone-400 hidden sm:block">({formatTime(day.start_time)} – {formatTime(day.end_time)})</span>
                           </div>
                         )}
                       </div>
@@ -1851,9 +1851,9 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div className="mt-6 bg-cream-50 border border-cream-200 p-5">
-              <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-3">How It Works</p>
-              <ol className="text-sm text-cream-700 space-y-1 list-decimal list-inside">
+            <div className="mt-6 bg-stone-50 border border-stone-200 p-5">
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">How It Works</p>
+              <ol className="text-sm text-stone-700 space-y-1 list-decimal list-inside">
                 <li>Set your hours for each day above</li>
                 <li>Click Save Schedule to store changes</li>
                 <li>Go to Availability tab and click Generate Availability</li>
@@ -1867,26 +1867,26 @@ export default function Dashboard() {
         {activeTab === "settings" && (
           <div className="space-y-6">
             {/* Profile Picture */}
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Profile Picture</SectionHeading>
               <div className="flex items-start gap-6">
-                <div className="w-20 h-20 bg-cream-200 flex-shrink-0 overflow-hidden">
+                <div className="w-20 h-20 bg-stone-200 flex-shrink-0 overflow-hidden">
                   {profilePicPreview ? (
                     <img
                       src={profilePicPreview.startsWith("http") ? profilePicPreview : `https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicPreview}`}
                       alt="Profile" className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-cream-900 flex items-center justify-center">
-                      <span className="text-white text-2xl font-bold" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>M</span>
+                    <div className="w-full h-full bg-stone-900 flex items-center justify-center">
+                      <span className="text-white text-2xl font-bold" style={{ fontFamily: "Georgia, serif" }}>M</span>
                     </div>
                   )}
                 </div>
                 <div className="flex-1">
                   <label className="cursor-pointer block">
-                    <div className="border-2 border-dashed border-cream-300 p-4 text-center hover:border-gold-700 hover:bg-cream-50 transition-colors">
-                      <p className="text-sm font-medium text-cream-700">Click to upload new photo</p>
-                      <p className="text-xs text-cream-400 mt-1">PNG, JPG up to 5MB</p>
+                    <div className="border-2 border-dashed border-stone-300 p-4 text-center hover:border-rose-800 hover:bg-stone-50 transition-colors">
+                      <p className="text-sm font-medium text-stone-700">Click to upload new photo</p>
+                      <p className="text-xs text-stone-400 mt-1">PNG, JPG up to 5MB</p>
                     </div>
                     <input type="file" accept="image/*" onChange={handleProfilePicChange} className="hidden" />
                   </label>
@@ -1900,7 +1900,7 @@ export default function Dashboard() {
             </div>
 
             {/* Bio */}
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Bio</SectionHeading>
               <div className="space-y-4">
                 <div>
@@ -1921,9 +1921,9 @@ export default function Dashboard() {
             </div>
 
             {/* Automatic Texts */}
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Automatic Texts</SectionHeading>
-              <p className="text-xs text-cream-500 mb-5 leading-relaxed">
+              <p className="text-xs text-stone-500 mb-5 leading-relaxed">
                 These go out on their own, every hour, without you touching anything. Appointment
                 reminders always send — they&apos;re part of the booking.
               </p>
@@ -1931,9 +1931,9 @@ export default function Dashboard() {
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={automations.reviews_enabled}
                     onChange={(e) => setAutomations({ ...automations, reviews_enabled: e.target.checked })}
-                    className="w-4 h-4 accent-gold-700 mt-0.5" />
-                  <span className="text-sm text-cream-700 leading-relaxed">
-                    <strong className="text-cream-900">Ask for a Google review</strong> a couple of hours after
+                    className="w-4 h-4 accent-rose-800 mt-0.5" />
+                  <span className="text-sm text-stone-700 leading-relaxed">
+                    <strong className="text-stone-900">Ask for a Google review</strong> a couple of hours after
                     they leave. Reviews are the biggest thing deciding whether you show up when someone
                     searches &ldquo;nails near me&rdquo;.
                   </span>
@@ -1941,9 +1941,9 @@ export default function Dashboard() {
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={automations.rebook_enabled}
                     onChange={(e) => setAutomations({ ...automations, rebook_enabled: e.target.checked })}
-                    className="w-4 h-4 accent-gold-700 mt-0.5" />
-                  <span className="text-sm text-cream-700 leading-relaxed">
-                    <strong className="text-cream-900">Nudge them for a fill</strong> when their set is due.
+                    className="w-4 h-4 accent-rose-800 mt-0.5" />
+                  <span className="text-sm text-stone-700 leading-relaxed">
+                    <strong className="text-stone-900">Nudge them for a fill</strong> when their set is due.
                     This one catches people at full price, before they drift far enough to need a discount.
                   </span>
                 </label>
@@ -1954,7 +1954,7 @@ export default function Dashboard() {
                       value={automations.rebook_after_weeks}
                       onChange={(e) => setAutomations({ ...automations, rebook_after_weeks: e.target.value })}
                       className={`${inputCls} max-w-32`} />
-                    <span className="text-sm text-cream-500">weeks after their last set</span>
+                    <span className="text-sm text-stone-500">weeks after their last set</span>
                   </div>
                 </div>
                 <button onClick={saveAutomations} disabled={savingAutomations} className={btnPrimary}>
@@ -1964,7 +1964,7 @@ export default function Dashboard() {
             </div>
 
             {/* Reactivation Offer */}
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Reactivation Offer</SectionHeading>
               <div className="space-y-4">
                 <div>
@@ -1978,9 +1978,9 @@ export default function Dashboard() {
                       onChange={(e) => setReactivationPercent(e.target.value)}
                       className={`${inputCls} max-w-32`}
                     />
-                    <span className="text-sm text-cream-500">% off their next set</span>
+                    <span className="text-sm text-stone-500">% off their next set</span>
                   </div>
-                  <p className="text-xs text-cream-400 mt-2 leading-relaxed">
+                  <p className="text-xs text-stone-400 mt-2 leading-relaxed">
                     The discount in every reactivation text. Anything between {MIN_PERCENT}% and {MAX_PERCENT}%.
                     Codes already sent keep the percentage they were sent with.
                   </p>
@@ -1997,22 +1997,22 @@ export default function Dashboard() {
             </div>
 
             {/* Promo Banner */}
-            <div className="bg-white border border-cream-200 p-6">
+            <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Promo Banner</SectionHeading>
               <div className="space-y-4">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input type="checkbox" checked={promoEnabled} onChange={(e) => setPromoEnabled(e.target.checked)}
-                    className="w-4 h-4 accent-gold-700" />
-                  <span className="text-sm text-cream-700">Show promo banner on booking page</span>
+                    className="w-4 h-4 accent-rose-800" />
+                  <span className="text-sm text-stone-700">Show promo banner on booking page</span>
                 </label>
                 <div>
                   <label className={labelCls}>Promo Message</label>
                   <input type="text" value={promoText} onChange={(e) => setPromoText(e.target.value)}
                     placeholder="e.g. 20% OFF all services this week!" className={inputCls} />
-                  <p className="text-xs text-cream-400 mt-1">Appears at the top of your booking page when enabled.</p>
+                  <p className="text-xs text-stone-400 mt-1">Appears at the top of your booking page when enabled.</p>
                 </div>
                 {promoEnabled && promoText && (
-                  <div className="bg-gold-700 text-white p-3 text-center text-sm font-medium">
+                  <div className="bg-rose-800 text-white p-3 text-center text-sm font-medium">
                     {promoText}
                   </div>
                 )}
@@ -2057,32 +2057,32 @@ export default function Dashboard() {
           width: 100%;
         }
         .calendar-container .react-calendar__tile {
-          border: 1px solid #E9E1D2 !important;
+          border: 1px solid #e7e5e4 !important;
           background: white !important;
           padding: 10px !important;
           transition: all 0.15s !important;
           font-size: 13px;
-          color: #4E453B;
+          color: #57534e;
         }
         .calendar-container .react-calendar__tile:hover:enabled {
-          background: #FAF7F1 !important;
-          border-color: #8C7D68 !important;
+          background: #fafaf9 !important;
+          border-color: #78716c !important;
         }
         .calendar-container .react-calendar__tile--now {
-          background: #FAF7F1 !important;
+          background: #fafaf9 !important;
           font-weight: 600 !important;
         }
         .calendar-container .available-date {
           background: white !important;
-          color: #231D18 !important;
+          color: #1c1917 !important;
           font-weight: 700 !important;
-          border-color: #8F7440 !important;
+          border-color: #9f1239 !important;
           border-width: 2px !important;
         }
         .calendar-container .react-calendar__tile:disabled {
-          background: #FAF7F1 !important;
-          color: #D9CDB8 !important;
-          border-color: #F4EEE3 !important;
+          background: #fafaf9 !important;
+          color: #d6d3d1 !important;
+          border-color: #f5f5f4 !important;
           cursor: default !important;
         }
         .calendar-container .react-calendar__navigation {
@@ -2090,16 +2090,16 @@ export default function Dashboard() {
           margin-bottom: 10px !important;
         }
         .calendar-container .react-calendar__navigation button {
-          color: #231D18 !important;
+          color: #1c1917 !important;
           font-weight: 600 !important;
           font-size: 14px;
         }
         .calendar-container .react-calendar__navigation button:hover {
-          background: #FAF7F1 !important;
+          background: #fafaf9 !important;
         }
         .calendar-container .react-calendar__month-view__weekdays {
           font-weight: 600 !important;
-          color: #8C7D68 !important;
+          color: #78716c !important;
           font-size: 11px;
           text-transform: uppercase;
         }

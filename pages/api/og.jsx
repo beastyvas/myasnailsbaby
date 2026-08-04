@@ -12,9 +12,9 @@ export const config = { runtime: "edge" };
  * can't go missing the way a file can, and it restyles with the site.
  */
 export default function handler() {
-  const cream = "#FAF7F1";
-  const ink = "#231D18";
-  const gold = "#B08D57";
+  const stone = "#FAFAF9";
+  const ink = "#1C1917";
+  const maroon = "#9F1239";
 
   return new ImageResponse(
     (
@@ -26,10 +26,10 @@ export default function handler() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: cream,
+          background: stone,
           color: ink,
-          // a soft gold vignette so the card doesn't read as a plain box
-          backgroundImage: `radial-gradient(circle at 50% 0%, #FBF6EA 0%, ${cream} 60%)`,
+          // a soft rose vignette so the card doesn't read as a plain box
+          backgroundImage: `radial-gradient(circle at 50% 0%, #FDF2F4 0%, ${stone} 60%)`,
         }}
       >
         <div
@@ -38,7 +38,7 @@ export default function handler() {
             fontSize: 26,
             letterSpacing: 14,
             textTransform: "uppercase",
-            color: gold,
+            color: maroon,
           }}
         >
           Las Vegas
@@ -61,17 +61,17 @@ export default function handler() {
             display: "flex",
             width: 220,
             height: 3,
-            background: gold,
+            background: maroon,
             marginTop: 40,
             marginBottom: 40,
           }}
         />
 
-        <div style={{ display: "flex", fontSize: 34, color: "#4E453B" }}>
+        <div style={{ display: "flex", fontSize: 34, color: "#44403C" }}>
           Gel-X · Acrylic · Hard Gel · Nail Art · Pedicures
         </div>
 
-        <div style={{ display: "flex", fontSize: 27, color: "#8C7D68", marginTop: 28 }}>
+        <div style={{ display: "flex", fontSize: 27, color: "#78716C", marginTop: 28 }}>
           Book online · $20 deposit · @myasnailsbaby
         </div>
       </div>

@@ -21,7 +21,8 @@ export default function Document() {
           rel="stylesheet"
         />
 
-        <meta name="theme-color" content="#FAF7F1" />
+        {/* Tints the phone browser chrome — matches the stone page background. */}
+        <meta name="theme-color" content="#FAFAF9" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <body>
