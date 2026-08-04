@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
+import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
 import "react-calendar/dist/Calendar.css";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
@@ -375,6 +376,14 @@ export default function Dashboard() {
   const [chargingNoShow, setChargingNoShow] = useState(new Set());
   const [clientProfiles, setClientProfiles] = useState({});
   const [savingClientLabel, setSavingClientLabel] = useState(new Set());
+  const [reactivation, setReactivation] = useState(null);
+  const [loadingReactivation, setLoadingReactivation] = useState(false);
+  const [sendingCampaign, setSendingCampaign] = useState(false);
+  const [campaignMsg, setCampaignMsg] = useState(null);
+  const [campaignPicks, setCampaignPicks] = useState(null); // null = everyone due
+  const [showSampleText, setShowSampleText] = useState(false);
+  const [reactivationPercent, setReactivationPercent] = useState("");
+  const [savingPercent, setSavingPercent] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -389,6 +398,16 @@ export default function Dashboard() {
     })();
   }, []);
 
+  // Loaded on first visit to the tab rather than on mount: it's the only view
+  // that needs a round trip to the server, and most dashboard sessions never
+  // open it.
+  useEffect(() => {
+    if (activeTab === "reactivate" && !reactivation && !loadingReactivation) {
+      fetchReactivation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   if (!ready) {
     return (
       <div className="min-h-screen bg-cream-50 flex items-center justify-center">
@@ -402,14 +421,103 @@ export default function Dashboard() {
 
   // ── Fetchers ──────────────────────────────────────────────────
   async function fetchBio() {
-    const { data, error } = await supabase.from("settings").select("bio, profile_picture_url, promo_text, promo_enabled").single();
+    const BASE = "bio, profile_picture_url, promo_text, promo_enabled";
+    // Selecting a column the database doesn't have fails the whole query, so
+    // if add_reactivation.sql hasn't been run yet the bio and promo settings
+    // would silently stop loading. Fall back to the columns that predate it.
+    let { data, error } = await supabase.from("settings").select(`${BASE}, reactivation_percent`).single();
+    if (error) {
+      ({ data, error } = await supabase.from("settings").select(BASE).single());
+      if (!error) console.warn("settings.reactivation_percent is missing — run supabase/migrations/add_reactivation.sql");
+    }
     if (!error && data) {
       setBio(data.bio || "");
       setProfilePicPreview(data.profile_picture_url || null);
       setPromoText(data.promo_text || "");
       setPromoEnabled(data.promo_enabled || false);
+      setReactivationPercent(String(data.reactivation_percent ?? DEFAULT_PERCENT));
     }
   }
+
+  // ── Reactivation campaign ────────────────────────────────────
+  // Everything the campaign needs comes from one authenticated route: the
+  // offer log and the opt-out list are service-role only, so the dashboard's
+  // anon client can't read them directly.
+  async function fetchReactivation() {
+    setLoadingReactivation(true);
+    try {
+      const res = await fetch("/api/reactivation");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Couldn't load the campaign.");
+      setReactivation(json);
+      setCampaignPicks(null);
+    } catch (err) {
+      setCampaignMsg(err.message);
+    } finally {
+      setLoadingReactivation(false);
+    }
+  }
+
+  const sendCampaign = async () => {
+    const recipients = reactivation?.recipients ?? [];
+    const targets = campaignPicks ? recipients.filter((r) => campaignPicks.includes(r.phone)) : recipients;
+    if (targets.length === 0) return;
+
+    const ok = confirm(
+      `Text ${targets.length} ${targets.length === 1 ? "client" : "clients"} a ${reactivation.percentOff}% off code?\n\n` +
+      `Each code is good for ${reactivation.windowDays} days. This sends real texts and can't be undone.`
+    );
+    if (!ok) return;
+
+    setSendingCampaign(true);
+    setCampaignMsg(null);
+    try {
+      const res = await fetch("/api/reactivation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(campaignPicks ? { phones: campaignPicks } : {}),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Send failed.");
+
+      const parts = [`Sent ${json.sent} ${json.sent === 1 ? "text" : "texts"}.`];
+      if (json.failed?.length) parts.push(`Couldn't reach: ${json.failed.join(", ")}.`);
+      setCampaignMsg(parts.join(" "));
+      await fetchReactivation();
+    } catch (err) {
+      setCampaignMsg(err.message);
+    } finally {
+      setSendingCampaign(false);
+    }
+  };
+
+  const setOptOut = async (phone, optedOut) => {
+    const res = await fetch("/api/reactivation-optout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, opted_out: optedOut }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setCampaignMsg(json.error || "Couldn't update that.");
+      return;
+    }
+    await fetchReactivation();
+  };
+
+  const saveReactivationPercent = async () => {
+    setSavingPercent(true);
+    const clamped = clampPercent(reactivationPercent);
+    const { error } = await supabase
+      .from("settings")
+      .update({ reactivation_percent: clamped })
+      .eq("id", "c5d1931e-8603-4f6e-ac4e-e6cf6bd839a9");
+    setSavingPercent(false);
+    setReactivationPercent(String(clamped));
+    if (error) { alert("Failed to save the offer."); return; }
+    alert(`Reactivation offer set to ${clamped}% off.`);
+    if (reactivation) fetchReactivation();
+  };
 
   async function fetchClientProfiles() {
     const { data, error } = await supabase.from("clients").select("*");
@@ -664,6 +772,7 @@ export default function Dashboard() {
     { id: "overview", label: "Overview" },
     { id: "appointments", label: "Appointments" },
     { id: "clients", label: "Clients" },
+    { id: "reactivate", label: "Reactivate" },
     { id: "gallery", label: "Gallery" },
     { id: "availability", label: "Availability" },
     { id: "schedule", label: "Schedule" },
@@ -1224,6 +1333,225 @@ export default function Dashboard() {
           );
         })()}
 
+        {/* ── REACTIVATE ── */}
+        {activeTab === "reactivate" && (() => {
+          const recipients = reactivation?.recipients ?? [];
+          const clients = reactivation?.clients ?? [];
+          const stats = reactivation?.stats;
+          const liveOffers = clients.filter((c) => c.offer && !c.offer.booked);
+          const wonBack = clients.filter((c) => c.offer?.booked);
+          const optedOut = clients.filter((c) => c.optedOut);
+          const chosen = campaignPicks ?? recipients.map((r) => r.phone);
+
+          const togglePick = (phone) => {
+            const next = new Set(chosen);
+            if (next.has(phone)) next.delete(phone); else next.add(phone);
+            setCampaignPicks([...next]);
+          };
+
+          return (
+            <div className="space-y-6">
+              {campaignMsg && (
+                <div className="bg-gold-50 border border-gold-200 text-cream-800 px-4 py-3 text-sm flex items-start justify-between gap-4">
+                  <span>{campaignMsg}</span>
+                  <button onClick={() => setCampaignMsg(null)} className="text-cream-400 hover:text-cream-900 flex-shrink-0">✕</button>
+                </div>
+              )}
+
+              {loadingReactivation && !reactivation ? (
+                <div className="bg-white border border-cream-200 p-10 text-center">
+                  <div className="w-8 h-8 border-2 border-cream-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-cream-500 text-sm">Working out who&apos;s gone quiet...</p>
+                </div>
+              ) : !reactivation ? (
+                <div className="bg-white border border-cream-200 p-10 text-center">
+                  <p className="text-cream-500 text-sm mb-4">Couldn&apos;t load the campaign.</p>
+                  <button onClick={fetchReactivation} className={btnSecondary}>Try again</button>
+                </div>
+              ) : (
+                <>
+                  {/* Scoreboard */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {[
+                      { label: "Due Now", value: recipients.length, accent: true },
+                      { label: "Offers Live", value: stats?.live ?? 0 },
+                      { label: "Came Back", value: stats?.booked ?? 0 },
+                      { label: "Deposits", value: `$${stats?.deposits ?? 0}` },
+                    ].map(({ label, value, accent }) => (
+                      <div key={label} className="bg-white border border-cream-200 p-5 stat-card">
+                        <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-2">{label}</p>
+                        <p className={`text-4xl font-bold ${accent ? "text-gold-700" : "text-cream-900"}`}>{value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* The campaign */}
+                  <div className="bg-white border border-cream-200 p-6">
+                    <SectionHeading>Win Them Back</SectionHeading>
+
+                    {recipients.length === 0 ? (
+                      <p className="text-cream-500 text-sm leading-relaxed">
+                        {liveOffers.length > 0
+                          ? `Nobody new is due. ${liveOffers.length} ${liveOffers.length === 1 ? "offer is" : "offers are"} still live — give them time to book.`
+                          : `Nobody's due. Clients show up here ${reactivation.dormantAfterDays} days after their last set with nothing on the books.`}
+                      </p>
+                    ) : (
+                      <div className="space-y-5">
+                        <p className="text-sm text-cream-700 leading-relaxed">
+                          <strong className="text-cream-900">{recipients.length} {recipients.length === 1 ? "client hasn't" : "clients haven't"} been in for a while.</strong>{" "}
+                          Each one gets a single text with their own {reactivation.percentOff}% off code, good for {reactivation.windowDays} days.
+                          Change the offer under Settings.
+                        </p>
+
+                        <div>
+                          <button
+                            onClick={() => setShowSampleText((v) => !v)}
+                            className="text-xs font-semibold text-gold-700 hover:text-gold-800 uppercase tracking-wider"
+                          >
+                            {showSampleText ? "Hide the text" : "See the text they get"}
+                          </button>
+                          {showSampleText && reactivation.sample && (
+                            <pre className="mt-3 bg-cream-50 border border-cream-200 p-4 text-xs text-cream-700 whitespace-pre-wrap font-sans leading-relaxed">
+                              {reactivation.sample}
+                            </pre>
+                          )}
+                        </div>
+
+                        {/* Who's getting it — every row is unticked-able, so a
+                            client Mya knows has moved away isn't texted. */}
+                        <div className="border border-cream-200">
+                          <div className="flex items-center justify-between px-4 py-2.5 bg-cream-50 border-b border-cream-200">
+                            <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider">
+                              Sending to {chosen.length} of {recipients.length}
+                            </p>
+                            <button
+                              onClick={() => setCampaignPicks(chosen.length === recipients.length ? [] : null)}
+                              className="text-xs font-semibold text-gold-700 hover:text-gold-800"
+                            >
+                              {chosen.length === recipients.length ? "Clear all" : "Select all"}
+                            </button>
+                          </div>
+                          <div className="divide-y divide-cream-100 max-h-80 overflow-y-auto">
+                            {recipients.map((r) => (
+                              <label key={r.phone} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-cream-50 transition">
+                                <input
+                                  type="checkbox"
+                                  checked={chosen.includes(r.phone)}
+                                  onChange={() => togglePick(r.phone)}
+                                  className="w-4 h-4 accent-gold-700 flex-shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-cream-900 truncate">{r.name || r.phone}</p>
+                                  <p className="text-xs text-cream-500">
+                                    {r.daysSinceVisit} days since her last set · {r.visits} {r.visits === 1 ? "visit" : "visits"}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.preventDefault(); setOptOut(r.phone, true); }}
+                                  className="text-xs text-cream-400 hover:text-red-700 transition flex-shrink-0"
+                                  title="Never send her promotional texts"
+                                >
+                                  Don&apos;t text
+                                </button>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={sendCampaign}
+                          disabled={sendingCampaign || chosen.length === 0}
+                          className={btnPrimary}
+                        >
+                          {sendingCampaign ? (
+                            <span className="flex items-center gap-2">
+                              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Sending...
+                            </span>
+                          ) : `SEND TO ${chosen.length}`}
+                        </button>
+                      </div>
+                    )}
+
+                    <details className="mt-6 text-xs text-cream-500">
+                      <summary className="cursor-pointer text-gold-700 font-semibold uppercase tracking-wider">How this works</summary>
+                      <p className="mt-3 leading-relaxed">
+                        Anyone who books from a texted number within {reactivation.windowDays} days is credited automatically —
+                        they don&apos;t have to mention the code. Their booking gets stamped with the discount and you get a
+                        text the moment it happens, so you know to honor it when they sit down. If someone replies STOP they
+                        stop getting offers straight away, but their appointment confirmations and reminders keep coming.
+                      </p>
+                    </details>
+                  </div>
+
+                  {/* Live offers */}
+                  {liveOffers.length > 0 && (
+                    <div className="bg-white border border-cream-200 p-6">
+                      <SectionHeading>Offers Out There</SectionHeading>
+                      <div className="divide-y divide-cream-100">
+                        {liveOffers.map((c) => (
+                          <div key={c.phone} className="py-3 flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-cream-900 truncate">{c.name || c.phone}</p>
+                              <p className="text-xs text-cream-500">
+                                {c.offer.percentOff}% off · code {c.offer.code} · expires {new Date(c.offer.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </p>
+                            </div>
+                            <span className="text-xs font-semibold bg-gold-50 text-gold-800 border border-gold-200 px-2 py-0.5 flex-shrink-0">Waiting</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Won back */}
+                  {wonBack.length > 0 && (
+                    <div className="bg-white border border-cream-200 p-6">
+                      <SectionHeading>Came Back</SectionHeading>
+                      <div className="divide-y divide-cream-100">
+                        {wonBack.map((c) => (
+                          <div key={c.phone} className="py-3 flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-cream-900 truncate">{c.name || c.phone}</p>
+                              <p className="text-xs text-cream-500">Honor {c.offer.percentOff}% off · code {c.offer.code}</p>
+                            </div>
+                            <span className="text-xs font-semibold bg-green-50 text-green-800 border border-green-200 px-2 py-0.5 flex-shrink-0">Booked</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Opted out */}
+                  {optedOut.length > 0 && (
+                    <div className="bg-white border border-cream-200 p-6">
+                      <SectionHeading>Not Receiving Offers</SectionHeading>
+                      <p className="text-xs text-cream-500 mb-4 leading-relaxed">
+                        These numbers asked out of promotional texts. They still get confirmations and reminders for
+                        appointments they book.
+                      </p>
+                      <div className="divide-y divide-cream-100">
+                        {optedOut.map((c) => (
+                          <div key={c.phone} className="py-3 flex items-center justify-between gap-4">
+                            <p className="text-sm text-cream-700 truncate">{c.name || c.phone}</p>
+                            <button
+                              onClick={() => setOptOut(c.phone, false)}
+                              className="text-xs text-cream-400 hover:text-cream-900 transition flex-shrink-0"
+                            >
+                              Let back in
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
+
         {/* ── GALLERY ── */}
         {activeTab === "gallery" && (
           <div className="space-y-6">
@@ -1524,6 +1852,39 @@ export default function Dashboard() {
                       Saving...
                     </span>
                   ) : "SAVE BIO"}
+                </button>
+              </div>
+            </div>
+
+            {/* Reactivation Offer */}
+            <div className="bg-white border border-cream-200 p-6">
+              <SectionHeading>Reactivation Offer</SectionHeading>
+              <div className="space-y-4">
+                <div>
+                  <label className={labelCls}>Percent Off</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={MIN_PERCENT}
+                      max={MAX_PERCENT}
+                      value={reactivationPercent}
+                      onChange={(e) => setReactivationPercent(e.target.value)}
+                      className={`${inputCls} max-w-32`}
+                    />
+                    <span className="text-sm text-cream-500">% off their next set</span>
+                  </div>
+                  <p className="text-xs text-cream-400 mt-2 leading-relaxed">
+                    The discount in every reactivation text. Anything between {MIN_PERCENT}% and {MAX_PERCENT}%.
+                    Codes already sent keep the percentage they were sent with.
+                  </p>
+                </div>
+                <button onClick={saveReactivationPercent} disabled={savingPercent} className={btnPrimary}>
+                  {savingPercent ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Saving...
+                    </span>
+                  ) : "SAVE OFFER"}
                 </button>
               </div>
             </div>

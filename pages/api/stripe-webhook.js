@@ -2,6 +2,8 @@
 import { buffer } from "micro";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { normalizePhone, sendSms } from "@/utils/sms";
+import { ownerAlert } from "@/utils/reactivation";
 
 export const config = {
   api: { bodyParser: false }, // ✅ raw body for Stripe signature verification
@@ -57,6 +59,71 @@ function addHoursTo24h(start24, hours) {
   const hh = String(d.getUTCHours()).padStart(2, "0");
   const mm = String(d.getUTCMinutes()).padStart(2, "0");
   return `${hh}:${mm}:00`;
+}
+
+/**
+ * If this booking came from a number Mya texted a reactivation offer to, and
+ * the offer is still inside its window, credit it.
+ *
+ * Attribution is by phone number rather than by the code, on purpose: almost
+ * nobody types a code back. Someone who gets the text and books a week later
+ * came back because of it, whether or not they mention it — and Mya still
+ * needs to know to honor the discount when they sit down.
+ *
+ * Never throws. A booking that's already paid for must not be undone because
+ * the campaign bookkeeping had a bad day.
+ */
+async function creditReactivation(bookingId, booking) {
+  try {
+    const phone = normalizePhone(booking.phone);
+    if (!phone) return;
+
+    const { data: offer, error } = await supabase
+      .from("reactivation_sends")
+      .select("id, code, percent_off")
+      .eq("phone", phone)
+      .is("booking_id", null)
+      .gt("expires_at", new Date().toISOString())
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("⚠️ Reactivation lookup failed:", error.message);
+      return;
+    }
+    if (!offer) return;
+
+    // Stamp the booking so the discount shows up wherever the booking does.
+    await supabase
+      .from("bookings")
+      .update({ reactivation_code: offer.code, discount_percent: offer.percent_off })
+      .eq("id", bookingId);
+
+    // Close the offer so it can't be credited to a second booking.
+    await supabase
+      .from("reactivation_sends")
+      .update({ booking_id: bookingId, booked_at: new Date().toISOString() })
+      .eq("id", offer.id);
+
+    console.log(`🎉 Reactivation credited: ${offer.code} → booking ${bookingId}`);
+
+    if (process.env.MYA_PHONE_NUMBER) {
+      await sendSms(
+        process.env.MYA_PHONE_NUMBER,
+        ownerAlert({
+          clientName: booking.name || "A client",
+          service: booking.service,
+          date: booking.date,
+          startTime: to12h(booking.start_time),
+          percentOff: offer.percent_off,
+          code: offer.code,
+        })
+      );
+    }
+  } catch (err) {
+    console.error("⚠️ Reactivation credit failed:", err.message);
+  }
 }
 
 export default async function handler(req, res) {
@@ -196,11 +263,17 @@ if (conflicts && conflicts.length > 0) {
       stripe_payment_method_id: stripePaymentMethodId,
     };
 
-    const { error: insertErr } = await supabase.from("bookings").insert([insert]);
+    const { data: created, error: insertErr } = await supabase
+      .from("bookings")
+      .insert([insert])
+      .select("id")
+      .single();
     if (insertErr) {
       console.error("❌ Supabase insert error:", insertErr.message);
       return res.status(200).json({ received: true }); // ack so Stripe stops retrying
     }
+
+    await creditReactivation(created.id, insert);
 
     return res.status(200).json({ received: true });
   }
