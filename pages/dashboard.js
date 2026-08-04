@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
 import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
+import { EXPENSE_CATEGORIES, formatMoney } from "@/utils/business";
+import { prettyDate, to12h } from "@/utils/time";
 import "react-calendar/dist/Calendar.css";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
@@ -384,6 +386,26 @@ export default function Dashboard() {
   const [showSampleText, setShowSampleText] = useState(false);
   const [reactivationPercent, setReactivationPercent] = useState("");
   const [savingPercent, setSavingPercent] = useState(false);
+  const [business, setBusiness] = useState(null);
+  const [loadingBusiness, setLoadingBusiness] = useState(false);
+  const [businessMsg, setBusinessMsg] = useState(null);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [expenseForm, setExpenseForm] = useState({
+    expense_date: new Date().toISOString().slice(0, 10),
+    category: "supplies",
+    amount_dollars: "",
+    description: "",
+  });
+  const [savingExpense, setSavingExpense] = useState(false);
+  const [amountDrafts, setAmountDrafts] = useState({});
+  const [savingAmount, setSavingAmount] = useState(new Set());
+  const [automations, setAutomations] = useState({
+    reviews_enabled: true,
+    rebook_enabled: true,
+    rebook_after_weeks: 3,
+    tax_set_aside_percent: 25,
+  });
+  const [savingAutomations, setSavingAutomations] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -398,12 +420,15 @@ export default function Dashboard() {
     })();
   }, []);
 
-  // Loaded on first visit to the tab rather than on mount: it's the only view
-  // that needs a round trip to the server, and most dashboard sessions never
-  // open it.
+  // Loaded on first visit to the tab rather than on mount: these are the only
+  // views that need a round trip to the server, and most dashboard sessions
+  // never open them.
   useEffect(() => {
     if (activeTab === "reactivate" && !reactivation && !loadingReactivation) {
       fetchReactivation();
+    }
+    if (activeTab === "business" && !business && !loadingBusiness) {
+      fetchBusiness();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -422,13 +447,14 @@ export default function Dashboard() {
   // ── Fetchers ──────────────────────────────────────────────────
   async function fetchBio() {
     const BASE = "bio, profile_picture_url, promo_text, promo_enabled";
+    const ADDED = "reactivation_percent, tax_set_aside_percent, rebook_after_weeks, reviews_enabled, rebook_enabled";
     // Selecting a column the database doesn't have fails the whole query, so
-    // if add_reactivation.sql hasn't been run yet the bio and promo settings
-    // would silently stop loading. Fall back to the columns that predate it.
-    let { data, error } = await supabase.from("settings").select(`${BASE}, reactivation_percent`).single();
+    // until the migrations have been run the bio and promo settings would
+    // silently stop loading. Fall back to the columns that predate them.
+    let { data, error } = await supabase.from("settings").select(`${BASE}, ${ADDED}`).single();
     if (error) {
       ({ data, error } = await supabase.from("settings").select(BASE).single());
-      if (!error) console.warn("settings.reactivation_percent is missing — run supabase/migrations/add_reactivation.sql");
+      if (!error) console.warn("Newer settings columns are missing — run the migrations in supabase/migrations/");
     }
     if (!error && data) {
       setBio(data.bio || "");
@@ -436,8 +462,37 @@ export default function Dashboard() {
       setPromoText(data.promo_text || "");
       setPromoEnabled(data.promo_enabled || false);
       setReactivationPercent(String(data.reactivation_percent ?? DEFAULT_PERCENT));
+      setAutomations({
+        reviews_enabled: data.reviews_enabled ?? true,
+        rebook_enabled: data.rebook_enabled ?? true,
+        rebook_after_weeks: data.rebook_after_weeks ?? 3,
+        tax_set_aside_percent: data.tax_set_aside_percent ?? 25,
+      });
     }
   }
+
+  const saveAutomations = async () => {
+    setSavingAutomations(true);
+    const clamp = (v, lo, hi, fallback) => {
+      const n = Math.round(Number(v));
+      return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : fallback;
+    };
+    const payload = {
+      reviews_enabled: !!automations.reviews_enabled,
+      rebook_enabled: !!automations.rebook_enabled,
+      rebook_after_weeks: clamp(automations.rebook_after_weeks, 1, 12, 3),
+      tax_set_aside_percent: clamp(automations.tax_set_aside_percent, 0, 60, 25),
+    };
+    const { error } = await supabase
+      .from("settings")
+      .update(payload)
+      .eq("id", "c5d1931e-8603-4f6e-ac4e-e6cf6bd839a9");
+    setSavingAutomations(false);
+    setAutomations(payload);
+    if (error) { alert("Failed to save."); return; }
+    alert("Saved!");
+    if (business) fetchBusiness();
+  };
 
   // ── Reactivation campaign ────────────────────────────────────
   // Everything the campaign needs comes from one authenticated route: the
@@ -503,6 +558,69 @@ export default function Dashboard() {
       return;
     }
     await fetchReactivation();
+  };
+
+  // ── Business ─────────────────────────────────────────────────
+  async function fetchBusiness() {
+    setLoadingBusiness(true);
+    try {
+      const res = await fetch("/api/business");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Couldn't load the numbers.");
+      setBusiness(json);
+    } catch (err) {
+      setBusinessMsg(err.message);
+    } finally {
+      setLoadingBusiness(false);
+    }
+  }
+
+  const addExpense = async (e) => {
+    e.preventDefault();
+    setSavingExpense(true);
+    setBusinessMsg(null);
+    try {
+      const res = await fetch("/api/expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(expenseForm),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Couldn't save that.");
+      setExpenseForm({ ...expenseForm, amount_dollars: "", description: "" });
+      setShowExpenseForm(false);
+      await fetchBusiness();
+    } catch (err) {
+      setBusinessMsg(err.message);
+    } finally {
+      setSavingExpense(false);
+    }
+  };
+
+  const removeExpense = async (id) => {
+    if (!confirm("Delete this expense?")) return;
+    await fetch(`/api/expenses?id=${id}`, { method: "DELETE" });
+    await fetchBusiness();
+  };
+
+  const recordAmount = async (bookingId, body) => {
+    setSavingAmount((prev) => new Set([...prev, bookingId]));
+    setBusinessMsg(null);
+    try {
+      const res = await fetch("/api/complete-booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_id: bookingId, ...body }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Couldn't save that.");
+      setAmountDrafts((prev) => { const next = { ...prev }; delete next[bookingId]; return next; });
+      await fetchBusiness();
+    } catch (err) {
+      setBusinessMsg(err.message);
+    } finally {
+      setSavingAmount((prev) => { const s = new Set(prev); s.delete(bookingId); return s; });
+    }
   };
 
   const saveReactivationPercent = async () => {
@@ -772,6 +890,7 @@ export default function Dashboard() {
     { id: "overview", label: "Overview" },
     { id: "appointments", label: "Appointments" },
     { id: "clients", label: "Clients" },
+    { id: "business", label: "Business" },
     { id: "reactivate", label: "Reactivate" },
     { id: "gallery", label: "Gallery" },
     { id: "availability", label: "Availability" },
@@ -1333,6 +1452,253 @@ export default function Dashboard() {
           );
         })()}
 
+        {/* ── BUSINESS ── */}
+        {activeTab === "business" && (() => {
+          const r = business?.report;
+          const money = (c, opts) => formatMoney(c, opts);
+
+          return (
+            <div className="space-y-6">
+              {businessMsg && (
+                <div className="bg-gold-50 border border-gold-200 text-cream-800 px-4 py-3 text-sm flex items-start justify-between gap-4">
+                  <span>{businessMsg}</span>
+                  <button onClick={() => setBusinessMsg(null)} className="text-cream-400 hover:text-cream-900 flex-shrink-0">✕</button>
+                </div>
+              )}
+
+              {loadingBusiness && !business ? (
+                <div className="bg-white border border-cream-200 p-10 text-center">
+                  <div className="w-8 h-8 border-2 border-cream-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-cream-500 text-sm">Adding it all up...</p>
+                </div>
+              ) : !business ? (
+                <div className="bg-white border border-cream-200 p-10 text-center">
+                  <p className="text-cream-500 text-sm mb-4">Couldn&apos;t load the numbers.</p>
+                  <button onClick={fetchBusiness} className={btnSecondary}>Try again</button>
+                </div>
+              ) : (
+                <>
+                  {/* This month */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {[
+                      { label: "Revenue", value: money(r.month.revenue, { whole: true }), accent: true },
+                      { label: "Expenses", value: money(r.month.expenses, { whole: true }) },
+                      { label: "Profit", value: money(r.month.profit, { whole: true }), warn: r.month.profit < 0 },
+                      { label: "Set Aside For Tax", value: money(r.month.taxSetAside, { whole: true }) },
+                    ].map(({ label, value, accent, warn }) => (
+                      <div key={label} className="bg-white border border-cream-200 p-5 stat-card">
+                        <p className="text-xs font-semibold text-cream-500 uppercase tracking-wider mb-2">{label}</p>
+                        <p className={`text-3xl font-bold ${warn ? "text-red-700" : accent ? "text-gold-700" : "text-cream-900"}`}>{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-cream-400 -mt-3">
+                    This month so far. Year to date: {money(r.yearToDate.revenue, { whole: true })} in,{" "}
+                    {money(r.yearToDate.expenses, { whole: true })} out,{" "}
+                    <strong className="text-cream-700">{money(r.yearToDate.profit, { whole: true })} profit</strong> ·{" "}
+                    {money(r.yearToDate.taxSetAside, { whole: true })} to put aside for tax.
+                  </p>
+
+                  {r.insights.length > 0 && (
+                    <div className="bg-white border border-cream-200 p-6">
+                      <SectionHeading>Worth Knowing</SectionHeading>
+                      <ul className="space-y-2">
+                        {r.insights.map((line, i) => (
+                          <li key={i} className="text-sm text-cream-700 leading-relaxed flex gap-2">
+                            <span className="text-gold-700 flex-shrink-0">·</span>{line}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Six-month bars */}
+                  <div className="bg-white border border-cream-200 p-6">
+                    <SectionHeading>Last Six Months</SectionHeading>
+                    {(() => {
+                      const peak = Math.max(1, ...r.monthly.map((m) => Math.max(m.revenue, m.expenses)));
+                      return (
+                        <div className="flex items-end justify-between gap-3 h-44">
+                          {r.monthly.map((m) => (
+                            <div key={m.month} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+                              <div className="w-full flex items-end justify-center gap-1 flex-1">
+                                <div
+                                  className="w-1/2 bg-gold-600 transition-all"
+                                  style={{ height: `${(m.revenue / peak) * 100}%` }}
+                                  title={`${m.label} in: ${money(m.revenue)}`}
+                                />
+                                <div
+                                  className="w-1/2 bg-cream-300 transition-all"
+                                  style={{ height: `${(m.expenses / peak) * 100}%` }}
+                                  title={`${m.label} out: ${money(m.expenses)}`}
+                                />
+                              </div>
+                              <span className="text-xs text-cream-500">{m.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                    <div className="flex items-center gap-5 mt-4 text-xs text-cream-500">
+                      <span className="flex items-center gap-2"><span className="w-3 h-3 bg-gold-600 inline-block" /> Money in</span>
+                      <span className="flex items-center gap-2"><span className="w-3 h-3 bg-cream-300 inline-block" /> Money out</span>
+                    </div>
+                  </div>
+
+                  {/* The queue that makes the numbers real */}
+                  {business.needsAmount.length > 0 && (
+                    <div className="bg-white border border-cream-200 p-6">
+                      <SectionHeading>What Did You Collect?</SectionHeading>
+                      <p className="text-xs text-cream-500 mb-5 leading-relaxed">
+                        The site only sees the $20 deposit — everything else is settled at the chair. Pop in the
+                        real total for each of these and the numbers above become the truth instead of a floor.
+                      </p>
+                      <div className="divide-y divide-cream-100">
+                        {business.needsAmount.map((b) => (
+                          <div key={b.id} className="py-3 flex flex-wrap items-center gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-cream-900 truncate">{b.name || "Client"}</p>
+                              <p className="text-xs text-cream-500">
+                                {prettyDate(b.date)} · {to12h(b.start_time)}{b.service ? ` · ${b.service}` : ""}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-cream-400 text-sm">$</span>
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  placeholder="0"
+                                  value={amountDrafts[b.id] ?? ""}
+                                  onChange={(e) => setAmountDrafts((prev) => ({ ...prev, [b.id]: e.target.value }))}
+                                  className="w-28 pl-7 pr-3 py-2 border border-cream-300 focus:border-cream-900 focus:outline-none text-sm bg-white"
+                                />
+                              </div>
+                              <button
+                                onClick={() => recordAmount(b.id, { total_dollars: amountDrafts[b.id] })}
+                                disabled={savingAmount.has(b.id) || !amountDrafts[b.id]}
+                                className="bg-gold-700 hover:bg-gold-800 disabled:bg-cream-200 disabled:text-cream-400 text-white px-4 py-2 text-xs font-semibold transition"
+                              >
+                                {savingAmount.has(b.id) ? "..." : "SAVE"}
+                              </button>
+                              <button
+                                onClick={() => { if (confirm(`Mark ${b.name || "this client"} as a no-show?`)) recordAmount(b.id, { no_show: true }); }}
+                                disabled={savingAmount.has(b.id)}
+                                className="text-xs text-cream-400 hover:text-red-700 transition"
+                              >
+                                No-show
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Expenses */}
+                  <div className="bg-white border border-cream-200 p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-0.5 h-6 bg-gold-700 flex-shrink-0" />
+                        <h2 className="text-lg font-bold text-cream-900" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>Expenses</h2>
+                      </div>
+                      <button onClick={() => setShowExpenseForm((v) => !v)} className={btnSecondary}>
+                        {showExpenseForm ? "Cancel" : "+ Log One"}
+                      </button>
+                    </div>
+
+                    {showExpenseForm && (
+                      <form onSubmit={addExpense} className="bg-cream-50 border border-cream-200 p-5 mb-6 space-y-4">
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className={labelCls}>Date</label>
+                            <input type="date" required value={expenseForm.expense_date}
+                              onChange={(e) => setExpenseForm({ ...expenseForm, expense_date: e.target.value })}
+                              className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls}>Category</label>
+                            <select value={expenseForm.category}
+                              onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
+                              className={selectCls}>
+                              {EXPENSE_CATEGORIES.map((c) => (
+                                <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className={labelCls}>Amount</label>
+                            <input type="text" inputMode="decimal" required placeholder="45.00"
+                              value={expenseForm.amount_dollars}
+                              onChange={(e) => setExpenseForm({ ...expenseForm, amount_dollars: e.target.value })}
+                              className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls}>What was it?</label>
+                            <input type="text" placeholder="Gel-X tips restock"
+                              value={expenseForm.description}
+                              onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
+                              className={inputCls} />
+                          </div>
+                        </div>
+                        <button type="submit" disabled={savingExpense} className={btnPrimary}>
+                          {savingExpense ? "Saving..." : "LOG EXPENSE"}
+                        </button>
+                      </form>
+                    )}
+
+                    {r.byCategory.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-5">
+                        {r.byCategory.map(({ category, amount }) => (
+                          <span key={category} className="text-xs bg-cream-100 border border-cream-200 text-cream-700 px-3 py-1.5">
+                            {category} · <strong>{money(amount, { whole: true })}</strong>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {business.expenses.length === 0 ? (
+                      <p className="text-cream-400 text-sm text-center py-8">
+                        Nothing logged yet. Tips, gels, booth rent, files, lamps — it all comes off the tax bill.
+                      </p>
+                    ) : (
+                      <div className="divide-y divide-cream-100 max-h-96 overflow-y-auto">
+                        {business.expenses.map((e) => (
+                          <div key={e.id} className="py-3 flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="text-sm text-cream-900 truncate">{e.description || e.category}</p>
+                              <p className="text-xs text-cream-500">{prettyDate(e.expense_date)} · {e.category}</p>
+                            </div>
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              <span className="text-sm font-medium text-cream-900">{money(e.amount_cents)}</span>
+                              <button onClick={() => removeExpense(e.id)} className="text-xs text-cream-400 hover:text-red-700 transition">✕</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* On the books */}
+                  <div className="bg-white border border-cream-200 p-6">
+                    <SectionHeading>Still To Come</SectionHeading>
+                    <p className="text-sm text-cream-700 leading-relaxed">
+                      <strong className="text-cream-900">{r.pipeline.count}</strong>{" "}
+                      {r.pipeline.count === 1 ? "appointment is" : "appointments are"} booked and paid for —{" "}
+                      {money(r.pipeline.value, { whole: true })} in deposits already collected, plus whatever
+                      they spend at the chair.
+                    </p>
+                    <p className="text-xs text-cream-400 mt-3">
+                      {r.counts.visits} {r.counts.visits === 1 ? "visit" : "visits"} so far
+                      {r.counts.noShows > 0 && ` · ${r.counts.noShows} no-${r.counts.noShows === 1 ? "show" : "shows"}`}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })()}
+
         {/* ── REACTIVATE ── */}
         {activeTab === "reactivate" && (() => {
           const recipients = reactivation?.recipients ?? [];
@@ -1852,6 +2218,60 @@ export default function Dashboard() {
                       Saving...
                     </span>
                   ) : "SAVE BIO"}
+                </button>
+              </div>
+            </div>
+
+            {/* Automatic Texts */}
+            <div className="bg-white border border-cream-200 p-6">
+              <SectionHeading>Automatic Texts</SectionHeading>
+              <p className="text-xs text-cream-500 mb-5 leading-relaxed">
+                These go out on their own, every hour, without you touching anything. Appointment
+                reminders always send — they&apos;re part of the booking.
+              </p>
+              <div className="space-y-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={automations.reviews_enabled}
+                    onChange={(e) => setAutomations({ ...automations, reviews_enabled: e.target.checked })}
+                    className="w-4 h-4 accent-gold-700 mt-0.5" />
+                  <span className="text-sm text-cream-700 leading-relaxed">
+                    <strong className="text-cream-900">Ask for a Google review</strong> a couple of hours after
+                    they leave. Reviews are the biggest thing deciding whether you show up when someone
+                    searches &ldquo;nails near me&rdquo;.
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={automations.rebook_enabled}
+                    onChange={(e) => setAutomations({ ...automations, rebook_enabled: e.target.checked })}
+                    className="w-4 h-4 accent-gold-700 mt-0.5" />
+                  <span className="text-sm text-cream-700 leading-relaxed">
+                    <strong className="text-cream-900">Nudge them for a fill</strong> when their set is due.
+                    This one catches people at full price, before they drift far enough to need a discount.
+                  </span>
+                </label>
+                <div className="pt-1">
+                  <label className={labelCls}>Nudge After</label>
+                  <div className="flex items-center gap-3">
+                    <input type="number" min={1} max={12}
+                      value={automations.rebook_after_weeks}
+                      onChange={(e) => setAutomations({ ...automations, rebook_after_weeks: e.target.value })}
+                      className={`${inputCls} max-w-32`} />
+                    <span className="text-sm text-cream-500">weeks after their last set</span>
+                  </div>
+                </div>
+                <div className="pt-1">
+                  <label className={labelCls}>Set Aside For Tax</label>
+                  <div className="flex items-center gap-3">
+                    <input type="number" min={0} max={60}
+                      value={automations.tax_set_aside_percent}
+                      onChange={(e) => setAutomations({ ...automations, tax_set_aside_percent: e.target.value })}
+                      className={`${inputCls} max-w-32`} />
+                    <span className="text-sm text-cream-500">% of profit</span>
+                  </div>
+                  <p className="text-xs text-cream-400 mt-2">Used for the &ldquo;set aside for tax&rdquo; figure on the Business tab.</p>
+                </div>
+                <button onClick={saveAutomations} disabled={savingAutomations} className={btnPrimary}>
+                  {savingAutomations ? "Saving..." : "SAVE"}
                 </button>
               </div>
             </div>

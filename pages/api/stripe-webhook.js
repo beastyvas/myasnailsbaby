@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { normalizePhone, sendSms } from "@/utils/sms";
 import { ownerAlert } from "@/utils/reactivation";
+import { prettyDate } from "@/utils/time";
 
 export const config = {
   api: { bodyParser: false }, // ✅ raw body for Stripe signature verification
@@ -271,6 +272,18 @@ if (conflicts && conflicts.length > 0) {
     if (insertErr) {
       console.error("❌ Supabase insert error:", insertErr.message);
       return res.status(200).json({ received: true }); // ack so Stripe stops retrying
+    }
+
+    // Mya has always been emailed about a new booking, but never texted —
+    // an email is easy to miss mid-set. Failures are swallowed: the client
+    // has already paid and been confirmed.
+    if (process.env.MYA_PHONE_NUMBER) {
+      await sendSms(
+        process.env.MYA_PHONE_NUMBER,
+        `📅 New booking — ${insert.name || "someone"}\n` +
+          `${insert.service || "Nails"}${insert.pedicure === "yes" ? " + pedicure" : ""}\n` +
+          `${prettyDate(insert.date)} at ${to12h(insert.start_time)}`
+      );
     }
 
     await creditReactivation(created.id, insert);

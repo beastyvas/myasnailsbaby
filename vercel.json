@@ -4,6 +4,12 @@
       "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/engine",
+      "schedule": "0 15 * * *"
+    }
+  ],
   "routes": [
     {
       "src": "/api/stripe-webhook",
