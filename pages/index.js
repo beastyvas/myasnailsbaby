@@ -11,7 +11,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import Seo from "@/components/Seo";
 import { faqJsonLd, salonJsonLd } from "@/utils/seo";
-import { vegasParts } from "@/utils/time";
+import { prettyDate, vegasParts } from "@/utils/time";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -34,6 +34,9 @@ export default function Home() {
   const [isReturning, setIsReturning] = useState(false);
   const [bookingNails, setBookingNails] = useState("");
   const [pedicureType, setPedicureType] = useState("");
+  const [step, setStep] = useState(1);
+  const [artLevel, setArtLevel] = useState("");
+  const [nailLength, setNailLength] = useState("");
 
   useEffect(() => {
     let d = 0;
@@ -201,6 +204,35 @@ export default function Home() {
   const selectCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 bg-white";
   const sectionHeading = { fontFamily: "Georgia, serif" };
   const scriptHeading = { fontFamily: "'Great Vibes', cursive", color: "#1c1917" };
+
+  // ── stepped booking form ───────────────────────────────────────────
+  const STEPS = ["Service", "Date", "Details"];
+
+  const nailsChosen = bookingNails === "yes";
+  const pedChosen = pedicure === "yes";
+
+  // A step can only be left once everything it owns is filled, which is what
+  // keeps the hidden steps' required fields valid at submit time — the
+  // browser refuses to submit a form with an empty required field it can't
+  // scroll to, and every field stays mounted so FormData still sees it.
+  const step1Valid =
+    (nailsChosen || pedChosen) &&
+    bookingNails !== "" &&
+    pedicure !== "" &&
+    (!nailsChosen || (service !== "" && soakoff !== "")) &&
+    (!pedChosen || pedicureType !== "");
+  const step2Valid = !!selectedDate && !!time;
+  const canAdvance = step === 1 ? step1Valid : step === 2 ? step2Valid : true;
+
+  const summaryService = [
+    nailsChosen ? service : null,
+    pedChosen ? (pedicureType || "Pedicure") : null,
+  ].filter(Boolean).join(" + ");
+  const summaryDetails = [
+    artLevel && artLevel !== "N/A" ? artLevel : null,
+    nailLength && nailLength !== "N/A" ? nailLength : null,
+    soakoff && soakoff !== "none" ? (soakoff === "foreign" ? "Foreign soak-off" : "Soak-off") : null,
+  ].filter(Boolean).join(" · ");
 
   return (
     <main className={`min-h-screen bg-stone-50${promoEnabled && promoText ? " pb-12" : ""}`}>
@@ -371,25 +403,67 @@ export default function Home() {
           <div className="max-w-2xl mx-auto">
             <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Book an Appointment</h3>
 
-            <form ref={formRef} onSubmit={handleSubmit} className="bg-white border border-stone-200 p-8 space-y-8">
+            {/* Three steps rather than one long scroll. Every field stays
+                mounted — hidden steps are display:none, not unmounted — so
+                FormData still sees the whole form on submit and handleSubmit
+                needs no changes at all. */}
+            <form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              onKeyDown={(e) => {
+                // Enter on step 1 or 2 would submit a form whose later
+                // required fields are still empty, which the browser rejects
+                // with an unhelpful "not focusable" error. Advance instead.
+                if (e.key === "Enter" && step < 3 && e.target.tagName !== "TEXTAREA") {
+                  e.preventDefault();
+                  if (canAdvance) setStep(step + 1);
+                }
+              }}
+              className="bg-white border border-stone-200 p-8 space-y-8"
+            >
 
-              {/* Personal Info */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200 pb-2">Personal Information</h4>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <input type="text" name="name" placeholder="Full Name" required className={inputCls} />
-                  <input type="text" name="instagram" placeholder="Instagram Handle" required className={inputCls} />
-                </div>
-                <input type="tel" name="phone" placeholder="Phone Number (e.g. 7021234567)" required
-                  pattern="\d{10}" inputMode="numeric" title="Enter 10-digit phone number" className={inputCls} />
-                <input type="email" name="email" placeholder="Email Address (for confirmation)" required className={inputCls} />
-              </div>
+              {/* ── progress ─────────────────────────────────────────── */}
+              <ol className="flex items-center gap-2" aria-label="Booking progress">
+                {STEPS.map((label, i) => {
+                  const n = i + 1;
+                  const done = step > n;
+                  const current = step === n;
+                  return (
+                    <li key={label} className="flex items-center gap-2 flex-1 last:flex-none">
+                      <button
+                        type="button"
+                        onClick={() => { if (n < step) setStep(n); }}
+                        disabled={n >= step}
+                        aria-current={current ? "step" : undefined}
+                        className={`flex items-center gap-2 text-left ${n < step ? "cursor-pointer" : "cursor-default"}`}
+                      >
+                        <span
+                          className={`w-7 h-7 flex items-center justify-center text-xs font-semibold flex-shrink-0 transition ${
+                            current
+                              ? "bg-rose-800 text-white"
+                              : done
+                                ? "bg-rose-100 text-rose-800 border border-rose-200"
+                                : "bg-stone-100 text-stone-400 border border-stone-200"
+                          }`}
+                        >
+                          {done ? "✓" : n}
+                        </span>
+                        <span className={`text-xs uppercase tracking-wider hidden sm:inline ${current ? "text-stone-900 font-semibold" : "text-stone-400"}`}>
+                          {label}
+                        </span>
+                      </button>
+                      {n < STEPS.length && <span className="flex-1 h-px bg-stone-200" />}
+                    </li>
+                  );
+                })}
+              </ol>
 
-              {/* Services */}
-              <div className="space-y-4">
+              {/* ── step 1 · services ────────────────────────────────── */}
+              <div className={step === 1 ? "space-y-4" : "hidden"}>
                 <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200 pb-2">Services</h4>
 
-                <select name="bookingNails" required value={bookingNails}
+                <label htmlFor="bookingNails" className="sr-only">Booking nails?</label>
+                <select id="bookingNails" name="bookingNails" required value={bookingNails}
                   onChange={(e) => { const v = e.target.value; setBookingNails(v); if (v === "no") { setService(""); setSoakoff(""); } }}
                   className={selectCls}>
                   <option value="">Booking nails?</option>
@@ -399,7 +473,8 @@ export default function Home() {
 
                 {bookingNails === "yes" && (
                   <div className="space-y-4 bg-stone-50 p-5 border border-stone-200">
-                    <select name="service" required value={service}
+                    <label htmlFor="service" className="sr-only">Service</label>
+                    <select id="service" name="service" required value={service}
                       onChange={(e) => { const v = e.target.value; setService(v); setDuration(v ? 2 + (pedicure === "yes" ? 1 : 0) : pedicure === "yes" ? 1 : 0); }}
                       className={selectCls}>
                       <option value="">Select Service</option>
@@ -409,35 +484,43 @@ export default function Home() {
                       <option value="Hard Gel">Hard Gel</option>
                       <option value="Builder Gel Manicure">Builder Gel Manicure</option>
                     </select>
-                    <select name="soakoff" value={soakoff} onChange={(e) => setSoakoff(e.target.value)} required className={selectCls}>
+                    <label htmlFor="soakoff" className="sr-only">Soak-off</label>
+                    <select id="soakoff" name="soakoff" value={soakoff} onChange={(e) => setSoakoff(e.target.value)} required className={selectCls}>
                       <option value="">Soak-Off</option>
                       <option value="none">No Soak-Off</option>
                       <option value="soak-off">Soak-Off</option>
                       <option value="foreign">Foreign Soak-Off</option>
                     </select>
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <select name="artLevel" className={selectCls}>
-                        <option value="">Art Level</option>
-                        <option value="N/A">N/A</option>
-                        <option value="Level 1">Level 1</option>
-                        <option value="Level 2">Level 2</option>
-                        <option value="Level 3">Level 3</option>
-                        <option value="Level 4">Level 4</option>
-                        <option value="French Tips">French Tips</option>
-                      </select>
-                      <select name="Length" className={selectCls}>
-                        <option value="">Nail Length</option>
-                        <option value="N/A">N/A</option>
-                        <option value="Small/Xtra Small">Short/Xtra Short</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Large">Large</option>
-                        <option value="XL/XXL">XL/XXL</option>
-                      </select>
+                      <div>
+                        <label htmlFor="artLevel" className="sr-only">Art level</label>
+                        <select id="artLevel" name="artLevel" value={artLevel} onChange={(e) => setArtLevel(e.target.value)} className={selectCls}>
+                          <option value="">Art Level</option>
+                          <option value="N/A">N/A</option>
+                          <option value="Level 1">Level 1</option>
+                          <option value="Level 2">Level 2</option>
+                          <option value="Level 3">Level 3</option>
+                          <option value="Level 4">Level 4</option>
+                          <option value="French Tips">French Tips</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="Length" className="sr-only">Nail length</label>
+                        <select id="Length" name="Length" value={nailLength} onChange={(e) => setNailLength(e.target.value)} className={selectCls}>
+                          <option value="">Nail Length</option>
+                          <option value="N/A">N/A</option>
+                          <option value="Small/Xtra Small">Short/Xtra Short</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Large">Large</option>
+                          <option value="XL/XXL">XL/XXL</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                <select name="pedicure" required value={pedicure} onChange={(e) => setPedicure(e.target.value)} className={selectCls}>
+                <label htmlFor="pedicure" className="sr-only">Booking a pedicure?</label>
+                <select id="pedicure" name="pedicure" required value={pedicure} onChange={(e) => setPedicure(e.target.value)} className={selectCls}>
                   <option value="">Booking a pedicure?</option>
                   <option value="yes">Yes</option>
                   <option value="no">No</option>
@@ -445,7 +528,8 @@ export default function Home() {
 
                 {pedicure === "yes" && (
                   <div className="bg-stone-50 p-5 border border-stone-200">
-                    <select name="pedicureType" value={pedicureType} onChange={(e) => setPedicureType(e.target.value)} className={selectCls}>
+                    <label htmlFor="pedicureType" className="sr-only">Pedicure type</label>
+                    <select id="pedicureType" name="pedicureType" value={pedicureType} onChange={(e) => setPedicureType(e.target.value)} className={selectCls}>
                       <option value="">Pedicure Type</option>
                       <option value="Gel pedicure">Gel Pedicure</option>
                       <option value="Gel pedciure + Acrylic big toes">Gel Pedicure + Acrylic Big Toes</option>
@@ -453,11 +537,15 @@ export default function Home() {
                     </select>
                   </div>
                 )}
+
+                {bookingNails === "no" && pedicure === "no" && (
+                  <p className="text-sm text-rose-800">Pick nails, a pedicure, or both to carry on.</p>
+                )}
               </div>
 
-              {/* Date & Time */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200 pb-2">Date & Time</h4>
+              {/* ── step 2 · date & time ─────────────────────────────── */}
+              <div className={step === 2 ? "space-y-4" : "hidden"}>
+                <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200 pb-2">Date &amp; Time</h4>
                 <div className="calendar-wrapper bg-white border border-stone-200 p-4">
                   <Calendar
                     value={selectedDate ? new Date(selectedDate + "T00:00:00") : null}
@@ -480,50 +568,138 @@ export default function Home() {
                   />
                 </div>
                 <input type="hidden" name="date" value={selectedDate || ""} />
-                <select name="start_time" value={time} onChange={(e) => setTime(e.target.value)} required className={selectCls}>
+                <label htmlFor="start_time" className="sr-only">Appointment time</label>
+                <select id="start_time" name="start_time" value={time} onChange={(e) => setTime(e.target.value)} required className={selectCls}>
                   <option value="">Select Time</option>
                   {timeOptions.map((t) => (<option key={t} value={t}>{formatTo12Hour(t)}</option>))}
                 </select>
-              </div>
-
-              {/* Additional Info */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200 pb-2">Additional Information</h4>
-                <select name="returning" required onChange={(e) => setIsReturning(e.target.value === "yes")} className={selectCls}>
-                  <option value="">Returning client?</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-                {!isReturning && (
-                  <input type="text" name="referral" required placeholder="Who referred you?" className={inputCls} />
+                {selectedDate && timeOptions.length === 0 && (
+                  <p className="text-sm text-stone-500">No openings left that day — try another date.</p>
                 )}
-                <textarea name="notes" placeholder="Design ideas or special requests" rows="4"
-                  className={`${inputCls} resize-none`} />
               </div>
 
-              {/* Consent & Submit */}
-              <div className="space-y-4">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" name="confirmSMS" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
-                  <span className="text-sm text-stone-700 leading-relaxed">
-                    I agree to receive automated appointment-related text messages from Mya's Nails Baby (confirmations, reminders, updates) at the phone number provided. Message frequency varies. Message and data rates may apply. Reply STOP to opt out, HELP for help. I agree to the{" "}
-                    <Link href="/terms" className="text-rose-800 underline hover:text-rose-900">Terms of Service</Link> and{" "}
-                    <Link href="/privacy" className="text-rose-800 underline hover:text-rose-900">Privacy Policy</Link>.
-                  </span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" name="confirmPolicy" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
-                  <span className="text-sm text-stone-700">I understand a <strong>$20 deposit</strong> is required to confirm my booking, and I authorize Mya&apos;s Nails Baby to save my card on file and charge a <strong>$25 no-show fee</strong> if I miss my appointment without notice.</span>
-                </label>
-                <button type="submit" disabled={isSubmitting}
-                  className={`w-full py-4 font-medium text-sm tracking-wide transition active:scale-95 ${isSubmitting ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white btn-shimmer"}`}>
-                  {isSubmitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
-                      Processing...
+              {/* ── step 3 · your details ────────────────────────────── */}
+              <div className={step === 3 ? "space-y-8" : "hidden"}>
+
+                {/* What they're about to pay for. Last chance to catch a
+                    wrong date before Stripe takes the deposit. */}
+                <div className="bg-stone-50 border border-stone-200 p-5">
+                  <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Your Appointment</p>
+                  <dl className="space-y-1.5 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-stone-500">Service</dt>
+                      <dd className="text-stone-900 font-medium text-right">{summaryService || "—"}</dd>
+                    </div>
+                    {bookingNails === "yes" && (
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-stone-500">Details</dt>
+                        <dd className="text-stone-900 text-right">{summaryDetails || "—"}</dd>
+                      </div>
+                    )}
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-stone-500">When</dt>
+                      <dd className="text-stone-900 font-medium text-right">
+                        {selectedDate ? `${prettyDate(selectedDate)} at ${formatTo12Hour(time)}` : "—"}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4 pt-2 mt-2 border-t border-stone-200">
+                      <dt className="text-stone-500">Due now</dt>
+                      <dd className="text-rose-800 font-semibold">$20 deposit</dd>
+                    </div>
+                  </dl>
+                  <button type="button" onClick={() => setStep(1)}
+                    className="mt-3 text-xs text-rose-800 hover:text-rose-900 underline">
+                    Change something
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200 pb-2">Personal Information</h4>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="name" className="sr-only">Full name</label>
+                      <input id="name" type="text" name="name" placeholder="Full Name" required autoComplete="name" className={inputCls} />
+                    </div>
+                    <div>
+                      <label htmlFor="instagram" className="sr-only">Instagram handle</label>
+                      <input id="instagram" type="text" name="instagram" placeholder="Instagram Handle" required className={inputCls} />
+                    </div>
+                  </div>
+                  <label htmlFor="phone" className="sr-only">Phone number</label>
+                  <input id="phone" type="tel" name="phone" placeholder="Phone Number (e.g. 7021234567)" required
+                    pattern="\d{10}" inputMode="numeric" autoComplete="tel" title="Enter 10-digit phone number" className={inputCls} />
+                  <label htmlFor="email" className="sr-only">Email address</label>
+                  <input id="email" type="email" name="email" placeholder="Email Address (for confirmation)" required autoComplete="email" className={inputCls} />
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200 pb-2">Additional Information</h4>
+                  <label htmlFor="returning" className="sr-only">Returning client?</label>
+                  <select id="returning" name="returning" required onChange={(e) => setIsReturning(e.target.value === "yes")} className={selectCls}>
+                    <option value="">Returning client?</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                  {!isReturning && (
+                    <>
+                      <label htmlFor="referral" className="sr-only">Who referred you?</label>
+                      <input id="referral" type="text" name="referral" required placeholder="Who referred you?" className={inputCls} />
+                    </>
+                  )}
+                  <label htmlFor="notes" className="sr-only">Design ideas or special requests</label>
+                  <textarea id="notes" name="notes" placeholder="Design ideas or special requests" rows="4"
+                    className={`${inputCls} resize-none`} />
+                </div>
+
+                <div className="space-y-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="confirmSMS" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
+                    <span className="text-sm text-stone-700 leading-relaxed">
+                      I agree to receive automated appointment-related text messages from Mya&apos;s Nails Baby (confirmations, reminders, updates) at the phone number provided. Message frequency varies. Message and data rates may apply. Reply STOP to opt out, HELP for help. I agree to the{" "}
+                      <Link href="/terms" className="text-rose-800 underline hover:text-rose-900">Terms of Service</Link> and{" "}
+                      <Link href="/privacy" className="text-rose-800 underline hover:text-rose-900">Privacy Policy</Link>.
                     </span>
-                  ) : "CONFIRM BOOKING"}
-                </button>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="confirmPolicy" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
+                    <span className="text-sm text-stone-700">I understand a <strong>$20 deposit</strong> is required to confirm my booking, and I authorize Mya&apos;s Nails Baby to save my card on file and charge a <strong>$25 no-show fee</strong> if I miss my appointment without notice.</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* ── navigation ───────────────────────────────────────── */}
+              <div className="flex items-center gap-3 pt-2">
+                {step > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setStep(step - 1)}
+                    className="border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-5 py-4 font-medium text-sm transition"
+                  >
+                    Back
+                  </button>
+                )}
+                {step < 3 ? (
+                  <button
+                    type="button"
+                    onClick={() => canAdvance && setStep(step + 1)}
+                    disabled={!canAdvance}
+                    className={`flex-1 py-4 font-medium text-sm tracking-wide transition active:scale-95 ${
+                      canAdvance ? "bg-rose-800 hover:bg-rose-900 text-white btn-shimmer" : "bg-stone-200 text-stone-400 cursor-not-allowed"
+                    }`}
+                  >
+                    {step === 1 ? "CHOOSE A DATE" : "ADD YOUR DETAILS"}
+                  </button>
+                ) : (
+                  <button type="submit" disabled={isSubmitting}
+                    className={`flex-1 py-4 font-medium text-sm tracking-wide transition active:scale-95 ${isSubmitting ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white btn-shimmer"}`}>
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+                        Processing...
+                      </span>
+                    ) : "CONFIRM BOOKING"}
+                  </button>
+                )}
               </div>
             </form>
           </div>
