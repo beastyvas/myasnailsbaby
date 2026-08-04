@@ -100,6 +100,18 @@ export default async function handler(req, res) {
       cleanPhone,
       `Hey ${booking.name}! Your nail appointment with Mya on ${booking.date} @ ${to12h(booking.start_time)} has been cancelled.${refundNote} DM @myasnailsbaby with any questions.`
     );
+
+    // Mya gets an email below, but a freed-up slot is time-sensitive — she
+    // can only fill it if she finds out while it's still worth filling.
+    if (process.env.MYA_PHONE_NUMBER) {
+      await sendSms(
+        process.env.MYA_PHONE_NUMBER,
+        `❌ Cancelled — ${booking.name}\n` +
+          `${booking.date} at ${to12h(booking.start_time)}\n` +
+          (refundIssued ? "Deposit refunded (48h+ notice)." : "Deposit kept.") +
+          "\nThat slot is open again."
+      );
+    }
   }
 
   // Email to Mya

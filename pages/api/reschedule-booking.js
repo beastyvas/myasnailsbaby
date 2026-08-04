@@ -297,6 +297,17 @@ Reply STOP to unsubscribe.`;
       console.log(ok ? "✅ Reschedule SMS sent" : "❌ Reschedule SMS failed");
     }
 
+    // Mya's calendar just changed underneath her. The email covers it, but
+    // she reads texts between clients and email at the end of the day.
+    if (process.env.MYA_PHONE_NUMBER) {
+      await sendSms(
+        process.env.MYA_PHONE_NUMBER,
+        `🔄 Moved — ${booking.name}\n` +
+          `Was: ${formatDateLong(oldDate)} at ${to12h(oldTime)}\n` +
+          `Now: ${formatDateLong(new_date)} at ${to12h(new_time)}`
+      );
+    }
+
     return res.status(200).json({
       success: true,
       message: "Appointment rescheduled successfully",

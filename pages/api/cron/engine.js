@@ -23,9 +23,12 @@ const LOOKBACK_DAYS = 120;
  *   · day-of reminder     — appointments 2–4h out
  *   · review request      — 2–4h after the appointment ended
  *   · rebooking nudge     — at the fill interval, before they drift
+ *   · checkout recovery   — 30 min after a checkout was started and dropped
  *
- * Every message is idempotent through sms_log, so running twice in an hour,
- * or re-running after a failure, can't double-text anyone.
+ * Every message is idempotent: the appointment ones through sms_log, and
+ * checkout recovery through its own recovered_at stamp (there's no booking
+ * row to key against). Running twice in an hour, or re-running after a
+ * failure, can't double-text anyone.
  *
  * Authenticated by CRON_SECRET rather than a login session. The previous
  * reminder endpoint required a signed-in dashboard session, which meant no
@@ -73,7 +76,13 @@ export default async function handler(req, res) {
   // A booking only counts as real if it was paid for and not refunded away.
   const live = (bookings || []).filter((b) => b.confirmed && !b.refunded && b.phone && b.date);
 
-  const counts = { reminder_24h: 0, reminder_day_of: 0, review_request: 0, rebook_nudge: 0 };
+  const counts = {
+    reminder_24h: 0,
+    reminder_day_of: 0,
+    review_request: 0,
+    rebook_nudge: 0,
+    checkout_recovery: 0,
+  };
   const failures = [];
 
   /** Send once, ever, for this (booking, kind). Claims the slot before
@@ -189,6 +198,59 @@ export default async function handler(req, res) {
         // /api/sms-reply so a STOP is honored without Mya reading it.
         { listenForReplies: true }
       );
+    }
+  }
+
+  // ── abandoned checkout: one nudge, then let it go ─────────────────────
+  // Someone who picked a time and stalled at the card form is the most
+  // recoverable person in the funnel — they'd already decided. One text,
+  // half an hour later, while the intent is still warm. Never a second.
+  const recoverCutoffNew = new Date(now - 30 * 60_000).toISOString();
+  const recoverCutoffOld = new Date(now - 12 * 3_600_000).toISOString();
+
+  const { data: abandoned, error: pendingErr } = await supabase
+    .from("pending_checkouts")
+    .select("id, name, phone, service, date, start_time")
+    .eq("completed", false)
+    .is("recovered_at", null)
+    .lt("created_at", recoverCutoffNew)
+    .gt("created_at", recoverCutoffOld);
+
+  if (pendingErr) {
+    console.error("Engine: couldn't load pending checkouts:", pendingErr.message);
+  } else {
+    // Someone who abandoned one checkout and booked a different slot later
+    // shouldn't be chased about the one they dropped.
+    const bookedPhones = new Set(live.map((b) => normalizePhone(b.phone)));
+
+    for (const p of abandoned || []) {
+      const phone = normalizePhone(p.phone);
+      if (!phone || optedOut.has(phone) || bookedPhones.has(phone)) continue;
+
+      // Claim it first — a stalled send must not leave the row eligible for
+      // a second run to pick up and text again.
+      const { error: claimErr } = await supabase
+        .from("pending_checkouts")
+        .update({ recovered_at: new Date().toISOString() })
+        .eq("id", p.id)
+        .is("recovered_at", null);
+      if (claimErr) continue;
+
+      const when = p.date ? `${prettyDate(p.date)}${p.start_time ? ` at ${to12h(p.start_time)}` : ""}` : "your spot";
+      const sent = await sendSms(
+        p.phone,
+        `Hi ${firstName(p.name)}! It's Mya 💅 You picked ${when} but didn't quite finish ` +
+          `checking out — that time is still open right now.\n` +
+          `Finish up on the site whenever you're ready, or just DM @myasnailsbaby and I'll hold it for you.\n` +
+          `(Reply STOP if you'd rather not get these.)`,
+        { listenForReplies: true }
+      );
+
+      if (sent) counts.checkout_recovery++;
+      else {
+        await supabase.from("pending_checkouts").update({ recovered_at: null }).eq("id", p.id);
+        failures.push({ pending: p.id, kind: "checkout_recovery" });
+      }
     }
   }
 

@@ -5,6 +5,7 @@ import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
+import { vegasParts } from "@/utils/time";
 import Seo from "@/components/Seo";
 import "react-calendar/dist/Calendar.css";
 
@@ -110,12 +111,10 @@ export default function ReschedulePage() {
       return;
     }
 
-    // Get Vegas time + 24hr minimum
-    const now = new Date();
-    const vegasNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
-    const minDate = new Date(vegasNow);
-    minDate.setHours(minDate.getHours() + 24);
-    const minDateStr = minDate.toISOString().split("T")[0];
+    // The Vegas date 24 hours from now. Derived straight from the instant —
+    // the old version mixed a Vegas wall clock with a UTC conversion and in
+    // the evening rolled the date forward, hiding a bookable day.
+    const minDateStr = vegasParts(new Date(Date.now() + 24 * 60 * 60 * 1000)).date;
 
     const validDates = data
       .map((d) => d.date)

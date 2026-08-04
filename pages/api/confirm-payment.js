@@ -2,7 +2,8 @@
 import Stripe from "stripe";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
-import { sendSms } from "@/utils/sms";
+import { sendSmsOnce } from "@/utils/smsOnce";
+import { prettyDate } from "@/utils/time";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -244,20 +245,27 @@ export default async function handler(req, res) {
       }
     }
 
-    // 6) Send confirmation SMS to client
+    // 6) Confirmation SMS — a backstop, not the main path.
+    // The webhook already sends this the moment Stripe reports payment, so
+    // in the normal case sendSmsOnce finds the sms_log row and skips. This
+    // only actually sends if the webhook is misconfigured or lagging, which
+    // is exactly when a silent booking would hurt most.
     if (phone) {
       const displayTime = booking.start_time ? to12h(booking.start_time) : "your selected time";
-      const ok = await sendSms(
+      const result = await sendSmsOnce(
+        supabase,
+        booking.id,
+        "booking_confirmation",
         phone,
-        `Hey love! Your appointment with Mya is confirmed for ${booking.date} at ${displayTime} 💅
-📍2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV
-DM @myasnailsbaby if you need anything!
-
-Reply STOP to unsubscribe.`
+        `Hey love! Your appointment with Mya is confirmed for ${prettyDate(booking.date)} ` +
+          `at ${displayTime} 💅\n` +
+          `📍 2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV\n` +
+          `DM @myasnailsbaby if you need anything!\n` +
+          `Reply STOP to unsubscribe.`
       );
       // A failed text never fails the booking — she's already paid and the
       // confirmation email has gone out.
-      console.log(ok ? "✅ Confirmation SMS sent" : "❌ Confirmation SMS failed");
+      if (result === "sent") console.log("✅ Confirmation SMS sent (webhook hadn't)");
     }
 
     return res.status(200).json({ 

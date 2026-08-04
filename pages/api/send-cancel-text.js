@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
-import { sendSms } from '@/utils/sms';
+import { normalizePhone, sendSms } from '@/utils/sms';
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -35,7 +35,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid name' });
     }
 
-    if (!phone || typeof phone !== 'string' || phone.replace(/\D/g, '').length !== 10) {
+    // Accepts anything normalizePhone can read — numbers are stored as the
+    // client typed them, so an exact 10-digit check rejected perfectly good
+    // ones like "+1 702 555 0134".
+    if (!normalizePhone(phone)) {
       return res.status(400).json({ error: 'Invalid phone number' });
     }
 

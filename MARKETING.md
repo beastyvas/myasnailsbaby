@@ -138,28 +138,24 @@ the bio link.
 
 ---
 
-## 6. Money
+## 6. Abandoned checkouts — already automatic
 
-Dashboard → **Business** shows real profit, not just takings — but only if you
-tell it what you collected.
+Someone picks a time, gets to the card form, and stops. It happens constantly
+on phones, and they'd already decided — they just got interrupted.
 
-The site only ever sees the $20 deposit; the rest is settled at the chair in
-cash, Zelle, whatever. So after each appointment there's a row in **"What Did
-You Collect?"** — put in the real total. Takes five seconds and it's the
-difference between a deposit tracker and a real set of books.
-
-Log expenses in the same tab: tips, gels, files, lamps, booth rent, the light
-for your videos. Every one comes off what you owe at tax time. The **set aside
-for tax** figure tells you what to move into savings so April isn't a shock.
-
----
+Half an hour later they get one text saying the slot is still open. One only,
+never a second, and never if they've already booked something else.
 
 ## 7. What's already handled in code
 
 You don't need to think about any of this — noted so you know it exists.
 
 - Appointment reminders 24 hours ahead and again on the day.
-- New-booking alerts texted to you the moment someone pays.
+- New-booking alerts texted to you the moment someone pays, plus a text when
+  someone cancels or reschedules so you can fill the gap.
+- If two people somehow pay for the same slot, the second is refunded
+  automatically *and told* — so nobody turns up to an appointment that was
+  never made.
 - `NailSalon` structured data, so Google can read your hours, address,
   services and price range directly off the site.
 - FAQ structured data — the deposit, location, services, late and cancellation

@@ -42,8 +42,9 @@ re-run.
 1. `supabase/migrations/add_stripe_noshow_columns.sql`
 2. `supabase/migrations/add_reactivation.sql`
 3. `supabase/migrations/add_growth.sql`
+4. `supabase/migrations/add_checkout_recovery.sql`
 
-Run them **before** deploying, or the Reactivate and Business tabs have
+Run them **before** deploying, or the automations and the Reactivate tab have
 nothing to read.
 
 ## The hourly automations
@@ -56,9 +57,11 @@ nothing to read.
 | Day-of reminder | 2–4h before | always on |
 | Review request | 2–4h after it ends | Settings toggle |
 | Rebooking nudge | at the fill interval, default 3 weeks | Settings toggle |
+| Abandoned checkout | 30 min after an unpaid checkout | always on |
 
-Every message is logged in `sms_log`, so running the job twice — or re-running
-after a failure — can't double-text anyone.
+Every message is idempotent — the appointment ones through `sms_log`, checkout
+recovery through its own `recovered_at` stamp — so running the job twice, or
+re-running it after a failure, can't double-text anyone.
 
 **Scheduling.** Vercel's Hobby plan only allows one cron run per day, which
 would miss almost every window above. `.github/workflows/engine.yml` runs it
@@ -79,44 +82,3 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://www.myasnailsbaby.com/api/c
 
 It returns a count of what it sent, so a `0` with no error means nothing was
 due — not that it's broken.
-
-## The Business tab
-
-Real profit, not just takings — but only once the totals are entered.
-
-The site only ever processes the $20 deposit; the rest is settled at the
-chair. Every past appointment therefore shows up under **"What Did You
-Collect?"** until the real total is typed in. Until then it's counted at the
-deposit only, which keeps the books honest rather than optimistic.
-
-Expenses go in the same tab, and the **set aside for tax** figure is a
-percentage of profit (not revenue) — set it under Settings → Automatic Texts.
-
-## The reactivation campaign
-
-Dashboard → **Reactivate**.
-
-A client appears there when she hasn't been in for 45 days and has nothing on
-the books. Ticking her and sending texts her a one-off code for a percentage
-off her next set, good for 30 days. Set the percentage under
-Settings → Reactivation Offer.
-
-If she books from that number inside the window it's credited automatically —
-she doesn't have to mention the code. The booking gets stamped with the
-discount and Mya gets a text so she knows to honor it at the chair.
-
-Anyone who replies STOP is added to the opt-out list immediately and never
-gets another offer. Appointment confirmations and reminders are transactional
-and keep sending, which is both correct and what the law expects.
-
-## Search
-
-- Page metadata lives in `components/Seo.jsx`; business facts (address,
-  hours, phone, services) live in `utils/seo.js`. Change them in one place.
-- `/sitemap.xml` and `/robots.txt` are generated — no files to maintain.
-- The link-preview card is drawn on request at `/api/og`.
-
-After deploying, submit `https://www.myasnailsbaby.com/sitemap.xml` in
-[Google Search Console](https://search.google.com/search-console) and claim
-the [Google Business Profile](https://business.google.com) — for a local nail
-studio that listing drives more traffic than the site's own ranking does.

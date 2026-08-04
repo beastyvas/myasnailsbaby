@@ -1,8 +1,7 @@
--- Growth + bookkeeping — run once in the Supabase SQL editor. Safe to re-run.
+-- Automated texts — run once in the Supabase SQL editor. Safe to re-run.
 --
--- Three things: a log so automated texts can't double-send, the fields
--- needed to know what an appointment actually earned, and an expense book so
--- the dashboard can show profit rather than just takings.
+-- Everything the hourly job needs: a log so it can't double-send, a way to
+-- mark someone as a no-show, and the switches for each automated message.
 
 -- 1 ── automated SMS log ────────────────────────────────────────────────
 -- The hourly job re-examines the same bookings every run. One row per
@@ -19,38 +18,21 @@ create table if not exists sms_log (
 
 create index if not exists sms_log_booking_idx on sms_log (booking_id);
 
--- 2 ── what the appointment actually earned ─────────────────────────────
--- The deposit is the only figure the system sees; the rest is settled in
--- person. collected_cents is the total for the visit, deposit included, and
--- is filled in when Mya marks an appointment done.
-alter table bookings add column if not exists collected_cents int;
-alter table bookings add column if not exists completed_at    timestamptz;
-alter table bookings add column if not exists no_show         boolean not null default false;
+-- 2 ── no-shows ─────────────────────────────────────────────────────────
+-- Distinct from no_show_charged: someone can miss an appointment without
+-- being charged for it. The hourly job checks this so a missed appointment
+-- never triggers a review request or a "you're due for a fill" nudge.
+alter table bookings add column if not exists no_show boolean not null default false;
 
 create index if not exists bookings_date_idx on bookings (date);
 
--- 3 ── the expense book ─────────────────────────────────────────────────
-create table if not exists expenses (
-  id           uuid primary key default gen_random_uuid(),
-  expense_date date not null,
-  category     text not null,
-  description  text not null default '',
-  amount_cents int  not null check (amount_cents > 0),
-  created_at   timestamptz not null default now()
-);
+-- Reached only through authenticated routes and the hourly job, both running
+-- as the service role, so RLS on with no policy is the correct posture: the
+-- anon key used in the browser can't read or forge the send log.
+alter table sms_log enable row level security;
 
-create index if not exists expenses_date_idx on expenses (expense_date);
-
--- Reached only through authenticated dashboard routes running as the
--- service role, so RLS on with no policy is the correct posture: the anon
--- key used in the browser can't read the books or the send log.
-alter table sms_log  enable row level security;
-alter table expenses enable row level security;
-
--- 4 ── settings the dashboard drives ────────────────────────────────────
--- Money set aside for taxes, and the switches for each automated text, so
--- Mya can turn one off without a deploy.
-alter table settings add column if not exists tax_set_aside_percent int not null default 25;
-alter table settings add column if not exists rebook_after_weeks    int not null default 3;
-alter table settings add column if not exists reviews_enabled       boolean not null default true;
-alter table settings add column if not exists rebook_enabled        boolean not null default true;
+-- 3 ── switches for the automated texts ─────────────────────────────────
+-- So Mya can turn one off from the dashboard without a deploy.
+alter table settings add column if not exists rebook_after_weeks int not null default 3;
+alter table settings add column if not exists reviews_enabled    boolean not null default true;
+alter table settings add column if not exists rebook_enabled     boolean not null default true;

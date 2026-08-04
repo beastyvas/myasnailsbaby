@@ -3,7 +3,8 @@ import { buffer } from "micro";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { normalizePhone, sendSms } from "@/utils/sms";
-import { ownerAlert } from "@/utils/reactivation";
+import { sendSmsOnce } from "@/utils/smsOnce";
+import { firstNameOf, ownerAlert } from "@/utils/reactivation";
 import { prettyDate } from "@/utils/time";
 
 export const config = {
@@ -205,20 +206,43 @@ if (conflicts && conflicts.length > 0) {
   }
 
   // Mark booking as refunded in DB so confirm-payment shows a clear error
-  await supabase.from("bookings").insert([{
-    session_id: session.id,
-    name: md.name ?? null,
-    phone: md.phone ?? null,
-    date: safeDate,
-    start_time: start24,
-    end_time: end24,
-    paid: false,
-    confirmed: false,
-    refunded: true,
-    notes: "AUTO-REFUNDED: Time conflict at booking time",
-  }]).then(({ error }) => {
-    if (error) console.error("⚠️ Could not log refunded booking:", error.message);
-  });
+  const { data: refundedRow, error: refundLogErr } = await supabase
+    .from("bookings")
+    .insert([{
+      session_id: session.id,
+      name: md.name ?? null,
+      phone: md.phone ?? null,
+      date: safeDate,
+      start_time: start24,
+      end_time: end24,
+      paid: false,
+      confirmed: false,
+      refunded: true,
+      notes: "AUTO-REFUNDED: Time conflict at booking time",
+    }])
+    .select("id")
+    .single();
+  if (refundLogErr) console.error("⚠️ Could not log refunded booking:", refundLogErr.message);
+
+  // Tell them. This is the worst thing that can happen silently: they paid,
+  // the money went back, and unless they happened to still be sitting on the
+  // success page they have no idea — so they turn up to an appointment that
+  // was never made. sendSmsOnce keeps Stripe's webhook retries from sending
+  // the apology twice.
+  if (refundedRow) {
+    await sendSmsOnce(
+      supabase,
+      refundedRow.id,
+      "conflict_refund",
+      md.phone,
+      `Hi ${firstNameOf(md.name)}, it's Mya — I'm so sorry. Someone booked ` +
+        `${prettyDate(safeDate)} at ${to12h(start24)} moments before you did, and the ` +
+        `payment went through before the system caught it.\n` +
+        `Your $20 deposit has been refunded and should be back on your card in 5-10 ` +
+        `business days. Nothing is booked for you.\n` +
+        `Please grab another time on the site, or DM @myasnailsbaby and I'll sort you out personally.`
+    );
+  }
 
   return res.status(200).json({ received: true });
 }
@@ -274,6 +298,23 @@ if (conflicts && conflicts.length > 0) {
       return res.status(200).json({ received: true }); // ack so Stripe stops retrying
     }
 
+    // The client's confirmation is sent from here, not from the success page.
+    // /api/confirm-payment only runs if the browser actually lands on
+    // /success — a client who pays and closes the tab used to be booked and
+    // never told. Stripe retries this webhook until it succeeds, and the
+    // sms_log claim keeps the success page from sending a second copy.
+    await sendSmsOnce(
+      supabase,
+      created.id,
+      "booking_confirmation",
+      insert.phone,
+      `Hey love! Your appointment with Mya is confirmed for ${prettyDate(insert.date)} ` +
+        `at ${to12h(insert.start_time)} 💅\n` +
+        `📍 2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV\n` +
+        `DM @myasnailsbaby if you need anything!\n` +
+        `Reply STOP to unsubscribe.`
+    );
+
     // Mya has always been emailed about a new booking, but never texted —
     // an email is easy to miss mid-set. Failures are swallowed: the client
     // has already paid and been confirmed.
@@ -285,6 +326,13 @@ if (conflicts && conflicts.length > 0) {
           `${prettyDate(insert.date)} at ${to12h(insert.start_time)}`
       );
     }
+
+    // They paid — close the pending row so the recovery job never chases
+    // someone who is already booked.
+    await supabase
+      .from("pending_checkouts")
+      .update({ completed: true })
+      .eq("stripe_session_id", session.id);
 
     await creditReactivation(created.id, insert);
 

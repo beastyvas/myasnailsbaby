@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import "react-calendar/dist/Calendar.css";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { vegasParts } from "@/utils/time";
 import Seo from "@/components/Seo";
 import { faqJsonLd, salonJsonLd } from "@/utils/seo";
 
@@ -144,11 +145,11 @@ export default function Home() {
       const { data, error } = await supabase.from("availability").select("date");
       if (error) { console.error("Failed to fetch available dates:", error.message); return; }
 
-      const now = new Date();
-      const vegasNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
-      const minBookableDate = new Date(vegasNow);
-      minBookableDate.setHours(minBookableDate.getHours() + 24);
-      const minDateStr = minBookableDate.toISOString().split("T")[0];
+      // The Vegas date 24 hours from now. Derived straight from the instant
+      // rather than by building a fake local Date and calling toISOString()
+      // on it — that mixed a Vegas wall clock with a UTC conversion, and in
+      // the evening it rolled the date forward and hid a bookable day.
+      const minDateStr = vegasParts(new Date(Date.now() + 24 * 60 * 60 * 1000)).date;
 
       const validDates = data.map((d) => d.date).filter((date) => date >= minDateStr);
       setAvailableDates([...new Set(validDates)]);
