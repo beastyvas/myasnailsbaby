@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { sendSms } from '@/utils/sms';
+import * as M from "@/utils/messages";
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -65,17 +66,7 @@ export default async function handler(req, res) {
   }
 
   // Build message based on what changed
-  let message = `Hi ${name}! Your appointment with Mya has been updated:\n\n`;
-  
-  if (oldDate !== newDate) {
-    message += `📅 New Date: ${formatDate(newDate)}\n`;
-  }
-  
-  if (oldTime !== newTime) {
-    message += `🕐 New Time: ${formatTime(newTime)}\n`;
-  }
-  
-  message += `\n📍 Address: 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, Nevada\n\nDM @myasnailsbaby if you have any questions! 💖`;
+  const message = M.movedByMya({ name, oldDate, oldTime, newDate, newTime });
 
   const ok = await sendSms(phone, message);
   if (!ok) return res.status(500).json({ error: 'Failed to send SMS' });

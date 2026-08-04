@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import { sendSmsOnce } from "@/utils/smsOnce";
+import * as M from "@/utils/messages";
 import { prettyDate } from "@/utils/time";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -257,11 +258,7 @@ export default async function handler(req, res) {
         booking.id,
         "booking_confirmation",
         phone,
-        `Hey love! Your appointment with Mya is confirmed for ${prettyDate(booking.date)} ` +
-          `at ${displayTime} 💅\n` +
-          `📍 2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV\n` +
-          `DM @myasnailsbaby if you need anything!\n` +
-          `Reply STOP to unsubscribe.`
+        M.bookingConfirmation({ name, date: booking.date, startTime: booking.start_time })
       );
       // A failed text never fails the booking — she's already paid and the
       // confirmation email has gone out.

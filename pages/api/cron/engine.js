@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { normalizePhone, sendSms } from "@/utils/sms";
-import { hoursSince, hoursUntil, prettyDate, to12h, todayVegas } from "@/utils/time";
+import { hoursSince, hoursUntil, todayVegas } from "@/utils/time";
+import * as M from "@/utils/messages";
 
 // SERVICE ROLE: this runs with no user session — a cron has no cookies.
 const supabase = createClient(
@@ -9,8 +10,6 @@ const supabase = createClient(
 );
 
 const SETTINGS_ID = "c5d1931e-8603-4f6e-ac4e-e6cf6bd839a9";
-
-const STUDIO = "2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, NV";
 
 /** How far back to look for visits worth following up on. */
 const LOOKBACK_DAYS = 120;
@@ -119,19 +118,13 @@ export default async function handler(req, res) {
       await sendOnce(
         b,
         "reminder_24h",
-        `Hi ${firstName(b.name)}! Reminder from Mya's Nails Baby — your appointment is tomorrow, ` +
-          `${prettyDate(b.date)} at ${to12h(b.start_time)}.\n` +
-          `📍 ${STUDIO}\n` +
-          `Please arrive on time. Deposits are non-refundable and no extra guests please.\n` +
-          `DM @myasnailsbaby if anything changes!`
+        M.reminder24h({ name: b.name, date: b.date, startTime: b.start_time })
       );
     } else if (until >= 2 && until <= 4) {
       await sendOnce(
         b,
         "reminder_day_of",
-        `See you today at ${to12h(b.start_time)}, ${firstName(b.name)}! 💅\n` +
-          `📍 ${STUDIO}\n` +
-          `— Mya's Nails Baby`
+        M.reminderDayOf({ name: b.name, startTime: b.start_time })
       );
     }
   }
@@ -151,10 +144,7 @@ export default async function handler(req, res) {
       await sendOnce(
         b,
         "review_request",
-        `Thank you for coming in today, ${firstName(b.name)}! 🤍 I loved doing your nails.\n` +
-          `If you have 30 seconds, a Google review helps me more than you know — just search ` +
-          `"Mya's Nails Baby Las Vegas" on Google and tap Reviews.\n` +
-          `See you next time! — Mya`
+        M.reviewRequest({ name: b.name })
       );
     }
   }
@@ -190,10 +180,7 @@ export default async function handler(req, res) {
       await sendOnce(
         b,
         "rebook_nudge",
-        `Hi ${firstName(b.name)}! It's Mya 💅 You're right about due for a fill — ` +
-          `${rebookWeeks} weeks is usually when they start growing out.\n` +
-          `Want me to save you a spot? Just DM @myasnailsbaby or book on the site and I'll get you in.\n` +
-          `(Reply STOP if you'd rather not get these.)`,
+        M.rebookNudge({ name: b.name, weeks: rebookWeeks }),
         // Promotional, unlike the reminders — replies must reach
         // /api/sms-reply so a STOP is honored without Mya reading it.
         { listenForReplies: true }
@@ -236,13 +223,9 @@ export default async function handler(req, res) {
         .is("recovered_at", null);
       if (claimErr) continue;
 
-      const when = p.date ? `${prettyDate(p.date)}${p.start_time ? ` at ${to12h(p.start_time)}` : ""}` : "your spot";
       const sent = await sendSms(
         p.phone,
-        `Hi ${firstName(p.name)}! It's Mya 💅 You picked ${when} but didn't quite finish ` +
-          `checking out — that time is still open right now.\n` +
-          `Finish up on the site whenever you're ready, or just DM @myasnailsbaby and I'll hold it for you.\n` +
-          `(Reply STOP if you'd rather not get these.)`,
+        M.checkoutRecovery({ name: p.name, date: p.date, startTime: p.start_time }),
         { listenForReplies: true }
       );
 
@@ -258,8 +241,4 @@ export default async function handler(req, res) {
   console.log(`Engine: sent ${total}`, counts);
 
   return res.status(200).json({ ok: true, sent: total, counts, failures, checked: live.length });
-}
-
-function firstName(full) {
-  return String(full ?? "").trim().split(/\s+/)[0] || "love";
 }

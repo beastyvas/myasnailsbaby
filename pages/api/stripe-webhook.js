@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { normalizePhone, sendSms } from "@/utils/sms";
 import { sendSmsOnce } from "@/utils/smsOnce";
+import * as M from "@/utils/messages";
 import { firstNameOf, ownerAlert } from "@/utils/reactivation";
 import { prettyDate } from "@/utils/time";
 
@@ -235,12 +236,7 @@ if (conflicts && conflicts.length > 0) {
       refundedRow.id,
       "conflict_refund",
       md.phone,
-      `Hi ${firstNameOf(md.name)}, it's Mya — I'm so sorry. Someone booked ` +
-        `${prettyDate(safeDate)} at ${to12h(start24)} moments before you did, and the ` +
-        `payment went through before the system caught it.\n` +
-        `Your $20 deposit has been refunded and should be back on your card in 5-10 ` +
-        `business days. Nothing is booked for you.\n` +
-        `Please grab another time on the site, or DM @myasnailsbaby and I'll sort you out personally.`
+      M.conflictRefund({ name: md.name, date: safeDate, startTime: start24 })
     );
   }
 
@@ -308,11 +304,7 @@ if (conflicts && conflicts.length > 0) {
       created.id,
       "booking_confirmation",
       insert.phone,
-      `Hey love! Your appointment with Mya is confirmed for ${prettyDate(insert.date)} ` +
-        `at ${to12h(insert.start_time)} 💅\n` +
-        `📍 2080 E. Flamingo Rd. Suite #106, Room 4 Las Vegas, NV\n` +
-        `DM @myasnailsbaby if you need anything!\n` +
-        `Reply STOP to unsubscribe.`
+      M.bookingConfirmation({ name: insert.name, date: insert.date, startTime: insert.start_time })
     );
 
     // Mya has always been emailed about a new booking, but never texted —
@@ -321,9 +313,13 @@ if (conflicts && conflicts.length > 0) {
     if (process.env.MYA_PHONE_NUMBER) {
       await sendSms(
         process.env.MYA_PHONE_NUMBER,
-        `📅 New booking — ${insert.name || "someone"}\n` +
-          `${insert.service || "Nails"}${insert.pedicure === "yes" ? " + pedicure" : ""}\n` +
-          `${prettyDate(insert.date)} at ${to12h(insert.start_time)}`
+        M.ownerNewBooking({
+          name: insert.name,
+          service: insert.service,
+          pedicure: insert.pedicure,
+          date: insert.date,
+          startTime: insert.start_time,
+        })
       );
     }
 

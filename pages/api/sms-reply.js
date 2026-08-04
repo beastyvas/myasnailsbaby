@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { isStopReply, normalizePhone, sendSms } from "@/utils/sms";
+import * as M from "@/utils/messages";
 
 // SERVICE ROLE — this route writes the opt-out list and is called by
 // Textbelt, which carries no Supabase session.
@@ -58,7 +59,7 @@ export default async function handler(req, res) {
     if (process.env.MYA_PHONE_NUMBER) {
       await sendSms(
         process.env.MYA_PHONE_NUMBER,
-        `Reply from ${phone}:\n"${text.slice(0, 200)}"`
+        M.ownerForwardedReply({ phone, text })
       );
     }
     return res.status(200).json({ ok: true });
@@ -80,8 +81,7 @@ export default async function handler(req, res) {
   // they know it worked and don't wonder.
   await sendSms(
     phone,
-    "Mya's Nails Baby: You're unsubscribed from offers and won't get them again. " +
-      "Appointment confirmations and reminders will still come through 💅"
+    M.optOutConfirmed()
   );
 
   return res.status(200).json({ ok: true });

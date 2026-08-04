@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { sendSms } from "@/utils/sms";
+import * as M from "@/utils/messages";
 
 // Initialize clients
 const supabase = createClient(
@@ -279,17 +280,13 @@ export default async function handler(req, res) {
 
     // 11. Send SMS notification
     if (cleanPhone) {
-      const smsMessage = `Hi ${booking.name}! Your appointment with Mya has been rescheduled:
-
-Old: ${formatDateLong(oldDate)} at ${to12h(oldTime)}
-New: ${formatDateLong(new_date)} at ${to12h(new_time)}
-
-📍 2080 E. Flamingo Rd. Suite #106, Room 4
-Las Vegas, NV
-
-DM @myasnailsbaby with questions! 💖
-
-Reply STOP to unsubscribe.`;
+      const smsMessage = M.rescheduledByClient({
+        name: booking.name,
+        oldDate,
+        oldTime,
+        newDate: new_date,
+        newTime: new_time,
+      });
 
       // A failed text never fails the reschedule — the move is already saved
       // and the confirmation email has gone out.
@@ -302,9 +299,13 @@ Reply STOP to unsubscribe.`;
     if (process.env.MYA_PHONE_NUMBER) {
       await sendSms(
         process.env.MYA_PHONE_NUMBER,
-        `🔄 Moved — ${booking.name}\n` +
-          `Was: ${formatDateLong(oldDate)} at ${to12h(oldTime)}\n` +
-          `Now: ${formatDateLong(new_date)} at ${to12h(new_time)}`
+        M.ownerRescheduled({
+          name: booking.name,
+          oldDate,
+          oldTime,
+          newDate: new_date,
+          newTime: new_time,
+        })
       );
     }
 

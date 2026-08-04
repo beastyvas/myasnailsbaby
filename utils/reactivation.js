@@ -42,9 +42,21 @@ export function firstNameOf(full) {
   return String(full ?? "").trim().split(/\s+/)[0] || "love";
 }
 
-/** "Aug 30" — short enough to sit inside a text without eating a segment. */
-export function prettyDate(iso) {
-  const d = iso instanceof Date ? iso : new Date(iso);
+/** "Aug 30" — short enough to sit inside a text without eating a segment.
+ *
+ *  Takes both an instant (an offer's expires_at) and a plain calendar date
+ *  (a booking's `date` column), which need opposite handling: "2026-08-12"
+ *  parses as UTC midnight, so rendering it in Pacific moved it back to the
+ *  11th and every appointment date in an alert was a day early. A bare date
+ *  is anchored at midday and read as-is; a real timestamp is converted. */
+export function prettyDate(value) {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const d = new Date(`${value}T12:00:00Z`);
+    return Number.isNaN(d.getTime())
+      ? ""
+      : d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  }
+  const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleDateString("en-US", {
     month: "short",
@@ -93,7 +105,7 @@ export function reactivationMessage({ name, daysSinceVisit, percentOff, code, ex
 export function ownerAlert({ clientName, service, date, startTime, percentOff, code }) {
   return (
     `THEY CAME BACK! ${clientName} just booked after your miss-you text.\n` +
-    `${service || "Appointment"} — ${date} at ${startTime}\n` +
+    `${service || "Appointment"} — ${prettyDate(date)} at ${startTime}\n` +
     `Honor ${percentOff}% off with code ${code}.`
   );
 }

@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { normalizePhone, sendSms } from '@/utils/sms';
+import * as M from "@/utils/messages";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -52,7 +53,7 @@ export default async function handler(req, res) {
 
     const ok = await sendSms(
       phone,
-      `Hey babes! Your nail appointment with Mya on ${date} @ ${start_time} was canceled. Please dm @myasnailsbaby if you believe this was an error!`
+      M.cancelledByMya({ name, date, startTime: start_time })
     );
     if (!ok) return res.status(500).json({ error: "Couldn't send the cancellation text" });
 

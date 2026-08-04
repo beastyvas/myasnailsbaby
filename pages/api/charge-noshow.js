@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { isAdmin } from "@/utils/requireAdmin";
 import { sendSmsOnce } from "@/utils/smsOnce";
+import * as M from "@/utils/messages";
 import { prettyDate, to12h } from "@/utils/time";
 
 /** Forfeited when someone doesn't turn up, per the policy they agree to at
@@ -67,10 +68,12 @@ export default async function handler(req, res) {
       booking.id,
       "no_show_fee",
       booking.phone,
-      `Hi ${firstName(booking.name)}, this is Mya's Nails Baby. We missed you at your ` +
-        `${prettyDate(booking.date)} appointment at ${to12h(booking.start_time)}, so the ` +
-        `$${NO_SHOW_FEE_CENTS / 100} no-show fee you agreed to at booking has been charged to your card.\n` +
-        `If something came up, please DM @myasnailsbaby — I'd rather sort it out than lose you.`
+      M.noShowFee({
+        name: booking.name,
+        date: booking.date,
+        startTime: booking.start_time,
+        feeCents: NO_SHOW_FEE_CENTS,
+      })
     );
 
     return res.status(200).json({ success: true, payment_intent_id: paymentIntent.id });

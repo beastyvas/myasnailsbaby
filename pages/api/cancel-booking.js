@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { sendSms } from "@/utils/sms";
+import * as M from "@/utils/messages";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(
@@ -98,7 +99,12 @@ export default async function handler(req, res) {
 
     await sendSms(
       cleanPhone,
-      `Hey ${booking.name}! Your nail appointment with Mya on ${booking.date} @ ${to12h(booking.start_time)} has been cancelled.${refundNote} DM @myasnailsbaby with any questions.`
+      M.cancelledByClient({
+        name: booking.name,
+        date: booking.date,
+        startTime: booking.start_time,
+        refundNote,
+      })
     );
 
     // Mya gets an email below, but a freed-up slot is time-sensitive — she
@@ -106,10 +112,12 @@ export default async function handler(req, res) {
     if (process.env.MYA_PHONE_NUMBER) {
       await sendSms(
         process.env.MYA_PHONE_NUMBER,
-        `❌ Cancelled — ${booking.name}\n` +
-          `${booking.date} at ${to12h(booking.start_time)}\n` +
-          (refundIssued ? "Deposit refunded (48h+ notice)." : "Deposit kept.") +
-          "\nThat slot is open again."
+        M.ownerCancelled({
+          name: booking.name,
+          date: booking.date,
+          startTime: booking.start_time,
+          refundIssued,
+        })
       );
     }
   }
