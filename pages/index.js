@@ -12,7 +12,7 @@ import dynamic from "next/dynamic";
 import Seo from "@/components/Seo";
 import { faqJsonLd, salonJsonLd } from "@/utils/seo";
 import { prettyDate, vegasParts } from "@/utils/time";
-import { formatPrice, hasQuote, isLengthPriced, quote } from "@/utils/pricing";
+import { BOOKABLE_SERVICES, formatPrice, hasQuote, isLengthPriced, quote, serviceMenuLabel } from "@/utils/pricing";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -251,7 +251,7 @@ export default function Home() {
         path="/"
         bareTitle
         title="Mya's Nails Baby | Nail Artist in Las Vegas — Gel-X, Acrylic & Nail Art"
-        description="Custom nail sets by Mya in Las Vegas. Gel-X, acrylic, hard gel, builder gel and hand-painted nail art, plus gel pedicures. Book online with a $20 deposit."
+        description="Custom nail sets by Mya in Las Vegas. Gel-X, acrylic, hard gel, structure gel and hand-painted nail art, plus gel pedicures. Book online with a $20 deposit."
         jsonLd={[salonJsonLd(), faqJsonLd()]}
       />
       <Toaster position="bottom-center" />
@@ -489,13 +489,11 @@ export default function Home() {
                       onChange={(e) => { const v = e.target.value; setService(v); if (!isLengthPriced(v)) setNailLength(""); setDuration(v ? 2 + (pedicure === "yes" ? 1 : 0) : pedicure === "yes" ? 1 : 0); }}
                       className={selectCls}>
                       <option value="">Select Service</option>
-                      <option value="Gel-X">Gel-X — from $45</option>
-                      <option value="Acrylic">Acrylic — from $55</option>
-                      <option value="Hard Gel with Tips">Hard Gel with Tips — from $55</option>
-                      <option value="Basic Manicure">Basic Manicure (no polish) — $35</option>
-                      <option value="Gel Manicure">Gel Manicure — $45</option>
-                      <option value="Builder Gel Manicure">Builder Gel Manicure (BIAB) — $55</option>
-                      <option value="Hard Gel Manicure">Hard Gel Manicure — $60</option>
+                      {/* Order and prices both come from utils/pricing.js, so
+                          the menu can't drift from the price list. */}
+                      {BOOKABLE_SERVICES.map((s) => (
+                        <option key={s.value} value={s.value}>{serviceMenuLabel(s.value)}</option>
+                      ))}
                     </select>
                     <label htmlFor="soakoff" className="sr-only">Soak-off</label>
                     <select id="soakoff" name="soakoff" value={soakoff} onChange={(e) => setSoakoff(e.target.value)} required className={selectCls}>

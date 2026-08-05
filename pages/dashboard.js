@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import "react-calendar/dist/Calendar.css";
 import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
 import { normalizePhone } from "@/utils/sms";
+import { BOOKABLE_SERVICES, serviceLabel } from "@/utils/pricing";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
@@ -13,6 +14,21 @@ const selectCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-9
 const labelCls = "block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2";
 const btnPrimary = "bg-rose-800 hover:bg-rose-900 text-white px-6 py-3 font-medium text-sm tracking-wide transition disabled:bg-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed";
 const btnSecondary = "border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-5 py-2.5 font-medium text-sm transition";
+
+/**
+ * Service choices for Mya's own forms — same list and order as the booking
+ * page, from the one source in utils/pricing.js, plus "N/A" for a block-off
+ * with no service attached.
+ *
+ * `current` is kept as an option when it isn't in the list. Bookings exist
+ * under names Mya no longer sells ("Hard Gel", "Builder Gel Manicure"), and
+ * without this, opening one for editing would show a blank service and
+ * quietly overwrite it on save.
+ */
+function serviceOptions(current) {
+  const base = ["N/A", ...BOOKABLE_SERVICES.map((s) => s.value)];
+  return current && !base.includes(current) ? [...base, current] : base;
+}
 
 function SectionHeading({ children }) {
   return (
@@ -71,7 +87,7 @@ function EditBookingForm({ booking, onSave, onCancel }) {
         <div>
           <label className={labelCls}>Service</label>
           <select value={formData.service} onChange={(e) => setFormData({ ...formData, service: e.target.value })} className={selectCls}>
-            {["N/A","Gel-X","Acrylic","Gel Manicure","Hard Gel","Builder Gel Manicure"].map(v => <option key={v}>{v}</option>)}
+            {serviceOptions(formData.service).map(v => <option key={v}>{v}</option>)}
           </select>
         </div>
 
@@ -220,7 +236,7 @@ function NewAppointmentForm({ onSuccess }) {
         <div>
           <label className={labelCls}>Service</label>
           <select value={formData.service} onChange={(e) => setFormData({ ...formData, service: e.target.value })} className={selectCls}>
-            {["N/A","Gel-X","Acrylic","Gel Manicure","Hard Gel","Builder Gel Manicure"].map(v => <option key={v}>{v}</option>)}
+            {serviceOptions(formData.service).map(v => <option key={v}>{v}</option>)}
           </select>
         </div>
 
@@ -944,7 +960,7 @@ export default function Dashboard() {
                           </div>
                           <div>
                             <p className="font-semibold text-stone-900 text-sm">{b.name}</p>
-                            <p className="text-xs text-stone-500">{b.service || "—"}</p>
+                            <p className="text-xs text-stone-500">{serviceLabel(b.service) || "—"}</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -994,7 +1010,7 @@ export default function Dashboard() {
                       <div key={b.id} className="flex items-center justify-between py-3 border-b border-stone-100 last:border-0">
                         <div>
                           <p className="font-semibold text-stone-900 text-sm">{b.name}</p>
-                          <p className="text-xs text-stone-500">{b.service || "—"}</p>
+                          <p className="text-xs text-stone-500">{serviceLabel(b.service) || "—"}</p>
                         </div>
                         <div className="text-right text-sm">
                           <p className="font-medium text-stone-900">
@@ -1066,7 +1082,7 @@ export default function Dashboard() {
 
                             <div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4 text-sm">
                               {booking.service && booking.service !== "N/A" && (
-                                <p className="text-stone-700"><span className="text-stone-400">Service: </span>{booking.service}</p>
+                                <p className="text-stone-700"><span className="text-stone-400">Service: </span>{serviceLabel(booking.service)}</p>
                               )}
                               {booking.art_level && booking.art_level !== "N/A" && (
                                 <p className="text-stone-700"><span className="text-stone-400">Art: </span>{booking.art_level}</p>
@@ -1273,7 +1289,7 @@ export default function Dashboard() {
                     <div className="space-y-3">
                       {sorted.map((b) => {
                         const details = [
-                          b.service && b.service !== "N/A" && b.service,
+                          b.service && b.service !== "N/A" && serviceLabel(b.service),
                           b.art_level,
                           b.length,
                           b.soakoff && b.soakoff !== "none" && b.soakoff,

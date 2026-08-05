@@ -30,20 +30,42 @@ export const LENGTH_OPTIONS = Object.keys(BY_LENGTH);
  * with no length. `openEnded` marks a service whose top length the list
  * itself prints with a "+" — acrylic XXL is "$95+", because a genuinely
  * enormous custom set can run over.
+ *
+ * KEY ORDER IS THE MENU ORDER. The booking form and both dashboard dropdowns
+ * render straight from this object, so reordering here reorders them all.
+ * That's deliberate — the list used to be hardcoded in four places and had
+ * already drifted apart.
+ *
+ * `legacy: true` means "still price it, never offer it": the key is a value
+ * stored on real bookings that Mya no longer sells under that name.
  */
 export const SERVICES = {
+  // Mya's order, from her list.
   "Gel-X": { label: "Gel-X", lengths: [4500, 5500, 6500, 7500, 8500] },
-  Acrylic: { label: "Acrylic", lengths: [5500, 6500, 7500, 8500, 9500], openEnded: true },
+  "Gel Manicure": { label: "Gel Manicure", flat: 4500 },
+  "Structure Gel Manicure": { label: "Structure Gel Manicure", flat: 5500 },
   "Hard Gel with Tips": {
     label: "Hard Gel with Tips",
     lengths: [5500, 6500, 7500, 8500, 9500],
     openEnded: true,
   },
-  "Basic Manicure": { label: "Basic Manicure (no polish)", flat: 3500 },
-  "Gel Manicure": { label: "Gel Manicure", flat: 4500 },
-  "Builder Gel Manicure": { label: "Builder Gel Manicure (BIAB)", flat: 5500 },
   "Hard Gel Manicure": { label: "Hard Gel Manicure", flat: 6000 },
+  Acrylic: { label: "Acrylic", lengths: [5500, 6500, 7500, 8500, 9500], openEnded: true },
+  "Basic Manicure": { label: "Basic Manicure (no polish)", flat: 3500 },
+
+  // Structure gel and builder gel are the same service — Mya asked for the
+  // name change. The old name is the string sitting on every historical
+  // booking, so it has to keep resolving or those bookings would stop pricing
+  // on her dashboard. Same reason the typo'd pedicure key below is still here.
+  // Priced identically and labelled with the new name, so old bookings read
+  // correctly too.
+  "Builder Gel Manicure": { label: "Structure Gel Manicure", flat: 5500, legacy: true },
 };
+
+/** The services to actually offer, in Mya's order — legacy names excluded. */
+export const BOOKABLE_SERVICES = Object.entries(SERVICES)
+  .filter(([, svc]) => !svc.legacy)
+  .map(([value, svc]) => ({ value, ...svc }));
 
 /** Added on top of the base set. French tips sits here rather than with the
  *  levels because the list prices it as its own thing. */
@@ -79,6 +101,32 @@ export function isLengthPriced(service) {
 export function formatPrice(cents) {
   if (cents == null || !Number.isFinite(cents)) return "";
   return `$${Math.round(cents / 100)}`;
+}
+
+/**
+ * What to show a human for a stored service value.
+ *
+ * A booking saved as "Builder Gel Manicure" displays as "Structure Gel
+ * Manicure", so the rename reaches history instead of only new bookings.
+ * Anything unrecognised is passed through untouched rather than blanked —
+ * showing the raw stored value beats showing nothing.
+ */
+export function serviceLabel(value) {
+  return SERVICES[value]?.label || value || "";
+}
+
+/**
+ * "Gel-X — from $45", "Basic Manicure (no polish) — $35".
+ *
+ * Derived rather than typed into the markup, so a price change in this file
+ * can't leave a stale figure sitting in the dropdown. "from" for anything
+ * priced by length, since the menu shows the shortest.
+ */
+export function serviceMenuLabel(value) {
+  const svc = SERVICES[value];
+  if (!svc) return value;
+  if (svc.flat != null) return `${svc.label} — ${formatPrice(svc.flat)}`;
+  return `${svc.label} — from ${formatPrice(svc.lengths[0])}`;
 }
 
 /**

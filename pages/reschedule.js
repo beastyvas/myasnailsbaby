@@ -7,6 +7,7 @@ import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
 import Seo from "@/components/Seo";
 import { vegasParts } from "@/utils/time";
+import { serviceLabel } from "@/utils/pricing";
 import "react-calendar/dist/Calendar.css";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
@@ -295,7 +296,7 @@ export default function ReschedulePage() {
             <div className="space-y-3">
               {[
                 ["Name", booking.name],
-                ["Service", `${booking.service}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? ` + ${booking.pedicure_type}` : ""}`],
+                ["Service", `${serviceLabel(booking.service)}${booking.pedicure_type && booking.pedicure_type !== "N/A" ? ` + ${booking.pedicure_type}` : ""}`],
                 ["Date", formatDateShort(booking.date)],
                 ["Time", to12h(booking.start_time)],
               ].map(([label, value]) => (

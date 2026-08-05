@@ -32,13 +32,21 @@ export const OPENING_HOURS = [
   { days: ["Saturday"], opens: "08:00", closes: "16:00" },
 ];
 
-/** The services on the booking form, as a catalog search engines can read. */
+/** The services on the booking form, as a catalog search engines can read.
+ *
+ *  "Builder Gel" stays alongside "Structure Gel" on purpose. Mya renamed the
+ *  service, so every client-facing label says Structure Gel — but far more
+ *  people type "builder gel las vegas" into Google than "structure gel", and
+ *  this list is read by machines, not clients. Dropping the old term would
+ *  give up the search traffic for a name change nobody is searching yet. */
 export const SERVICES = [
   "Gel-X Extensions",
-  "Acrylic Nails",
-  "Hard Gel",
-  "Builder Gel Manicure",
   "Gel Manicure",
+  "Structure Gel Manicure",
+  "Builder Gel Manicure",
+  "Hard Gel with Tips",
+  "Hard Gel Manicure",
+  "Acrylic Nails",
   "Custom Nail Art",
   "Gel Pedicure",
 ];
@@ -88,7 +96,7 @@ export function salonJsonLd() {
     "@id": `${siteUrl()}/#salon`,
     name: SITE_NAME,
     description:
-      "Custom nail sets by Mya in Las Vegas — Gel-X, acrylic, hard gel, builder gel and hand-painted nail art, plus gel pedicures. By appointment.",
+      "Custom nail sets by Mya in Las Vegas — Gel-X, acrylic, hard gel, structure gel and hand-painted nail art, plus gel pedicures. By appointment.",
     url: siteUrl(),
     image: ogImageUrl(),
     telephone: CONTACT.phone,

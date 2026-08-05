@@ -36,16 +36,42 @@ that file — nothing else needs to change.
 
 ## Database migrations
 
-Run these once each in the Supabase SQL editor, in order. All are safe to
-re-run.
+**Run `supabase/migrations/repair_schema.sql` in the Supabase SQL editor.**
+It's idempotent, it covers everything the automations and the Reactivate tab
+read, and it prints a pass/fail table so you can see what applied instead of
+assuming.
 
-1. `supabase/migrations/add_stripe_noshow_columns.sql`
-2. `supabase/migrations/add_reactivation.sql`
-3. `supabase/migrations/add_growth.sql`
-4. `supabase/migrations/add_checkout_recovery.sql`
-
-Run them **before** deploying, or the automations and the Reactivate tab have
+Run it **before** deploying, or the automations and the Reactivate tab have
 nothing to read.
+
+### Why one script instead of a list
+
+The Supabase SQL editor runs a script as **one transaction**. If any statement
+fails, every statement before it is rolled back — you get a single error and
+reasonably assume the rest applied.
+
+That's exactly what happened here. `add_growth.sql` and `add_reactivation.sql`
+each declared `booking_id uuid references bookings(id)`. The `bookings` table
+predates every migration in this repo (it was made in the Supabase table
+editor, and there's no `create table bookings` anywhere in the code), so if its
+`id` is `bigint` rather than `uuid`, Postgres rejects the constraint and drops
+the whole file with it. Both scripts left nothing behind, and the automations
+died on a missing `bookings.no_show` — a column that is plainly in
+`add_growth.sql`.
+
+`repair_schema.sql` reads the real type of `bookings.id` and builds each
+foreign key to match, puts every section in its own error-isolated block, and
+reports what it did. The individual files below still work and have been given
+the same type-adaptive treatment, but there's no reason to run them separately:
+
+- `add_stripe_noshow_columns.sql`
+- `add_reactivation.sql`
+- `add_growth.sql`
+- `add_checkout_recovery.sql`
+- `add_quoted_price.sql`
+- `add_missing_booking_columns.sql`
+
+If any row of the report says `FAILED`, the `detail` column says what to do.
 
 ## The hourly automations
 

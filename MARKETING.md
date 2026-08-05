@@ -43,12 +43,17 @@ and mismatches quietly cost you ranking.
 | Sunday | Closed |
 
 **Services** — add each one so they show as their own line on the listing:
-Gel-X Extensions, Acrylic Nails, Hard Gel, Builder Gel Manicure, Gel Manicure,
-Custom Nail Art, Gel Pedicure.
+Gel-X Extensions, Gel Manicure, Structure Gel Manicure, Builder Gel Manicure,
+Hard Gel with Tips, Hard Gel Manicure, Acrylic Nails, Custom Nail Art,
+Gel Pedicure.
+
+Structure gel and builder gel are the same service — list both. Mya's menu
+calls it Structure Gel, but "builder gel" is what people actually search, and
+a listing can carry both names where the booking form shouldn't.
 
 **Description** — paste this. It uses the words people actually search:
 
-> Custom nail sets by Mya in Las Vegas. Gel-X, acrylic, hard gel, builder gel
+> Custom nail sets by Mya in Las Vegas. Gel-X, acrylic, hard gel, structure gel
 > and hand-painted nail art, plus gel pedicures. By appointment only, in a
 > private suite on E. Flamingo Rd. Book online with a $20 deposit that goes
 > toward your set.
