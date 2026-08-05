@@ -31,14 +31,31 @@ jobs:
             exit 0
           fi
 
-          code=$(curl -sS -o /tmp/body.txt -w "%{http_code}" \
-            -H "Authorization: Bearer $CRON_SECRET" \
-            "$SITE_URL/api/cron/engine")
-          echo "HTTP $code"
+          BASE="${SITE_URL%/}"                    # tolerate a trailing slash
+          URL="$BASE/api/cron/engine"
+
+          # Resolve redirects with an UNAUTHENTICATED probe first. Two of them
+          # are likely — a trailing slash giving //api/..., and apex→www — and
+          # curl deliberately drops the Authorization header across hosts, so
+          # -L alone would turn a 308 into a 401. The engine answers 401 here;
+          # all we want back is the final URL. This also means the secret is
+          # only ever sent to a host we've already confirmed.
+          FINAL=$(curl -sS -o /dev/null -w '%{url_effective}' -L --max-time 30 "$URL" || echo "$URL")
+          if [ "$FINAL" != "$URL" ]; then
+            echo "::notice::$URL redirects to $FINAL — set the SITE_URL secret to ${FINAL%/api/cron/engine} to skip this hop"
+          fi
+
+          code=$(curl -sS -o /tmp/body.txt -w '%{http_code}' --max-time 60 \
+            -H "Authorization: Bearer $CRON_SECRET" "$FINAL")
+          echo "HTTP $code  ($FINAL)"
           cat /tmp/body.txt
+          echo
 
           # Configured but erroring genuinely means texts stopped going out.
           if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
-            echo "::error::Automations returned HTTP $code — reminders and review requests are not sending"
+            echo "::error::Automations returned HTTP $code — reminders, review requests and rebooking nudges are NOT sending."
+            echo "  401 → the CRON_SECRET secret here and the one in Vercel don't match"
+            echo "  404/000 → SITE_URL is wrong, or the deploy isn't live yet"
+            echo "  500 → CRON_SECRET isn't set in Vercel at all"
             exit 1
           fi
