@@ -164,11 +164,17 @@ export function optOutConfirmed() {
 
 /* ──────────────────────────── to Mya ───────────────────────────────── */
 
-export function ownerNewBooking({ name, service, pedicure, date, startTime }) {
+export function ownerNewBooking({ name, service, pedicure, date, startTime, quotedCents }) {
+  // The estimate is what she's owed at the chair less the deposit already
+  // taken, so she can see what the appointment is worth as it lands.
+  const money =
+    quotedCents != null && quotedCents > 0
+      ? `\n~$${Math.round(quotedCents / 100)} · $${Math.round((quotedCents - 2000) / 100)} due at the visit`
+      : "";
   return (
     `📅 New booking — ${name || "someone"}\n` +
     `${service || "Nails"}${pedicure === "yes" ? " + pedicure" : ""}\n` +
-    `${prettyDate(date)} at ${to12h(startTime)}`
+    `${prettyDate(date)} at ${to12h(startTime)}` + money
   );
 }
 

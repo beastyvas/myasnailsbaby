@@ -277,6 +277,10 @@ if (conflicts && conflicts.length > 0) {
       pedicure_type: md.pedicure_type ?? null,
       email: md.email ?? null,
       booking_nails: md.booking_nails ?? null,
+      spa_pedi: md.spa_pedi ?? null,
+      // Priced server-side in create-checkout-session; "" means the
+      // selections couldn't be priced, which stays null rather than 0.
+      quoted_cents: md.quoted_cents ? Number(md.quoted_cents) : null,
       paid: true,
       confirmed: true,
       session_id: session.id,
@@ -319,6 +323,7 @@ if (conflicts && conflicts.length > 0) {
           pedicure: insert.pedicure,
           date: insert.date,
           startTime: insert.start_time,
+          quotedCents: insert.quoted_cents,
         })
       );
     }

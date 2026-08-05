@@ -1,6 +1,7 @@
 // File: /pages/api/create-checkout-session.js
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { quote } from "@/utils/pricing";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -69,6 +70,22 @@ export default async function handler(req, res) {
       console.error("⚠️ Could not find/create Stripe customer:", e.message);
     }
 
+    // Price it here, from the selections, rather than trusting a number the
+    // browser sends. The deposit is a fixed $20 so a tampered form can't
+    // steal money — but this figure is what Mya reads at the chair and what
+    // the books are built on, so it has to be the server's own arithmetic.
+    const priced = quote({
+      bookingNails: bookingMetadata.booking_nails,
+      service: bookingMetadata.service,
+      length: bookingMetadata.length,
+      artLevel: bookingMetadata.artLevel,
+      soakoff: bookingMetadata.soakoff,
+      pedicure: bookingMetadata.pedicure,
+      pedicureType: bookingMetadata.pedicure_type,
+      spaPedi: bookingMetadata.spa_pedi === "yes",
+    });
+    const quotedCents = priced.unknown ? null : priced.total;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       ...(customerId ? { customer: customerId } : {}),
@@ -111,6 +128,8 @@ export default async function handler(req, res) {
   referral: bookingMetadata.referral,
   pedicure: bookingMetadata.pedicure,
   email: bookingMetadata.email ?? null,
+  spa_pedi: bookingMetadata.spa_pedi ?? "no",
+  quoted_cents: quotedCents == null ? "" : String(quotedCents),
 },
 
     });

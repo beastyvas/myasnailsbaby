@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import Seo from "@/components/Seo";
 import { faqJsonLd, salonJsonLd } from "@/utils/seo";
 import { prettyDate, vegasParts } from "@/utils/time";
+import { formatPrice, hasQuote, isLengthPriced, quote } from "@/utils/pricing";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -37,6 +38,7 @@ export default function Home() {
   const [step, setStep] = useState(1);
   const [artLevel, setArtLevel] = useState("");
   const [nailLength, setNailLength] = useState("");
+  const [spaPedi, setSpaPedi] = useState(false);
 
   useEffect(() => {
     let d = 0;
@@ -173,17 +175,18 @@ export default function Home() {
     const pedicure = data.get("pedicure");
     const pedicureType = data.get("pedicureType") || "";
     const bookingNails = data.get("bookingNails") || "no";
+    const spa_pedi = data.get("spaPedi") ? "yes" : "no";
     const bookingId = uuidv4();
     const durationHours = duration;
 
-    const payload = { id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, duration: durationHours, soakoff, referral, pedicure, pedicure_type: pedicureType, booking_nails: bookingNails, email };
+    const payload = { id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, duration: durationHours, soakoff, referral, pedicure, pedicure_type: pedicureType, booking_nails: bookingNails, spa_pedi, email };
 
     try {
       const res = await fetch("/api/book", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error("Booking failed");
 
-      const bookingMetadata = { booking_id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, pedicure_type: pedicureType, booking_nails: bookingNails, duration: durationHours, soakoff, referral, pedicure, email };
+      const bookingMetadata = { booking_id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, pedicure_type: pedicureType, booking_nails: bookingNails, spa_pedi, duration: durationHours, soakoff, referral, pedicure, email };
 
       const stripeRes = await fetch("/api/create-checkout-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bookingMetadata }) });
       const stripeJson = await stripeRes.json();
@@ -223,6 +226,14 @@ export default function Home() {
     (!pedChosen || pedicureType !== "");
   const step2Valid = !!selectedDate && !!time;
   const canAdvance = step === 1 ? step1Valid : step === 2 ? step2Valid : true;
+
+  // One shared pricing function for the form, the server and the stored
+  // quote, so what the client is shown can never drift from what's recorded.
+  const priceQuote = quote({
+    bookingNails, service, length: nailLength, artLevel, soakoff,
+    pedicure, pedicureType, spaPedi,
+  });
+  const showPrice = hasQuote(priceQuote);
 
   const summaryService = [
     nailsChosen ? service : null,
@@ -475,21 +486,23 @@ export default function Home() {
                   <div className="space-y-4 bg-stone-50 p-5 border border-stone-200">
                     <label htmlFor="service" className="sr-only">Service</label>
                     <select id="service" name="service" required value={service}
-                      onChange={(e) => { const v = e.target.value; setService(v); setDuration(v ? 2 + (pedicure === "yes" ? 1 : 0) : pedicure === "yes" ? 1 : 0); }}
+                      onChange={(e) => { const v = e.target.value; setService(v); if (!isLengthPriced(v)) setNailLength(""); setDuration(v ? 2 + (pedicure === "yes" ? 1 : 0) : pedicure === "yes" ? 1 : 0); }}
                       className={selectCls}>
                       <option value="">Select Service</option>
-                      <option value="Gel-X">Gel-X</option>
-                      <option value="Acrylic">Acrylic</option>
-                      <option value="Gel Manicure">Gel Manicure</option>
-                      <option value="Hard Gel">Hard Gel</option>
-                      <option value="Builder Gel Manicure">Builder Gel Manicure</option>
+                      <option value="Gel-X">Gel-X — from $45</option>
+                      <option value="Acrylic">Acrylic — from $55</option>
+                      <option value="Hard Gel with Tips">Hard Gel with Tips — from $55</option>
+                      <option value="Basic Manicure">Basic Manicure (no polish) — $35</option>
+                      <option value="Gel Manicure">Gel Manicure — $45</option>
+                      <option value="Builder Gel Manicure">Builder Gel Manicure (BIAB) — $55</option>
+                      <option value="Hard Gel Manicure">Hard Gel Manicure — $60</option>
                     </select>
                     <label htmlFor="soakoff" className="sr-only">Soak-off</label>
                     <select id="soakoff" name="soakoff" value={soakoff} onChange={(e) => setSoakoff(e.target.value)} required className={selectCls}>
                       <option value="">Soak-Off</option>
                       <option value="none">No Soak-Off</option>
-                      <option value="soak-off">Soak-Off</option>
-                      <option value="foreign">Foreign Soak-Off</option>
+                      <option value="soak-off">Soak-Off — $10</option>
+                      <option value="foreign">Foreign Soak-Off — $20</option>
                     </select>
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
@@ -497,22 +510,25 @@ export default function Home() {
                         <select id="artLevel" name="artLevel" value={artLevel} onChange={(e) => setArtLevel(e.target.value)} className={selectCls}>
                           <option value="">Art Level</option>
                           <option value="N/A">N/A</option>
-                          <option value="Level 1">Level 1</option>
-                          <option value="Level 2">Level 2</option>
-                          <option value="Level 3">Level 3</option>
-                          <option value="Level 4">Level 4</option>
-                          <option value="French Tips">French Tips</option>
+                          <option value="Level 1">Level 1 — +$20</option>
+                          <option value="Level 2">Level 2 — +$30</option>
+                          <option value="Level 3">Level 3 — +$40</option>
+                          <option value="Level 4">Level 4 — +$50</option>
+                          <option value="French Tips">French Tips — +$15</option>
                         </select>
                       </div>
-                      <div>
+                      {/* A manicure has no length and isn't priced by one —
+                          showing the field there only invites a wrong answer. */}
+                      <div className={isLengthPriced(service) ? "" : "hidden"}>
                         <label htmlFor="Length" className="sr-only">Nail length</label>
-                        <select id="Length" name="Length" value={nailLength} onChange={(e) => setNailLength(e.target.value)} className={selectCls}>
+                        <select id="Length" name="Length" value={nailLength} onChange={(e) => setNailLength(e.target.value)}
+                          required={isLengthPriced(service)} className={selectCls}>
                           <option value="">Nail Length</option>
-                          <option value="N/A">N/A</option>
-                          <option value="Small/Xtra Small">Short/Xtra Short</option>
+                          <option value="Small/Xtra Small">Short / Xtra Short</option>
                           <option value="Medium">Medium</option>
                           <option value="Large">Large</option>
-                          <option value="XL/XXL">XL/XXL</option>
+                          <option value="XL">XL</option>
+                          <option value="XXL">XXL</option>
                         </select>
                       </div>
                     </div>
@@ -531,15 +547,42 @@ export default function Home() {
                     <label htmlFor="pedicureType" className="sr-only">Pedicure type</label>
                     <select id="pedicureType" name="pedicureType" value={pedicureType} onChange={(e) => setPedicureType(e.target.value)} className={selectCls}>
                       <option value="">Pedicure Type</option>
-                      <option value="Gel pedicure">Gel Pedicure</option>
-                      <option value="Gel pedciure + Acrylic big toes">Gel Pedicure + Acrylic Big Toes</option>
-                      <option value="Acrylic Pedicure">Acrylic Pedicure</option>
+                      <option value="Gel pedicure">Gel Pedicure — $50</option>
+                      <option value="Gel pedicure + Acrylic big toes">Gel Pedicure + Acrylic Big Toes — $55</option>
+                      <option value="Acrylic Pedicure">Acrylic Pedicure — $65</option>
                     </select>
+                    {/* Pedis are dry by default. This was only capturable by
+                        typing "spa pedi" into the notes, where it got missed
+                        and never priced. */}
+                    <label className="flex items-start gap-3 cursor-pointer mt-4">
+                      <input type="checkbox" name="spaPedi" checked={spaPedi}
+                        onChange={(e) => setSpaPedi(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
+                      <span className="text-sm text-stone-700 leading-relaxed">
+                        Make it a <strong>spa pedi</strong> — soak, scrub and mask <span className="text-stone-500">(+$10)</span>
+                      </span>
+                    </label>
                   </div>
                 )}
 
                 {bookingNails === "no" && pedicure === "no" && (
                   <p className="text-sm text-rose-800">Pick nails, a pedicure, or both to carry on.</p>
+                )}
+
+                {showPrice && (
+                  <div className="border border-stone-200 bg-stone-50 px-5 py-4">
+                    <div className="flex items-baseline justify-between gap-4">
+                      <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                        Estimated total
+                      </span>
+                      <span className="text-2xl font-bold text-rose-800">
+                        {priceQuote.isFrom ? "from " : ""}{formatPrice(priceQuote.total)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-500 mt-1.5 leading-relaxed">
+                      $20 due now to book · {formatPrice(priceQuote.balanceCents)} at your appointment
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -602,11 +645,45 @@ export default function Home() {
                         {selectedDate ? `${prettyDate(selectedDate)} at ${formatTo12Hour(time)}` : "—"}
                       </dd>
                     </div>
-                    <div className="flex justify-between gap-4 pt-2 mt-2 border-t border-stone-200">
-                      <dt className="text-stone-500">Due now</dt>
-                      <dd className="text-rose-800 font-semibold">$20 deposit</dd>
-                    </div>
                   </dl>
+
+                  {showPrice && (
+                    <div className="mt-4 pt-4 border-t border-stone-200">
+                      <dl className="space-y-1.5 text-sm">
+                        {priceQuote.lines.map((line, i) => (
+                          <div key={i} className="flex justify-between gap-4">
+                            <dt className="text-stone-500">{line.label}</dt>
+                            <dd className="text-stone-900">{formatPrice(line.cents)}</dd>
+                          </div>
+                        ))}
+                        <div className="flex justify-between gap-4 pt-2 mt-2 border-t border-stone-200">
+                          <dt className="text-stone-900 font-semibold">Estimated total</dt>
+                          <dd className="text-stone-900 font-semibold">
+                            {priceQuote.isFrom ? "from " : ""}{formatPrice(priceQuote.total)}
+                          </dd>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-stone-500">Deposit today</dt>
+                          <dd className="text-rose-800 font-semibold">{formatPrice(priceQuote.depositCents)}</dd>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-stone-500">Balance at your appointment</dt>
+                          <dd className="text-stone-900">{formatPrice(priceQuote.balanceCents)}</dd>
+                        </div>
+                      </dl>
+                      <p className="text-xs text-stone-500 mt-3 leading-relaxed">
+                        An estimate — your final price is confirmed at your appointment.
+                        {priceQuote.isFrom && " Very long or highly detailed sets can run a little over."}
+                      </p>
+                    </div>
+                  )}
+
+                  {!showPrice && (
+                    <div className="flex justify-between gap-4 pt-2 mt-2 border-t border-stone-200 text-sm">
+                      <span className="text-stone-500">Due now</span>
+                      <span className="text-rose-800 font-semibold">$20 deposit</span>
+                    </div>
+                  )}
                   <button type="button" onClick={() => setStep(1)}
                     className="mt-3 text-xs text-rose-800 hover:text-rose-900 underline">
                     Change something
