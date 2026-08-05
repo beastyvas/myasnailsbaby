@@ -20,14 +20,25 @@ jobs:
           SITE_URL: ${{ secrets.SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          if [ -z "$SITE_URL" ]; then
-            echo "SITE_URL secret is not set — add it in Settings → Secrets → Actions"
-            exit 1
+          # Not configured yet is a different thing from broken. Failing here
+          # would email on every run, hourly, forever — which trains you to
+          # ignore exactly the alert that matters once it IS configured.
+          if [ -z "$SITE_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::notice::Skipping — set the SITE_URL and CRON_SECRET secrets"
+            echo "  Settings → Secrets and variables → Actions → New repository secret"
+            echo "    SITE_URL     https://www.myasnailsbaby.com"
+            echo "    CRON_SECRET  same value as the Vercel environment variable"
+            exit 0
           fi
+
           code=$(curl -sS -o /tmp/body.txt -w "%{http_code}" \
             -H "Authorization: Bearer $CRON_SECRET" \
             "$SITE_URL/api/cron/engine")
           echo "HTTP $code"
           cat /tmp/body.txt
-          # a non-2xx means the automations silently stopped — fail loudly
-          [ "$code" -ge 200 ] && [ "$code" -lt 300 ]
+
+          # Configured but erroring genuinely means texts stopped going out.
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Automations returned HTTP $code — reminders and review requests are not sending"
+            exit 1
+          fi

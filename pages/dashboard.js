@@ -4,6 +4,7 @@ import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
 import "react-calendar/dist/Calendar.css";
 import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
+import { normalizePhone } from "@/utils/sms";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
@@ -373,6 +374,8 @@ export default function Dashboard() {
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [allBookings, setAllBookings] = useState([]);
   const [expandedClientKey, setExpandedClientKey] = useState(null);
+  const [clientSearch, setClientSearch] = useState("");
+  const [clientLimit, setClientLimit] = useState(25);
   const [chargingNoShow, setChargingNoShow] = useState(new Set());
   const [clientProfiles, setClientProfiles] = useState({});
   const [savingClientLabel, setSavingClientLabel] = useState(new Set());
@@ -1135,7 +1138,11 @@ export default function Dashboard() {
         {activeTab === "clients" && (() => {
           const clientMap = {};
           allBookings.forEach((b) => {
-            const key = b.phone || b.email || b.name;
+            // A booking with no real phone number is one of Mya's own
+            // block-offs — "wax", holds, personal time. It isn't a client,
+            // it can't be texted, and left in it dominates the list: one
+            // block-off entry had 111 "visits" and sat above everyone.
+            const key = normalizePhone(b.phone);
             if (!key) return;
             if (!clientMap[key]) {
               clientMap[key] = { name: b.name, phone: b.phone, email: b.email, instagram: b.instagram, hasCard: false, bookings: [], noShowsCharged: 0 };
@@ -1148,9 +1155,21 @@ export default function Dashboard() {
             if (!c.instagram && b.instagram) c.instagram = b.instagram;
           });
 
-          const clientList = Object.entries(clientMap)
+          const allClients = Object.entries(clientMap)
             .map(([key, c]) => ({ key, ...c }))
             .sort((a, b) => b.bookings.length - a.bookings.length);
+
+          // 90 rows is a scroll to nowhere. Search first, then a capped list
+          // with an explicit "show more" — the people she wants are almost
+          // always either the most frequent or someone she can name.
+          const q = clientSearch.trim().toLowerCase();
+          const matched = q
+            ? allClients.filter((c) =>
+                [c.name, c.phone, c.email, c.instagram]
+                  .filter(Boolean)
+                  .some((v) => String(v).toLowerCase().includes(q)))
+            : allClients;
+          const clientList = matched.slice(0, clientLimit);
 
           const LABELS = [
             { value: "",        display: "No Label", cls: "bg-stone-100 text-stone-600 border-stone-200" },
@@ -1339,11 +1358,29 @@ export default function Dashboard() {
                 {/* Client list — hidden on mobile when detail is open */}
                 <div className={`bg-white border border-stone-200 ${selected ? "hidden sm:block" : ""}`}>
                   <div className="p-4 border-b border-stone-200 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">All Clients</p>
-                    <span className="text-xs font-semibold text-stone-400">{clientList.length}</span>
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                      {q ? "Matching" : "All Clients"}
+                    </p>
+                    <span className="text-xs font-semibold text-stone-400">
+                      {q ? `${matched.length} of ${allClients.length}` : allClients.length}
+                    </span>
                   </div>
+
+                  <div className="px-4 py-3 border-b border-stone-200">
+                    <input
+                      type="search"
+                      value={clientSearch}
+                      onChange={(e) => { setClientSearch(e.target.value); setClientLimit(25); }}
+                      placeholder="Search name, number, or @handle"
+                      aria-label="Search clients"
+                      className="w-full px-3 py-2 border border-stone-300 focus:border-stone-900 focus:outline-none text-sm bg-white placeholder-stone-400"
+                    />
+                  </div>
+
                   {clientList.length === 0 ? (
-                    <p className="text-stone-400 text-sm text-center py-10">No clients yet.</p>
+                    <p className="text-stone-400 text-sm text-center py-10">
+                      {q ? `Nobody matching "${clientSearch}".` : "No clients yet."}
+                    </p>
                   ) : (
                     <div className="divide-y divide-stone-100">
                       {clientList.map((client) => {
@@ -1382,6 +1419,15 @@ export default function Dashboard() {
                         );
                       })}
                     </div>
+                  )}
+
+                  {matched.length > clientList.length && (
+                    <button
+                      onClick={() => setClientLimit(clientLimit + 25)}
+                      className="w-full py-3 text-xs font-semibold text-rose-800 hover:bg-stone-50 border-t border-stone-200 uppercase tracking-wider transition"
+                    >
+                      Show {Math.min(25, matched.length - clientList.length)} more
+                    </button>
                   )}
                 </div>
 
