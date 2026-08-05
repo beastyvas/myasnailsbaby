@@ -80,6 +80,14 @@ begin
   -- the send log.
   alter table sms_log enable row level security;
 
+  -- Report the type the table ACTUALLY has, not the one we asked for. If the
+  -- table already existed, `if not exists` above skipped the create entirely,
+  -- and reporting the requested type would claim success for a table that is
+  -- still wrong. Step 2 is what judges it.
+  select format_type(a.atttypid, a.atttypmod) into idtype
+    from pg_attribute a
+   where a.attrelid = to_regclass('public.sms_log') and a.attname = 'booking_id';
+
   insert into migration_report values (1, 'sms_log', 'ok', 'booking_id ' || idtype);
 exception when others then
   insert into migration_report values (1, 'sms_log', 'FAILED', sqlerrm);
