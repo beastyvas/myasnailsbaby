@@ -1,36 +1,143 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Mya's Nails Baby — foundations
 
+   Deliberately small. The per-component polish (button shimmer, nav
+   underline, section-title accent, the whole calendar) already lives in
+   <style jsx global> blocks inside pages/index.js, pages/reschedule.js
+   and pages/dashboard.js, mostly with !important. Duplicating any of it
+   here would be dead weight that loses on specificity anyway.
+
+   What was actually wrong was underneath all of that: the base font, the
+   absence of any depth, and a few leftovers from earlier themes.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* pages/_app.js wraps every page in `font-outfit`, but that token was
+     declared only in tailwind.config.js — which Tailwind v4 ignores
+     unless a stylesheet pulls it in with @config. So the class resolved
+     to nothing and the body fell through to the Arial rule that used to
+     sit in this file. Declaring it here is what makes it real.
+
+     (Loading the old config instead would also revive `bg-myaPink`
+     — #ffe4f0 — and paint every page pale pink.) */
+  --font-outfit: "Outfit", ui-sans-serif, system-ui, sans-serif;
+}
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --maroon: #9f1239;      /* rose-800, the site's accent */
+  --rose-dusty: #c9848c;
+  --ink: #1c1917;         /* stone-900 */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ── base ─────────────────────────────────────────────────────────────
+   This block used to set `font-family: Arial, Helvetica, sans-serif`,
+   which everything inherited, and a prefers-color-scheme:dark rule that
+   drove the body background to #0a0a0a. The site is light by design and
+   every page sets its own bg-stone-50, so in dark mode that only ever
+   showed up as a black edge behind the layout. */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #fafaf9; /* stone-50 */
+  color: var(--ink);
+  font-family: var(--font-outfit);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+::selection {
+  background: var(--maroon);
+  color: #fff;
+}
+
+/* ── depth ────────────────────────────────────────────────────────────
+   The homepage had ten hard 1px boxes, one shadow and two rounded
+   corners — the "blocky" part. Tailwind class names are real class
+   names, so the existing `bg-white border border-stone-200` panels can
+   be softened without touching any markup. Full-width bars (border-b /
+   border-t) are excluded: a radius on the sticky header reads as broken,
+   and a shadow under it fights the border it already has. */
+
+.bg-white.border-stone-200:not(.border-b):not(.border-t) {
+  border-radius: 3px;
+  box-shadow:
+    0 1px 2px rgba(28, 25, 23, 0.04),
+    0 12px 28px -18px rgba(28, 25, 23, 0.18);
+}
+
+/* ── interactive ──────────────────────────────────────────────────────
+   One easing curve and one focus treatment across the site, so controls
+   feel like part of the same object. Transform is left out on purpose:
+   several buttons already carry Tailwind's `active:scale-95`, and a
+   competing transform here would fight it at equal specificity. */
+
+a,
+button,
+input,
+select,
+textarea,
+[role="button"] {
+  transition:
+    color 0.2s var(--ease),
+    background-color 0.2s var(--ease),
+    border-color 0.2s var(--ease),
+    box-shadow 0.2s var(--ease);
+}
+
+input,
+select,
+textarea {
+  border-radius: 3px;
+}
+
+/* Replaces the browser's default blue ring on a maroon site. Keyboard
+   users get a clear ring; mouse users get nothing, which is the point of
+   :focus-visible over :focus. */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--rose-dusty);
+  border-radius: 3px;
+}
+
+button:not(:disabled),
+a[href] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── react-calendar fallback ──────────────────────────────────────────
+   index.js and reschedule.js style the calendar themselves. These two
+   rules only matter anywhere else it might appear, and exist because
+   what used to be here painted the selected day #ec4899 — hot pink, a
+   leftover from the site's original theme, on a maroon site. */
+
+.react-calendar__tile--now {
+  background: #fdf2f4;
+}
+
+.react-calendar__tile--active {
+  background: var(--maroon);
+  color: #fff;
+}
 
 @layer utilities {
   .animate-fade-in {
@@ -41,15 +148,4 @@ body {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
-}
-
-.react-calendar__tile--now {
-  background: #ffe4e6 !important; /* light pink highlight */
-}
-.react-calendar__tile--active {
-  background: #ec4899 !important; /* pink-500 */
-  color: white !important;
-}
-.bg-pink-100 {
-  background-color: #ffe4e6 !important;
 }
