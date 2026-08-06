@@ -169,29 +169,42 @@ export function salonJsonLd() {
  * service eligible for a rich result, and "gel-x price las vegas" is a
  * search someone makes with a card in their hand.
  *
+ * RANGES, NOT EXACT PRICES. Every figure here is a minimum, because the work
+ * genuinely varies: length changes the price, art level is Mya's judgement
+ * about the design in front of her, and the site only ever collects a $20
+ * deposit — the balance is settled at the chair. Publishing `price: 45.00`
+ * would be advertising a number she can't be held to. `minPrice` says the
+ * true thing, and Google renders it as "from $45" rather than a promise.
+ *
+ * `maxPrice` is only set where a real ceiling exists — the top of a length
+ * ladder. Acrylic and hard gel are open-ended (her list prints the longest
+ * length as "$95+"), so those get no maximum, and neither do flat-priced
+ * services, which can always have art added on top.
+ *
  * Built from utils/pricing.js rather than a second hand-written list, so the
  * figures a crawler reads can never drift from the ones at checkout.
- * Length-priced sets are advertised from their shortest length, which is what
- * the page shows too.
  */
 export function servicesJsonLd() {
-  const offer = (name, cents) => ({
+  const usd = (cents) => (cents / 100).toFixed(2);
+
+  const offer = (name, minCents, maxCents) => ({
     "@type": "Offer",
     itemOffered: { "@type": "Service", name, serviceType: name },
+    priceCurrency: "USD",
     priceSpecification: {
       "@type": "PriceSpecification",
-      price: (cents / 100).toFixed(2),
+      minPrice: usd(minCents),
+      ...(maxCents ? { maxPrice: usd(maxCents) } : {}),
       priceCurrency: "USD",
-      // Length-priced sets and open-ended top lengths both start here rather
-      // than land here, and saying so is the honest version.
-      valueAddedTaxIncluded: false,
     },
   });
 
   const items = [
-    ...BOOKABLE_SERVICES.map((s) =>
-      offer(s.label, s.flat != null ? s.flat : s.lengths[0])
-    ),
+    ...BOOKABLE_SERVICES.map((s) => {
+      if (s.flat != null) return offer(s.label, s.flat);
+      const top = s.openEnded ? null : s.lengths[s.lengths.length - 1];
+      return offer(s.label, s.lengths[0], top);
+    }),
     ...Object.entries(PEDICURES)
       // The typo'd legacy key is the same service under a misspelling —
       // publishing it would advertise a duplicate.

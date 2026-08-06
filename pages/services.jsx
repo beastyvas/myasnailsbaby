@@ -69,7 +69,7 @@ export default function Services() {
       <Seo
         path="/services"
         title="Nail Prices & Services"
-        description="Full price list for Mya's Nails Baby in Las Vegas — Gel-X from $45, acrylic from $55, hard gel, structure gel, gel manicures, pedicures and custom nail art. $20 deposit books your appointment."
+        description="Starting prices at Mya's Nails Baby in Las Vegas — Gel-X from $45, acrylic from $55, hard gel, structure gel, gel manicures, pedicures and custom nail art. Estimates; final price confirmed at your appointment. $20 deposit books your time."
         jsonLd={[servicesJsonLd(), salonJsonLd()]}
       />
 
@@ -88,13 +88,23 @@ export default function Services() {
             appointment only. A {formatPrice(DEPOSIT_CENTS)} deposit books your
             time and comes off the price of your set.
           </p>
+          {/* Says the same thing as the booking form, in the same words. Every
+              figure below is a starting point: length changes the price and
+              art level is a judgement about the design, so quoting these as
+              exact would be promising something Mya can't be held to. */}
+          <p className="text-stone-500 text-sm leading-relaxed max-w-2xl mt-3">
+            These are <strong className="text-stone-700 font-semibold">starting prices, not exact quotes</strong>.
+            What you pay depends on length and how detailed your design is — you'll
+            see an estimate as you book, and Mya confirms your final price at your
+            appointment.
+          </p>
         </div>
 
         <div className="bg-white border border-stone-200 p-8 sm:p-12 space-y-10">
 
           <Section
             title="Full Sets"
-            intro="Priced by length. Prices are for the set itself — art and removal are added below."
+            intro="From, by length. The set itself — art and removal are added below."
           >
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[34rem]">
@@ -131,12 +141,24 @@ export default function Services() {
             ))}
           </Section>
 
-          <Section title="Nail Art" intro="Added on top of your set.">
+          {/* The most subjective thing on the page. Where a design lands
+              between Level 1 and Level 4 is Mya's call, not a lookup — so
+              saying so here is what stops it being a surprise at the chair. */}
+          <Section
+            title="Nail Art"
+            intro="Added on top of your set. Mya decides the level from your design."
+          >
             {Object.entries(ART_LEVELS)
               .filter(([, cents]) => cents > 0)
               .map(([name, cents]) => (
-                <Row key={name} label={name} value={`+${formatPrice(cents)}`} />
+                <Row key={name} label={name} value={`from +${formatPrice(cents)}`} />
               ))}
+            <p className="text-stone-500 text-sm leading-relaxed mt-3">
+              Levels aren't a fixed menu — a simple French is a world away from
+              hand-painted detail on all ten nails. Send your inspo when you book
+              and Mya will tell you which level it is before she starts, so the
+              price is agreed up front.
+            </p>
           </Section>
 
           <Section title="Removal" intro="Only if you're coming in with something on.">
@@ -172,8 +194,11 @@ export default function Services() {
                 as soon as you know you're running behind.
               </p>
               <p className="text-stone-500 text-sm">
-                Prices are for the work itself. Your exact total is shown before you
-                pay, once you've picked your length, art and any removal.
+                You'll see an estimate as you pick your length, art and removal —
+                the same wording the booking form uses: it's an estimate, and your
+                final price is confirmed at your appointment. Only the{" "}
+                {formatPrice(DEPOSIT_CENTS)} deposit is taken online; the balance is
+                settled in person.
               </p>
             </div>
           </Section>
