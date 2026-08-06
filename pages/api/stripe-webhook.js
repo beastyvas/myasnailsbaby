@@ -120,7 +120,9 @@ async function creditReactivation(bookingId, booking) {
           date: booking.date,
           startTime: to12h(booking.start_time),
           percentOff: offer.percent_off,
-          code: offer.code,
+          // Lets the alert name the real figure rather than making her do
+          // percentages in her head with a client sitting in front of her.
+          quotedCents: booking.quoted_cents,
         })
       );
     }

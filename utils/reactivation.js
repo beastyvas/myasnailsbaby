@@ -1,5 +1,15 @@
-/** The reactivation campaign: text lapsed clients a percent-off code, then
- *  credit a later booking from that number back to the text that caused it.
+/** The reactivation campaign: text lapsed clients an offer, then credit a
+ *  later booking from that number back to the text that caused it.
+ *
+ *  THERE IS NO CODE FOR THE CLIENT TO REDEEM. Attribution has always been by
+ *  phone number — the webhook matches a new booking against a live offer for
+ *  that number, because almost nobody types a code back. The code was only
+ *  ever decoration on top of that, and asking someone to remember one is a
+ *  reason for the offer to fail rather than a way to claim it.
+ *
+ *  So the client is simply told to book, and Mya is told to take the discount
+ *  off at the chair. `reactivation_sends.code` still exists as an internal
+ *  reference for the row; it is never shown to a client or to Mya.
  *
  *  Imported by both the API routes and the dashboard, so everything here is
  *  browser-safe — no node:crypto, no server-only imports. */
@@ -19,11 +29,15 @@ export const MIN_PERCENT = 5;
 export const MAX_PERCENT = 50;
 export const DEFAULT_PERCENT = 20;
 
-/** Unambiguous alphabet — no O/0, no I/1 — so a code read aloud or copied
- *  off a screenshot survives the trip. */
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-/** Web Crypto rather than node:crypto — this module is bundled for the
+/** An internal reference for a reactivation_sends row — not a coupon.
+ *
+ *  Nobody is ever asked to type this. It exists because the column is
+ *  `not null unique`, and because a short handle is easier to grep for in a
+ *  log than a uuid when working out why an offer was or wasn't credited.
+ *
+ *  Web Crypto rather than node:crypto — this module is bundled for the
  *  dashboard too, and getRandomValues exists in both runtimes. */
 export function newCode() {
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(5));
@@ -73,15 +87,26 @@ export function daysSince(dateStr) {
   return Math.floor((Date.now() - then.getTime()) / 86_400_000);
 }
 
+/** Price after the discount, rounded to the dollar so the number Mya says
+ *  out loud matches the number on her screen. */
+export function discountedCents(priceCents, percentOff) {
+  if (!priceCents || !percentOff) return priceCents || 0;
+  return Math.round((priceCents * (100 - percentOff)) / 100 / 100) * 100;
+}
+
 /**
  * The text itself.
  *
  * Deliberately link-free. Textbelt refuses messages containing a URL until
- * the sending domain is whitelisted, so rather than write a message that
- * gets mangled by the link stripper on the way out, the call to action is
- * the code plus a DM — both of which work from the lock screen.
+ * the sending domain is whitelisted, so the call to action is the site name
+ * and her handle — both of which work from the lock screen.
+ *
+ * And deliberately code-free. The discount is applied by Mya at the chair,
+ * not claimed by the client at checkout, so there is nothing to remember,
+ * mistype, or lose. Telling someone the offer is already attached to them is
+ * also a stronger invitation than handing them homework.
  */
-export function reactivationMessage({ name, daysSinceVisit, percentOff, code, expiresAt }) {
+export function reactivationMessage({ name, daysSinceVisit, percentOff, expiresAt }) {
   const first = firstNameOf(name);
 
   const months = daysSinceVisit ? Math.round(daysSinceVisit / 30) : 0;
@@ -95,18 +120,38 @@ export function reactivationMessage({ name, daysSinceVisit, percentOff, code, ex
   return (
     `Mya's Nails Baby: Hi ${first}! It's Mya 💅 ${gap}since I did your nails and I miss you.\n` +
     `Come back and I'll take ${percentOff}% off your next set — good through ${prettyDate(expiresAt)}.\n` +
-    `Mention code ${code} when you book, or just DM @myasnailsbaby and I'll get you in.\n` +
+    `No code needed, I've got you down. Just book on my site or DM @myasnailsbaby and I'll take it off when you're in my chair.\n` +
     `(Reply STOP and I won't send these.)`
   );
 }
 
-/** The alert Mya gets the moment a reactivation text turns into a booking —
- *  the payoff that makes the campaign worth running again. */
-export function ownerAlert({ clientName, service, date, startTime, percentOff, code }) {
-  return (
+/**
+ * The alert Mya gets the moment a reactivation text turns into a booking.
+ *
+ * This is the whole mechanism from her side: the client is flagged, and this
+ * text tells her what to knock off. It names the actual dollar figure when
+ * the booking carries a quote, because "20% off" at the chair is a sum to do
+ * in her head while someone waits, and that is where the offer quietly
+ * doesn't get honored.
+ */
+export function ownerAlert({
+  clientName, service, date, startTime, percentOff, quotedCents, depositCents = 2000,
+}) {
+  const head =
     `THEY CAME BACK! ${clientName} just booked after your miss-you text.\n` +
-    `${service || "Appointment"} — ${prettyDate(date)} at ${startTime}\n` +
-    `Honor ${percentOff}% off with code ${code}.`
+    `${service || "Appointment"} — ${prettyDate(date)} at ${startTime}\n`;
+
+  if (!quotedCents) {
+    // No quote stored (a legacy booking, or selections that couldn't be
+    // priced). Still tell her the important half.
+    return `${head}Honor ${percentOff}% off when they sit down.`;
+  }
+
+  const after = discountedCents(quotedCents, percentOff);
+  const due = Math.max(0, after - depositCents);
+  return (
+    `${head}Honor ${percentOff}% off: $${after / 100} instead of $${quotedCents / 100} ` +
+    `(they owe $${due / 100} at the visit, $${depositCents / 100} deposit already paid).`
   );
 }
 

@@ -87,7 +87,6 @@ async function preview(res) {
           name: eligible[0].name,
           daysSinceVisit: eligible[0].daysSinceVisit,
           percentOff,
-          code: "MYAXXXXX",
           expiresAt,
         })
       : null,
@@ -110,12 +109,12 @@ async function send(req, res) {
   const failed = [];
 
   for (const c of targets) {
+    // Internal reference for the row only — never shown to the client.
     const code = newCode();
     const message = reactivationMessage({
       name: c.name,
       daysSinceVisit: c.daysSinceVisit,
       percentOff,
-      code,
       expiresAt,
     });
 

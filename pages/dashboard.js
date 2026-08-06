@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
 import "react-calendar/dist/Calendar.css";
-import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
+import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent, discountedCents } from "@/utils/reactivation";
 import { normalizePhone } from "@/utils/sms";
-import { BOOKABLE_SERVICES, serviceLabel } from "@/utils/pricing";
+import { BOOKABLE_SERVICES, DEPOSIT_CENTS, formatPrice, serviceLabel } from "@/utils/pricing";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
@@ -1080,6 +1080,32 @@ export default function Dashboard() {
                               </div>
                             </div>
 
+                            {/* The whole reactivation mechanism, from Mya's
+                                side. There is no code for the client to
+                                redeem — this flag is how she knows to take
+                                the discount off, so it sits above the
+                                details rather than among them, and names the
+                                figure so it isn't mental arithmetic with
+                                someone waiting. */}
+                            {booking.discount_percent > 0 && (
+                              <div className="mb-4 border border-rose-300 bg-rose-50 px-3 py-2">
+                                <p className="text-xs font-semibold text-rose-900 uppercase tracking-wider">
+                                  Came back · take {booking.discount_percent}% off
+                                </p>
+                                {booking.quoted_cents ? (
+                                  <p className="text-sm text-rose-900 mt-0.5">
+                                    {formatPrice(discountedCents(booking.quoted_cents, booking.discount_percent))}
+                                    <span className="text-rose-700"> instead of {formatPrice(booking.quoted_cents)}</span>
+                                    <span className="text-rose-700">
+                                      {" "}· {formatPrice(Math.max(0, discountedCents(booking.quoted_cents, booking.discount_percent) - DEPOSIT_CENTS))} due at the visit
+                                    </span>
+                                  </p>
+                                ) : (
+                                  <p className="text-sm text-rose-900 mt-0.5">Discount off whatever the set comes to.</p>
+                                )}
+                              </div>
+                            )}
+
                             <div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4 text-sm">
                               {booking.service && booking.service !== "N/A" && (
                                 <p className="text-stone-700"><span className="text-stone-400">Service: </span>{serviceLabel(booking.service)}</p>
@@ -1621,7 +1647,7 @@ export default function Dashboard() {
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-stone-900 truncate">{c.name || c.phone}</p>
                               <p className="text-xs text-stone-500">
-                                {c.offer.percentOff}% off · code {c.offer.code} · expires {new Date(c.offer.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                {c.offer.percentOff}% off · expires {new Date(c.offer.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                               </p>
                             </div>
                             <span className="text-xs font-semibold bg-rose-50 text-rose-900 border border-rose-200 px-2 py-0.5 flex-shrink-0">Waiting</span>
@@ -1640,7 +1666,7 @@ export default function Dashboard() {
                           <div key={c.phone} className="py-3 flex items-center justify-between gap-4">
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-stone-900 truncate">{c.name || c.phone}</p>
-                              <p className="text-xs text-stone-500">Honor {c.offer.percentOff}% off · code {c.offer.code}</p>
+                              <p className="text-xs text-stone-500">Take {c.offer.percentOff}% off at the chair</p>
                             </div>
                             <span className="text-xs font-semibold bg-green-50 text-green-800 border border-green-200 px-2 py-0.5 flex-shrink-0">Booked</span>
                           </div>
