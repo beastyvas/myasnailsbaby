@@ -5,6 +5,10 @@ import { absoluteUrl } from "@/utils/seo";
  *  noindex and deliberately left out, so crawl budget goes to real pages. */
 const PAGES = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
+  // The price list. High priority on purpose: it's the only page that can
+  // rank for "gel-x price las vegas" and the like, since every figure used
+  // to live inside a <select> where no crawler could see it.
+  { path: "/services", changefreq: "weekly", priority: "0.9" },
   { path: "/privacy", changefreq: "yearly", priority: "0.3" },
   { path: "/terms", changefreq: "yearly", priority: "0.3" },
 ];

@@ -2,6 +2,11 @@
  *  needs to know about the business. Kept here rather than inline in pages
  *  so the address, hours and phone number can't drift apart across files. */
 
+// Prices come from the same module the booking form prices against, so the
+// numbers a crawler reads and the numbers a client is charged are the same
+// numbers. pricing.js imports nothing, so there's no cycle here.
+import { BOOKABLE_SERVICES, PEDICURES } from "./pricing";
+
 export const SITE_NAME = "Mya's Nails Baby";
 export const SITE_TAGLINE = "Nail Artist in Las Vegas";
 export const DEPOSIT_DOLLARS = 20;
@@ -141,7 +146,11 @@ export function salonJsonLd() {
       "@type": "ReserveAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${siteUrl()}/#book`,
+        // #booking, not #book — the form's anchor is id="booking", and the
+        // nav, hero CTA and Business Profile booking link all use it. This
+        // was the only reference pointing somewhere that doesn't exist, and
+        // it degraded silently to the top of the page instead of 404ing.
+        urlTemplate: `${siteUrl()}/#booking`,
         actionPlatform: [
           "http://schema.org/DesktopWebPlatform",
           "http://schema.org/MobileWebPlatform",
@@ -149,6 +158,54 @@ export function salonJsonLd() {
       },
       result: { "@type": "Reservation", name: "Nail appointment" },
     },
+  };
+}
+
+/**
+ * The price list as structured data, for /services.
+ *
+ * `salonJsonLd` already emits an offer catalog, but a name-only one — Google
+ * can see that Mya does Gel-X, not what it costs. Prices are what make a
+ * service eligible for a rich result, and "gel-x price las vegas" is a
+ * search someone makes with a card in their hand.
+ *
+ * Built from utils/pricing.js rather than a second hand-written list, so the
+ * figures a crawler reads can never drift from the ones at checkout.
+ * Length-priced sets are advertised from their shortest length, which is what
+ * the page shows too.
+ */
+export function servicesJsonLd() {
+  const offer = (name, cents) => ({
+    "@type": "Offer",
+    itemOffered: { "@type": "Service", name, serviceType: name },
+    priceSpecification: {
+      "@type": "PriceSpecification",
+      price: (cents / 100).toFixed(2),
+      priceCurrency: "USD",
+      // Length-priced sets and open-ended top lengths both start here rather
+      // than land here, and saying so is the honest version.
+      valueAddedTaxIncluded: false,
+    },
+  });
+
+  const items = [
+    ...BOOKABLE_SERVICES.map((s) =>
+      offer(s.label, s.flat != null ? s.flat : s.lengths[0])
+    ),
+    ...Object.entries(PEDICURES)
+      // The typo'd legacy key is the same service under a misspelling —
+      // publishing it would advertise a duplicate.
+      .filter(([name]) => !name.includes("pedciure"))
+      .map(([name, cents]) => offer(name, cents)),
+  ];
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    "@id": `${siteUrl()}/services#catalog`,
+    name: `Nail Services & Prices — ${SITE_NAME}`,
+    url: absoluteUrl("/services"),
+    itemListElement: items,
   };
 }
 

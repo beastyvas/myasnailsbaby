@@ -29,6 +29,7 @@ and mismatches quietly cost you ranking.
 | Phone | `(702) 981-8428` |
 | Website | `https://www.myasnailsbaby.com` |
 | Booking link | `https://www.myasnailsbaby.com/#booking` |
+| Menu / services link | `https://www.myasnailsbaby.com/services` |
 
 **Hours** — match the site exactly:
 
@@ -114,14 +115,26 @@ Change the timing or switch it off under Settings → Automatic Texts.
 ## 4. Reactivation — one tap
 
 For the ones who slipped through anyway: Dashboard → **Reactivate**. Anyone
-45 days quiet with nothing booked shows up there. Tick who you want, send, and
-each gets their own percent-off code good for 30 days.
+45 days quiet with nothing booked shows up there. Tick who you want and send.
 
-If they book from that number inside the window it's credited automatically —
-you get a text so you know to honour it at the chair.
+**There is no code for them to redeem.** They just get a text saying you'd
+love them back and you'll take 20% off — nothing to remember, mistype or lose.
 
-Run it when you have a quiet week ahead. Don't run it every week; an offer
-that always exists stops being an offer.
+If they book from that number within 30 days it's credited automatically, by
+phone number. You get a text the moment it happens telling you what to knock
+off, with the real figure worked out:
+
+> THEY CAME BACK! Sarah just booked after your miss-you text.
+> Gel-X — Sep 3 at 11:00 AM
+> Honor 20% off: $76 instead of $95 (they owe $56 at the visit, $20 deposit
+> already paid).
+
+The booking also shows a flag on your dashboard when you open it, so you can't
+miss it even if you missed the text. **Tick individual clients before sending**
+— sending with nobody selected texts everyone on the list.
+
+Change the percentage under Settings. Run it when you have a quiet week ahead,
+not every week; an offer that always exists stops being an offer.
 
 ---
 
@@ -165,6 +178,13 @@ You don't need to think about any of this — noted so you know it exists.
   services and price range directly off the site.
 - FAQ structured data — the deposit, location, services, late and cancellation
   policy questions can appear straight in search results.
+- **A price page at `/services`** with the full list, and structured data
+  carrying the actual prices. Until this existed, every figure lived inside a
+  dropdown on the booking form where no search engine could read it — so
+  someone searching "gel-x price las vegas" had nothing of yours to land on.
+  Every number on it is read from the same file the checkout prices against,
+  so it cannot drift out of date; when you change a price, it changes there
+  too.
 - Sitemap and robots at `/sitemap.xml` and `/robots.txt`.
 - Link previews (`/api/og`) so the site looks right when shared in a DM.
 
@@ -172,4 +192,6 @@ You don't need to think about any of this — noted so you know it exists.
 `https://www.myasnailsbaby.com/sitemap.xml` at
 [Google Search Console](https://search.google.com/search-console). It's free
 and it's how Google learns the site exists rather than waiting to stumble on
-it.
+it. Do this once the Business Profile above is live — the two reinforce each
+other, and Search Console is also where you'll see which searches are actually
+finding you.

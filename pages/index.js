@@ -273,6 +273,11 @@ export default function Home() {
             MyasNailsBaby
           </h1>
           <nav className="hidden sm:flex items-center space-x-6 text-sm">
+            {/* A real <Link> to /services, not an anchor. Without an internal
+                link the page is reachable only via the sitemap, which is a
+                far weaker signal — and people want the prices before they
+                decide to book anyway. */}
+            <Link href="/services" className="text-stone-600 hover:text-stone-900 transition nav-slide">Prices</Link>
             <a href="#contact" className="text-stone-600 hover:text-stone-900 transition nav-slide">Contact</a>
             <a href="#policies" className="text-stone-600 hover:text-stone-900 transition nav-slide">Policies</a>
             <a href="#booking" className="text-stone-600 hover:text-stone-900 transition nav-slide">Book</a>
