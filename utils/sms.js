@@ -73,9 +73,30 @@ export async function sendSms(phone, message, opts = {}) {
 
   const body = ALLOW_LINKS ? message : stripLinks(message);
 
-  // No key configured: log the message instead of dropping it silently, so
-  // local development and a lapsed key both stay diagnosable.
+  // No key configured.
+  //
+  // In development that's normal and the message is logged instead — working
+  // on the booking flow shouldn't require a funded Textbelt key.
+  //
+  // In production it is a serious fault, and returning `true` here was a bug
+  // that hid for a day: the automations reported four texts sent, wrote four
+  // sms_log rows, and showed Mya a confident "4 sent" on her dashboard while
+  // nothing left the building. It surfaced only because the credit balance
+  // hadn't moved. A function that says a text was delivered when it wasn't
+  // defeats every guard built on top of it — sms_log then blocks the retry
+  // forever, so the client is never reminded at all.
+  //
+  // Returning false instead feeds the existing machinery: sendOnce releases
+  // the sms_log claim so the next run retries, `failures` is populated, and
+  // the workflow fails and emails.
   if (!textbeltConfigured()) {
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        `TEXTBELT_KEY is missing — refusing to report a send to ${to} that did not happen. ` +
+          "Set it in Vercel (Production scope) and redeploy."
+      );
+      return false;
+    }
     console.log(`[sms demo] to ${to}:\n${body}\n`);
     return true;
   }
