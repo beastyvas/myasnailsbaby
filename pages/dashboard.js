@@ -6,6 +6,7 @@ import "react-calendar/dist/Calendar.css";
 import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent, discountedCents } from "@/utils/reactivation";
 import { normalizePhone } from "@/utils/sms";
 import { BOOKABLE_SERVICES, DEPOSIT_CENTS, formatPrice, serviceLabel } from "@/utils/pricing";
+import { GROWTH_ENABLED } from "@/utils/features";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
@@ -883,7 +884,10 @@ export default function Dashboard() {
     { id: "overview", label: "Overview" },
     { id: "appointments", label: "Appointments" },
     { id: "clients", label: "Clients" },
-    { id: "reactivate", label: "Reactivate" },
+    // Reactivate is hidden while the growth switch is off. activeTab always
+    // starts at "overview" and isn't persisted, so removing it can't strand
+    // anyone on a blank page.
+    ...(GROWTH_ENABLED ? [{ id: "reactivate", label: "Reactivate" }] : []),
     { id: "gallery", label: "Gallery" },
     { id: "availability", label: "Availability" },
     { id: "schedule", label: "Schedule" },
@@ -2128,32 +2132,40 @@ export default function Dashboard() {
                     searches &ldquo;nails near me&rdquo;.
                   </span>
                 </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" checked={automations.rebook_enabled}
-                    onChange={(e) => setAutomations({ ...automations, rebook_enabled: e.target.checked })}
-                    className="w-4 h-4 accent-rose-800 mt-0.5" />
-                  <span className="text-sm text-stone-700 leading-relaxed">
-                    <strong className="text-stone-900">Nudge them for a fill</strong> when their set is due.
-                    This one catches people at full price, before they drift far enough to need a discount.
-                  </span>
-                </label>
-                <div className="pt-1">
-                  <label className={labelCls}>Nudge After</label>
-                  <div className="flex items-center gap-3">
-                    <input type="number" min={1} max={12}
-                      value={automations.rebook_after_weeks}
-                      onChange={(e) => setAutomations({ ...automations, rebook_after_weeks: e.target.value })}
-                      className={`${inputCls} max-w-32`} />
-                    <span className="text-sm text-stone-500">weeks after their last set</span>
-                  </div>
-                </div>
+                {/* Rebooking nudge: hidden while the growth switch is off,
+                    so the control doesn't sit there implying it does
+                    something. The setting itself is untouched underneath. */}
+                {GROWTH_ENABLED && (
+                  <>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" checked={automations.rebook_enabled}
+                        onChange={(e) => setAutomations({ ...automations, rebook_enabled: e.target.checked })}
+                        className="w-4 h-4 accent-rose-800 mt-0.5" />
+                      <span className="text-sm text-stone-700 leading-relaxed">
+                        <strong className="text-stone-900">Nudge them for a fill</strong> when their set is due.
+                        This one catches people at full price, before they drift far enough to need a discount.
+                      </span>
+                    </label>
+                    <div className="pt-1">
+                      <label className={labelCls}>Nudge After</label>
+                      <div className="flex items-center gap-3">
+                        <input type="number" min={1} max={12}
+                          value={automations.rebook_after_weeks}
+                          onChange={(e) => setAutomations({ ...automations, rebook_after_weeks: e.target.value })}
+                          className={`${inputCls} max-w-32`} />
+                        <span className="text-sm text-stone-500">weeks after their last set</span>
+                      </div>
+                    </div>
+                  </>
+                )}
                 <button onClick={saveAutomations} disabled={savingAutomations} className={btnPrimary}>
                   {savingAutomations ? "Saving..." : "SAVE"}
                 </button>
               </div>
             </div>
 
-            {/* Reactivation Offer */}
+            {/* Reactivation Offer — hidden with the growth switch. */}
+            {GROWTH_ENABLED && (
             <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Reactivation Offer</SectionHeading>
               <div className="space-y-4">
@@ -2185,6 +2197,7 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
+            )}
 
             {/* Promo Banner */}
             <div className="bg-white border border-stone-200 p-6">

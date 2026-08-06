@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { checkQuota, normalizePhone, sendSms } from "@/utils/sms";
+import { GROWTH_ENABLED } from "@/utils/features";
 import { hoursSince, hoursUntil, todayVegas, vegasParts } from "@/utils/time";
 import * as M from "@/utils/messages";
 import {
@@ -184,7 +185,9 @@ export default async function handler(req, res) {
   // than to a client going quiet. It lands weeks before the reactivation
   // campaign would — catching someone while they still love their set and
   // will rebook at full price, instead of winning them back at a discount.
-  if (rebookOn) {
+  // GROWTH_ENABLED sits outside the settings toggle on purpose: while the
+  // switch is off, nothing in the dashboard can turn this back on by accident.
+  if (GROWTH_ENABLED && rebookOn) {
     const hasUpcoming = new Set(
       live.filter((b) => b.date >= today && !b.no_show).map((b) => b.phone)
     );

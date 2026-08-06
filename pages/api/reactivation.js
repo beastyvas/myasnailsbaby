@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { isAdmin } from "@/utils/requireAdmin";
+import { GROWTH_ENABLED } from "@/utils/features";
 import { normalizePhone, sendSms } from "@/utils/sms";
 import {
   DORMANT_AFTER_DAYS,
@@ -49,6 +50,14 @@ async function loadAudience() {
 }
 
 export default async function handler(req, res) {
+  // Checked before auth: while the switch is off this endpoint does not exist
+  // as far as any caller is concerned. Hiding the dashboard tab is cosmetic —
+  // a POST here would still text real clients, so "off" has to mean off at
+  // the route, not just in the navigation.
+  if (!GROWTH_ENABLED) {
+    return res.status(403).json({ error: "The reactivation campaign is switched off." });
+  }
+
   if (!(await isAdmin(req, res))) {
     return res.status(401).json({ error: "Unauthorized — must be logged in" });
   }
