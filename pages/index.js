@@ -497,7 +497,11 @@ export default function Home() {
                     </select>
                     <label htmlFor="soakoff" className="sr-only">Soak-off</label>
                     <select id="soakoff" name="soakoff" value={soakoff} onChange={(e) => setSoakoff(e.target.value)} required className={selectCls}>
-                      <option value="">Soak-Off</option>
+                      {/* "Soak-Off" as the placeholder read as an answer,
+                          not a prompt — it's word-for-word one of the real
+                          choices below, so the field looked pre-set to a $10
+                          removal nobody had picked. */}
+                      <option value="">Select removal</option>
                       <option value="none">No Soak-Off</option>
                       <option value="soak-off">Soak-Off — $10</option>
                       <option value="foreign">Foreign Soak-Off — $20</option>

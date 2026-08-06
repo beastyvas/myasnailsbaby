@@ -517,8 +517,8 @@ export default function Dashboard() {
     if (targets.length === 0) return;
 
     const ok = confirm(
-      `Text ${targets.length} ${targets.length === 1 ? "client" : "clients"} a ${reactivation.percentOff}% off code?\n\n` +
-      `Each code is good for ${reactivation.windowDays} days. This sends real texts and can't be undone.`
+      `Text ${targets.length} ${targets.length === 1 ? "client" : "clients"} ${reactivation.percentOff}% off?\n\n` +
+      `Each offer is good for ${reactivation.windowDays} days. This sends real texts and can't be undone.`
     );
     if (!ok) return;
 
@@ -1551,7 +1551,8 @@ export default function Dashboard() {
                       <div className="space-y-5">
                         <p className="text-sm text-stone-700 leading-relaxed">
                           <strong className="text-stone-900">{recipients.length} {recipients.length === 1 ? "client hasn't" : "clients haven't"} been in for a while.</strong>{" "}
-                          Each one gets a single text with their own {reactivation.percentOff}% off code, good for {reactivation.windowDays} days.
+                          Each one gets a single text offering {reactivation.percentOff}% off, good for {reactivation.windowDays} days.
+                          There&rsquo;s no code — if they book, they&rsquo;ll show up flagged and you take it off at the chair.
                           Change the offer under Settings.
                         </p>
 
