@@ -79,15 +79,26 @@ If any row of the report says `FAILED`, the `detail` column says what to do.
 
 | | When | |
 | --- | --- | --- |
-| 24h reminder | 23–25h before the appointment | always on |
-| Day-of reminder | 2–4h before | always on |
-| Review request | 2–4h after it ends | Settings toggle |
+| 24h reminder | 6–26h before the appointment | always on |
+| Day-of reminder | 0–6h before | always on |
+| Review request | 2–24h after it ends | Settings toggle |
 | Rebooking nudge | at the fill interval, default 3 weeks | Settings toggle |
 | Abandoned checkout | 30 min after an unpaid checkout | always on |
 
 Every message is idempotent — the appointment ones through `sms_log`, checkout
 recovery through its own `recovered_at` stamp — so running the job twice, or
 re-running it after a failure, can't double-text anyone.
+
+**Nothing sends between 9pm and 8am Vegas time.** A send that comes due
+overnight is held, without claiming its `sms_log` row, and goes out on the
+first run after 8am.
+
+**Why the windows are so wide.** GitHub throttles free-tier scheduled
+workflows — real gaps between runs have been 2h18m to 4h06m, not an hour. The
+windows used to be two hours wide, so a four-hour gap stepped straight over
+them and the text was skipped with no error at all. They're now wide enough
+that a late run still catches everything, which is only safe because
+`sms_log` makes sending once-only. Precision was traded for actually arriving.
 
 **Scheduling.** Vercel's Hobby plan only allows one cron run per day, which
 would miss almost every window above. `.github/workflows/engine.yml` runs it

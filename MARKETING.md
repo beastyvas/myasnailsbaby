@@ -77,10 +77,15 @@ a listing can carry both names where the booking form shouldn't.
 Reviews are the number one thing deciding where you land in that map box, and
 the number one thing deciding whether someone picks you once they see it.
 
-**The site already handles the asking.** Two hours after every appointment
-ends, the client gets a thank-you text that asks for a Google review and tells
-them exactly how to find you. Two hours is deliberate — it's while they're
-still looking at their hands and loving them.
+**The site already handles the asking.** A couple of hours after every
+appointment ends, the client gets a thank-you text that asks for a Google
+review and tells them exactly how to find you. That timing is deliberate —
+it's while they're still looking at their hands and loving them.
+
+It's a couple of hours rather than exactly two because the scheduler that runs
+it is only roughly hourly, and a text that reliably lands near the right
+moment beats one timed to the minute that doesn't send at all. Nothing goes
+out overnight either; anything due between 9pm and 8am waits for the morning.
 
 You don't need to do anything for this to work. Switch it off any time under
 Settings → Automatic Texts.

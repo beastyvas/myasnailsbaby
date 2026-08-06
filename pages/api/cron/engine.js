@@ -1,7 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import { normalizePhone, sendSms } from "@/utils/sms";
-import { hoursSince, hoursUntil, todayVegas } from "@/utils/time";
+import { hoursSince, hoursUntil, todayVegas, vegasParts } from "@/utils/time";
 import * as M from "@/utils/messages";
+import {
+  dueFor24hReminder,
+  dueForDayOf,
+  dueForRebook,
+  dueForReview,
+  isQuietHour,
+} from "@/utils/windows";
 
 // SERVICE ROLE: this runs with no user session — a cron has no cookies.
 const supabase = createClient(
@@ -18,16 +25,22 @@ const LOOKBACK_DAYS = 120;
  * The hourly job. Everything automatic the site does to earn money lives
  * here, so there's one place to reason about what a client receives.
  *
- *   · 24h reminder        — appointments 23–25h out
- *   · day-of reminder     — appointments 2–4h out
- *   · review request      — 2–4h after the appointment ended
+ *   · 24h reminder        — appointments 6–26h out
+ *   · day-of reminder     — appointments 0–6h out
+ *   · review request      — 2–24h after the appointment ended
  *   · rebooking nudge     — at the fill interval, before they drift
  *   · checkout recovery   — 30 min after a checkout was started and dropped
+ *
+ * Those windows are wide on purpose. This job is scheduled hourly and does
+ * not run hourly — GitHub throttles free-tier cron to every 2–4 hours — so
+ * the original two-hour windows were being stepped straight over, skipping
+ * the text with no error. See utils/windows.js for the measured gaps.
  *
  * Every message is idempotent: the appointment ones through sms_log, and
  * checkout recovery through its own recovered_at stamp (there's no booking
  * row to key against). Running twice in an hour, or re-running after a
- * failure, can't double-text anyone.
+ * failure, can't double-text anyone — which is exactly what makes the wide
+ * windows safe rather than spammy.
  *
  * Authenticated by CRON_SECRET rather than a login session. The previous
  * reminder endpoint required a signed-in dashboard session, which meant no
@@ -47,6 +60,11 @@ export default async function handler(req, res) {
   const now = Date.now();
   const today = todayVegas();
   const since = new Date(now - LOOKBACK_DAYS * 86_400_000).toISOString().slice(0, 10);
+
+  // Nothing automated goes out overnight. Computed once per run from Vegas
+  // local time, so it follows DST without a hardcoded offset.
+  const vegasHour = Number(vegasParts(new Date(now)).time.slice(0, 2));
+  const quiet = isQuietHour(vegasHour);
 
   const [{ data: bookings, error }, { data: settings }, { data: optOuts }] = await Promise.all([
     supabase
@@ -83,10 +101,22 @@ export default async function handler(req, res) {
     checkout_recovery: 0,
   };
   const failures = [];
+  /** Surfaced in the response so a run of all zeroes overnight is
+   *  distinguishable from a run where nothing was due. */
+  let skippedQuiet = 0;
 
   /** Send once, ever, for this (booking, kind). Claims the slot before
    *  sending: a duplicate row is harmless, a duplicate text is not. */
   async function sendOnce(booking, kind, message, opts = {}) {
+    // Bail BEFORE claiming. Taking the sms_log row and then not sending
+    // would mark it delivered forever — the client would simply never be
+    // reminded. Skipping without a claim means the next run after 8am picks
+    // it up, which the widened windows are what make possible.
+    if (quiet) {
+      skippedQuiet++;
+      return;
+    }
+
     const { error: claimErr } = await supabase
       .from("sms_log")
       .insert({ booking_id: booking.id, kind });
@@ -114,13 +144,13 @@ export default async function handler(req, res) {
     const until = hoursUntil(b.date, b.start_time, now);
     if (until === null || until <= 0) continue;
 
-    if (until >= 23 && until <= 25) {
+    if (dueFor24hReminder(until)) {
       await sendOnce(
         b,
         "reminder_24h",
         M.reminder24h({ name: b.name, date: b.date, startTime: b.start_time })
       );
-    } else if (until >= 2 && until <= 4) {
+    } else if (dueForDayOf(until)) {
       await sendOnce(
         b,
         "reminder_day_of",
@@ -139,7 +169,7 @@ export default async function handler(req, res) {
     for (const b of live) {
       if (b.no_show) continue;
       const sinceEnd = hoursSince(b.date, b.end_time || b.start_time, now);
-      if (sinceEnd === null || sinceEnd < 2 || sinceEnd > 4) continue;
+      if (!dueForReview(sinceEnd)) continue;
 
       await sendOnce(
         b,
@@ -174,8 +204,9 @@ export default async function handler(req, res) {
       if (optedOut.has(normalizePhone(b.phone))) continue;
 
       const sinceVisit = hoursSince(b.date, b.start_time, now) / 24;
-      // One-day window; the job runs hourly and sms_log stops repeats.
-      if (sinceVisit < dueDays || sinceVisit > dueDays + 1) continue;
+      // Multi-day window; sms_log stops repeats, so the only thing a wider
+      // window changes is whether a scheduler outage loses the nudge.
+      if (!dueForRebook(sinceVisit, dueDays)) continue;
 
       await sendOnce(
         b,
@@ -211,6 +242,12 @@ export default async function handler(req, res) {
     const bookedPhones = new Set(live.map((b) => normalizePhone(b.phone)));
 
     for (const p of abandoned || []) {
+      // Same rule as sendOnce, and same reason to check before claiming: the
+      // recovered_at stamp is this path's idempotency guard, so setting it
+      // without sending would lose the nudge for good. The 30min–12h window
+      // is wide enough that a morning run still catches an overnight drop.
+      if (quiet) { skippedQuiet++; continue; }
+
       const phone = normalizePhone(p.phone);
       if (!phone || optedOut.has(phone) || bookedPhones.has(phone)) continue;
 
@@ -238,7 +275,18 @@ export default async function handler(req, res) {
   }
 
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
-  console.log(`Engine: sent ${total}`, counts);
+  console.log(`Engine: sent ${total}`, counts, quiet ? `(quiet hours, held ${skippedQuiet})` : "");
 
-  return res.status(200).json({ ok: true, sent: total, counts, failures, checked: live.length });
+  return res.status(200).json({
+    ok: true,
+    sent: total,
+    counts,
+    failures,
+    checked: live.length,
+    // Without these, an overnight run of all zeroes is indistinguishable
+    // from a broken one — which is the exact ambiguity that hid the
+    // missing sms_log table for a day.
+    quietHours: quiet,
+    heldForMorning: skippedQuiet,
+  });
 }
