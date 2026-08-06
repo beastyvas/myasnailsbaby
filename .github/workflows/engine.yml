@@ -71,7 +71,24 @@ jobs:
           # the moment it's needed.
           fails=$(jq -r '(.failures // []) | length' /tmp/body.txt 2>/dev/null || echo 0)
           credits=$(jq -r '.creditsLeft // "unknown"' /tmp/body.txt 2>/dev/null || echo unknown)
-          echo "failed sends: $fails   credits left: $credits"
+          # NOT `// "unknown"` — jq's alternative operator treats `false` as
+          # absent, so that would silently convert the exact failure we're
+          # looking for into "unknown" and never alert. Test caught it.
+          keyed=$(jq -r 'if .textbeltConfigured == null then "unknown" else (.textbeltConfigured|tostring) end' /tmp/body.txt 2>/dev/null || echo unknown)
+          echo "failed sends: $fails   credits left: $credits   key visible: $keyed"
+
+          # The most actionable failure there is, and the one that produced
+          # four texts the dashboard counted and nobody received. Checked
+          # first because nothing else matters if the key isn't there.
+          if [ "$keyed" = "false" ]; then
+            echo "::error::TEXTBELT_KEY is not visible to the running app — NOTHING is sending, including appointment reminders."
+            echo "  In Vercel → Settings → Environment Variables, check:"
+            echo "    · the name is exactly TEXTBELT_KEY (no typo, no trailing space)"
+            echo "    · the Production scope is ticked, not just Preview/Development"
+            echo "    · the value isn't empty"
+            echo "  Then REDEPLOY — variables only reach builds created after they're added."
+            exit 1
+          fi
 
           if [ "$fails" -gt 0 ] 2>/dev/null; then
             echo "::error::$fails message(s) failed to send despite HTTP 200. Most likely Textbelt is out of credits or the key is invalid."

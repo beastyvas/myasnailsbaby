@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { checkQuota, normalizePhone, sendSms } from "@/utils/sms";
+import { checkQuota, normalizePhone, sendSms, textbeltConfigured } from "@/utils/sms";
 import { GROWTH_ENABLED } from "@/utils/features";
 import { hoursSince, hoursUntil, todayVegas, vegasParts } from "@/utils/time";
 import * as M from "@/utils/messages";
@@ -324,5 +324,10 @@ export default async function handler(req, res) {
     // Read by the workflow, which fails the run when this gets low — a
     // green tick while texts silently stop is the failure mode being closed.
     creditsLeft,
+    // `creditsLeft: null` on its own is ambiguous — it means either "no key"
+    // or "the quota check failed". That ambiguity cost real time diagnosing
+    // four phantom sends, so say which it is. Reports whether the key is
+    // visible to this process, never the key itself.
+    textbeltConfigured: textbeltConfigured(),
   });
 }
