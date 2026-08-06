@@ -59,3 +59,29 @@ jobs:
             echo "  500 → CRON_SECRET isn't set in Vercel at all"
             exit 1
           fi
+
+          # HTTP 200 is not the same as "it worked". The engine answers 200
+          # with a populated `failures` array when Textbelt rejected sends —
+          # so a run where every single text failed used to be a green tick
+          # and no email. That is the failure this block exists to catch.
+          #
+          # This is deliberately the alerting channel rather than a text
+          # message: the likeliest cause is Textbelt being out of credits, and
+          # alerting about broken texting by sending a text fails at exactly
+          # the moment it's needed.
+          fails=$(jq -r '(.failures // []) | length' /tmp/body.txt 2>/dev/null || echo 0)
+          credits=$(jq -r '.creditsLeft // "unknown"' /tmp/body.txt 2>/dev/null || echo unknown)
+          echo "failed sends: $fails   credits left: $credits"
+
+          if [ "$fails" -gt 0 ] 2>/dev/null; then
+            echo "::error::$fails message(s) failed to send despite HTTP 200. Most likely Textbelt is out of credits or the key is invalid."
+            echo "  Check the balance: https://textbelt.com/quota/<your key>"
+            exit 1
+          fi
+
+          # Warn early enough to act. "unknown" means the key isn't set or the
+          # quota check itself failed — different from empty, so don't alarm.
+          if [ "$credits" != "unknown" ] && [ "$credits" -lt 15 ] 2>/dev/null; then
+            echo "::error::Only $credits Textbelt credits left — texts will stop soon. Top up the key."
+            exit 1
+          fi

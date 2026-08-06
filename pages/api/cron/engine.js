@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { normalizePhone, sendSms } from "@/utils/sms";
+import { checkQuota, normalizePhone, sendSms } from "@/utils/sms";
 import { hoursSince, hoursUntil, todayVegas, vegasParts } from "@/utils/time";
 import * as M from "@/utils/messages";
 import {
@@ -277,6 +277,36 @@ export default async function handler(req, res) {
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   console.log(`Engine: sent ${total}`, counts, quiet ? `(quiet hours, held ${skippedQuiet})` : "");
 
+  // Asked once per run rather than scraped off a send, because most runs send
+  // nothing — and a quiet run is exactly when advance warning is useful.
+  const creditsLeft = await checkQuota();
+
+  // Record the run. Bookkeeping must never fail a run that already sent
+  // texts — the messages are gone, and erroring now would only cause a
+  // pointless retry. supabase-js resolves with { error } rather than
+  // throwing, so this is checked, not caught; the try is only for a genuine
+  // network throw underneath.
+  try {
+    const { error: runErr } = await supabase.from("automation_runs").insert({
+      sent: total,
+      counts,
+      failures: failures.length,
+      credits_left: creditsLeft,
+      quiet_hours: quiet,
+      held: skippedQuiet,
+    });
+    if (runErr) {
+      // Most likely cause: the migration hasn't been run yet. Say so plainly
+      // rather than leaving a bare Postgres message in the log.
+      console.error(
+        `Engine: couldn't record the run (${runErr.message}) — ` +
+          "has supabase/migrations/add_automation_runs.sql been run?"
+      );
+    }
+  } catch (err) {
+    console.error("Engine: couldn't record the run:", err?.message || err);
+  }
+
   return res.status(200).json({
     ok: true,
     sent: total,
@@ -288,5 +318,8 @@ export default async function handler(req, res) {
     // missing sms_log table for a day.
     quietHours: quiet,
     heldForMorning: skippedQuiet,
+    // Read by the workflow, which fails the run when this gets low — a
+    // green tick while texts silently stop is the failure mode being closed.
+    creditsLeft,
   });
 }

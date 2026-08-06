@@ -6,6 +6,7 @@
  */
 
 const TEXTBELT_ENDPOINT = "https://textbelt.com/text";
+const TEXTBELT_QUOTA_ENDPOINT = "https://textbelt.com/quota";
 
 /** Links are off.
  *
@@ -125,6 +126,34 @@ async function post(to, message, opts) {
   } catch (err) {
     console.error("Textbelt request failed:", err);
     return { ok: false };
+  }
+}
+
+/**
+ * Textbelt credits remaining, or null if we can't tell.
+ *
+ * Every send already returns `quotaRemaining` and every send already threw it
+ * away — but most runs send nothing, and a run that sends nothing is exactly
+ * when you'd want advance warning. So this asks directly, once per run.
+ *
+ * Running out of credits is the most likely real failure and it fails
+ * silently: sendSms returns false, the engine records it in `failures`, and
+ * the run still answers HTTP 200. Knowing the balance beforehand is what turns
+ * that into a warning instead of a surprise.
+ *
+ * Null means unknown, never zero. An unconfigured key and an empty balance are
+ * different things and must not produce the same alarm.
+ */
+export async function checkQuota() {
+  if (!textbeltConfigured()) return null;
+  try {
+    const res = await fetch(`${TEXTBELT_QUOTA_ENDPOINT}/${process.env.TEXTBELT_KEY}`);
+    const json = await res.json();
+    return typeof json.quotaRemaining === "number" ? json.quotaRemaining : null;
+  } catch (err) {
+    // Never throw: a bookkeeping call must not be able to stop texts going out.
+    console.error("Textbelt quota check failed:", err?.message || err);
+    return null;
   }
 }
 

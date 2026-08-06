@@ -30,6 +30,20 @@ function serviceOptions(current) {
   return current && !base.includes(current) ? [...base, current] : base;
 }
 
+/** "2h ago" — relative beats a timestamp here, since the only question Mya
+ *  has is whether this is still happening. */
+function timeAgo(iso) {
+  const ms = Date.now() - Date.parse(iso);
+  if (!Number.isFinite(ms)) return "";
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return days === 1 ? "yesterday" : `${days}d ago`;
+}
+
 function SectionHeading({ children }) {
   return (
     <div className="flex items-center gap-3 mb-6">
@@ -410,6 +424,19 @@ export default function Dashboard() {
     rebook_after_weeks: 3,
   });
   const [savingAutomations, setSavingAutomations] = useState(false);
+  const [autoStatus, setAutoStatus] = useState(null);
+
+  /** What the site has been doing on its own. Never blocks the dashboard —
+   *  a failure here just hides the panel rather than breaking the page. */
+  async function fetchAutomationStatus() {
+    try {
+      const res = await fetch("/api/automations-status");
+      if (!res.ok) return;
+      setAutoStatus(await res.json());
+    } catch {
+      /* panel stays hidden */
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -418,6 +445,7 @@ export default function Dashboard() {
         await Promise.all([
           fetchGallery(), fetchAvailability(), fetchBookings(),
           fetchBio(), fetchScheduleSettings(), fetchClientProfiles(),
+          fetchAutomationStatus(),
         ]);
       }
       setReady(true);
@@ -941,6 +969,79 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+
+            {/* What the site did on its own.
+                Mya had no view of this at all — the site was texting her
+                clients and the only record was a GitHub Actions log. If it
+                stopped she'd never have noticed, she'd just have got fewer
+                rebookings. The banners are the important half: they make
+                silence mean something. */}
+            {autoStatus?.ok && (
+              <div className="bg-white border border-stone-200 p-6">
+                <SectionHeading>Automatic Texts</SectionHeading>
+
+                {autoStatus.health === "stale" && (
+                  <div className="mb-4 border border-red-300 bg-red-50 px-4 py-3">
+                    <p className="text-sm font-semibold text-red-900">Automatic texts may have stopped</p>
+                    <p className="text-sm text-red-800 mt-0.5">
+                      Nothing has run in over 6 hours. Reminders and review requests
+                      probably aren&rsquo;t going out — let Nick know.
+                    </p>
+                  </div>
+                )}
+                {autoStatus.health === "never" && (
+                  <div className="mb-4 border border-stone-300 bg-stone-50 px-4 py-3">
+                    <p className="text-sm text-stone-700">Waiting for the first run.</p>
+                  </div>
+                )}
+                {autoStatus.health === "failing" && (
+                  <div className="mb-4 border border-red-300 bg-red-50 px-4 py-3">
+                    <p className="text-sm font-semibold text-red-900">Some texts didn&rsquo;t send</p>
+                    <p className="text-sm text-red-800 mt-0.5">
+                      The last run couldn&rsquo;t deliver {autoStatus.failures}{" "}
+                      {autoStatus.failures === 1 ? "message" : "messages"} — let Nick know.
+                    </p>
+                  </div>
+                )}
+                {autoStatus.health === "low-credits" && (
+                  <div className="mb-4 border border-amber-300 bg-amber-50 px-4 py-3">
+                    <p className="text-sm font-semibold text-amber-900">Texts are about to stop</p>
+                    <p className="text-sm text-amber-800 mt-0.5">
+                      The texting account is nearly empty — let Nick know so he can top it up.
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4 mb-5">
+                  <div>
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">Sent today</p>
+                    <p className="text-3xl font-bold text-stone-900">{autoStatus.sentToday}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">This week</p>
+                    <p className="text-3xl font-bold text-stone-900">{autoStatus.sentThisWeek}</p>
+                  </div>
+                </div>
+
+                {autoStatus.recent.length > 0 ? (
+                  <div className="divide-y divide-stone-100 border-t border-stone-100">
+                    {autoStatus.recent.map((r, i) => (
+                      <div key={i} className="py-2.5 flex items-baseline justify-between gap-4">
+                        <span className="text-sm text-stone-700 truncate">
+                          {r.label}
+                          {r.name && <span className="text-stone-400"> · {r.name}</span>}
+                        </span>
+                        <span className="text-xs text-stone-400 whitespace-nowrap">{timeAgo(r.sentAt)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-stone-500">
+                    Nothing sent yet. Reminders go out the day before an appointment.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Today's Schedule */}
             <div className="bg-white border border-stone-200 p-6">

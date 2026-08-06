@@ -73,6 +73,29 @@ the same type-adaptive treatment, but there's no reason to run them separately:
 
 If any row of the report says `FAILED`, the `detail` column says what to do.
 
+Then run **`add_automation_runs.sql`** as well. It's newer than
+`verify_schema.sql` and records one row per engine run, which is what makes
+the dashboard able to tell "nothing was due" apart from "nothing is running".
+
+## Knowing when the automations break
+
+Three things can go wrong, and each now announces itself:
+
+| | how you find out |
+| --- | --- |
+| The endpoint errors | GitHub emails — the workflow fails on any non-2xx |
+| Texts fail despite `HTTP 200` | GitHub emails — the workflow now also fails when `failures` is non-empty |
+| Textbelt credits run low | GitHub emails below 15 credits, before sending stops |
+| The engine stops running at all | Red banner on Mya's dashboard after 6 hours of silence |
+
+That last one is the one that used to be invisible. GitHub cancelled two runs
+for lack of a runner on the day this was built; without a heartbeat, the
+*absence* of failure emails looks exactly like everything being fine.
+
+Alerting deliberately goes over email rather than SMS: the likeliest cause is
+Textbelt being out of credits, and a text-message alert about broken texting
+fails precisely when you need it.
+
 ## The hourly automations
 
 `/api/cron/engine` does everything that happens on its own:
