@@ -90,6 +90,16 @@ jobs:
             exit 1
           fi
 
+          # A negative balance isn't a balance. Textbelt answers the quota
+          # endpoint with a negative number when it doesn't recognise the key,
+          # which is a different problem from having spent your credits and
+          # wants a different fix — so don't report them as the same thing.
+          if [ "$credits" != "unknown" ] && [ "$credits" -lt 0 ] 2>/dev/null; then
+            echo "::error::Textbelt does not recognise the key (quota came back $credits). The key is present but wrong or expired."
+            echo "  Compare the value in Vercel against the funded key at https://textbelt.com/quota/<key>"
+            exit 1
+          fi
+
           if [ "$fails" -gt 0 ] 2>/dev/null; then
             echo "::error::$fails message(s) failed to send despite HTTP 200. Most likely Textbelt is out of credits or the key is invalid."
             echo "  Check the balance: https://textbelt.com/quota/<your key>"
