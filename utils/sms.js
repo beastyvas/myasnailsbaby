@@ -23,8 +23,29 @@ const URL_PATTERN = /https?:\/\/\S+/g;
 
 const SITE_HOST = "myasnailsbaby.com";
 
+/**
+ * The Textbelt API key.
+ *
+ * Accepts either name. The variable in Vercel was TEXTBELT_API_KEY while this
+ * code only ever read TEXTBELT_KEY, so every send took the "no key configured"
+ * path — which used to return success without sending. Four days of texts that
+ * the dashboard counted and no client received, over one word.
+ *
+ * Both names are read rather than picking a winner and renaming, because the
+ * failure was never that one name is correct: it was that a missing key was
+ * indistinguishable from a working one. TEXTBELT_API_KEY is a perfectly
+ * reasonable thing to call it, and code that only works if you guess the
+ * author's convention is the brittle part.
+ *
+ * Trimmed because a trailing newline from a paste is the same silent failure
+ * wearing a different hat.
+ */
+export function textbeltKey() {
+  return (process.env.TEXTBELT_KEY || process.env.TEXTBELT_API_KEY || "").trim();
+}
+
 export function textbeltConfigured() {
-  return !!process.env.TEXTBELT_KEY;
+  return !!textbeltKey();
 }
 
 export function siteUrl() {
@@ -92,8 +113,8 @@ export async function sendSms(phone, message, opts = {}) {
   if (!textbeltConfigured()) {
     if (process.env.NODE_ENV === "production") {
       console.error(
-        `TEXTBELT_KEY is missing — refusing to report a send to ${to} that did not happen. ` +
-          "Set it in Vercel (Production scope) and redeploy."
+        `No Textbelt key — refusing to report a send to ${to} that did not happen. ` +
+          "Set TEXTBELT_KEY or TEXTBELT_API_KEY in Vercel (Production scope) and redeploy."
       );
       return false;
     }
@@ -119,7 +140,7 @@ async function post(to, message, opts) {
   const payload = {
     phone: to,
     message,
-    key: process.env.TEXTBELT_KEY,
+    key: textbeltKey(),
   };
 
   if (opts.listenForReplies) {
@@ -168,7 +189,7 @@ async function post(to, message, opts) {
 export async function checkQuota() {
   if (!textbeltConfigured()) return null;
   try {
-    const res = await fetch(`${TEXTBELT_QUOTA_ENDPOINT}/${process.env.TEXTBELT_KEY}`);
+    const res = await fetch(`${TEXTBELT_QUOTA_ENDPOINT}/${textbeltKey()}`);
     const json = await res.json();
     return typeof json.quotaRemaining === "number" ? json.quotaRemaining : null;
   } catch (err) {

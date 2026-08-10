@@ -9,7 +9,7 @@ Set these in Vercel (Project → Settings → Environment Variables), and in
 
 | Variable | What it's for |
 | --- | --- |
-| `TEXTBELT_KEY` | Your Textbelt API key. **Without it no texts are sent** — messages are printed to the server log instead, which is what you want locally. |
+| `TEXTBELT_KEY` *or* `TEXTBELT_API_KEY` | Your Textbelt API key — either name works. **Without it no texts are sent.** Locally the message is printed to the server log instead; in production the send fails loudly, so a missing key can never be mistaken for a working one. |
 | `TEXTBELT_WEBHOOK_SECRET` | Any long random string you invent. Textbelt echoes it back on inbound replies so `/api/sms-reply` can tell a real reply from someone poking the URL. **Without it, STOP replies are ignored** and the route refuses everything. |
 | `MYA_PHONE_NUMBER` | Where new-booking alerts, reactivation wins, and forwarded client replies go. |
 | `NEXT_PUBLIC_SITE_URL` | e.g. `https://www.myasnailsbaby.com`. Used for the reply webhook URL and for canonical/sitemap links. |

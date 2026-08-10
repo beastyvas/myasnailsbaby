@@ -81,9 +81,9 @@ jobs:
           # four texts the dashboard counted and nobody received. Checked
           # first because nothing else matters if the key isn't there.
           if [ "$keyed" = "false" ]; then
-            echo "::error::TEXTBELT_KEY is not visible to the running app — NOTHING is sending, including appointment reminders."
+            echo "::error::No Textbelt key visible to the running app — NOTHING is sending, including appointment reminders."
             echo "  In Vercel → Settings → Environment Variables, check:"
-            echo "    · the name is exactly TEXTBELT_KEY (no typo, no trailing space)"
+            echo "    · a variable named TEXTBELT_KEY or TEXTBELT_API_KEY exists (either works)"
             echo "    · the Production scope is ticked, not just Preview/Development"
             echo "    · the value isn't empty"
             echo "  Then REDEPLOY — variables only reach builds created after they're added."
