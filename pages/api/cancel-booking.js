@@ -1,10 +1,12 @@
-import Stripe from "stripe";
+// No Stripe import: this route no longer refunds anything. The deposit is
+// non-refundable and becomes a credit instead, so nothing here touches a
+// payment. Leaving the client wired up would imply otherwise.
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { sendSms } from "@/utils/sms";
+import { normalizePhone, sendSms } from "@/utils/sms";
+import { DEPOSIT_CENTS } from "@/utils/pricing";
 import * as M from "@/utils/messages";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -56,24 +58,53 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Cannot cancel a past appointment" });
   }
 
-  const refundEligible = hoursUntil > 48 && booking.paid && booking.session_id;
-  let refundIssued = false;
+  // NO REFUND. The deposit is non-refundable — the booking page and the terms
+  // have always said so, and this route used to refund it anyway whenever the
+  // cancellation was more than 48 hours out. A client cancelled and got their
+  // $20 back off the back of that contradiction.
+  //
+  // Non-refundable is not the same as forfeited, though. Mya keeps the money
+  // and honours it against their next visit, so instead of a Stripe refund
+  // the deposit becomes a credit against their phone number.
+  let creditIssued = false;
+  if (booking.paid) {
+    const creditPhone = normalizePhone(cleanPhone);
+    // Name and date are copied onto the credit rather than joined back:
+    // cancelling deletes the booking a few lines below, so a foreign key
+    // would be null before anyone could read it. Mya still needs to be able
+    // to answer "where did this $20 come from".
+    const { error: creditErr } = await supabase.from("client_credits").insert({
+      phone: creditPhone,
+      amount_cents: DEPOSIT_CENTS,
+      reason: "cancelled_deposit",
+      booking_id,
+      client_name: booking.name || "",
+      source_date: booking.date,
+    });
 
-  // Issue Stripe refund if eligible
-  if (refundEligible) {
-    try {
-      const stripeSession = await stripe.checkout.sessions.retrieve(booking.session_id);
-      if (stripeSession.payment_intent) {
-        await stripe.refunds.create({
-          payment_intent: stripeSession.payment_intent,
-          reason: "requested_by_customer",
-        });
-        refundIssued = true;
-        console.log(`✅ Refund issued for booking ${booking_id}`);
-      }
-    } catch (refundErr) {
-      console.error("❌ Refund failed:", refundErr.message);
-      return res.status(500).json({ error: "Failed to process refund. Please DM @myasnailsbaby for help." });
+    if (creditErr) {
+      // Deliberately not fatal. Freeing the slot matters more than the
+      // bookkeeping, and failing here would leave the appointment on the
+      // calendar for a client who believes they cancelled.
+      console.error(
+        `⚠️ Couldn't record the $20 credit for ${creditPhone} (${creditErr.message}) — ` +
+          "has supabase/migrations/add_client_credits.sql been run?"
+      );
+    } else {
+      creditIssued = true;
+      console.log(`💳 $20 credit recorded for ${creditPhone}`);
+    }
+  }
+
+  // If the booking being cancelled had itself consumed a credit, hand it
+  // back. Otherwise cancelling twice would quietly eat the client's money.
+  if (booking.credit_applied_cents > 0) {
+    const { error: releaseErr } = await supabase.rpc("release_client_credit", {
+      p_phone: normalizePhone(cleanPhone),
+      p_cents: booking.credit_applied_cents,
+    });
+    if (releaseErr) {
+      console.error(`⚠️ Couldn't release ${booking.credit_applied_cents}c of credit:`, releaseErr.message);
     }
   }
 
@@ -90,12 +121,11 @@ export default async function handler(req, res) {
 
   // SMS to client
   {
-    let refundNote = "";
-    if (refundIssued) {
-      refundNote = " Your $20 deposit refund has been initiated and should appear in 5-10 business days.";
-    } else if (booking.paid) {
-      refundNote = " Your $20 deposit is non-refundable for cancellations within 48 hours of the appointment.";
-    }
+    // The deposit isn't coming back to their card, but they haven't lost it
+    // — say both halves, or "non-refundable" reads as "gone".
+    const refundNote = booking.paid
+      ? " Your $20 deposit isn't refunded, but it stays on your account and comes off your next appointment."
+      : "";
 
     await sendSms(
       cleanPhone,
@@ -116,7 +146,7 @@ export default async function handler(req, res) {
           name: booking.name,
           date: booking.date,
           startTime: booking.start_time,
-          refundIssued,
+          creditIssued,
         })
       );
     }
@@ -136,7 +166,7 @@ export default async function handler(req, res) {
         <p><strong>Service:</strong> ${booking.service}</p>
         <p><strong>Date:</strong> ${booking.date}</p>
         <p><strong>Time:</strong> ${to12h(booking.start_time)}</p>
-        <p><strong>Deposit Refunded:</strong> ${refundIssued ? "Yes — $20 returned to client" : booking.paid ? "No — cancelled within 48 hours" : "N/A — no deposit on file"}</p>
+        <p><strong>Deposit:</strong> ${creditIssued ? "Kept — $20 credited to them for next time" : booking.paid ? "Kept — credit NOT recorded, check the logs" : "N/A — no deposit on file"}</p>
       `,
     });
   } catch (emailErr) {
@@ -146,10 +176,8 @@ export default async function handler(req, res) {
   // Cancellation confirmation email to client
   if (booking.email) {
     try {
-      const refundRow = refundIssued
-        ? `<tr><td style="padding:7px 0;color:#a8a29e;font-size:12px;border-bottom:1px solid #f5f5f4;">Refund</td><td style="padding:7px 0;color:#166534;font-weight:bold;font-size:13px;border-bottom:1px solid #f5f5f4;">$20 refund initiated (5–10 business days)</td></tr>`
-        : booking.paid
-        ? `<tr><td style="padding:7px 0;color:#a8a29e;font-size:12px;border-bottom:1px solid #f5f5f4;">Deposit</td><td style="padding:7px 0;color:#9f1239;font-weight:bold;font-size:13px;border-bottom:1px solid #f5f5f4;">Non-refundable (cancelled within 48 hrs)</td></tr>`
+      const refundRow = booking.paid
+        ? `<tr><td style="padding:7px 0;color:#a8a29e;font-size:12px;border-bottom:1px solid #f5f5f4;">Deposit</td><td style="padding:7px 0;color:#9f1239;font-weight:bold;font-size:13px;border-bottom:1px solid #f5f5f4;">Not refunded — $20 credit toward your next appointment</td></tr>`
         : "";
 
       await resend.emails.send({
@@ -205,5 +233,5 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(200).json({ success: true, refund_issued: refundIssued });
+  return res.status(200).json({ success: true, credit_issued: creditIssued });
 }

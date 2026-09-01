@@ -7,6 +7,8 @@ import { sendSmsOnce } from "@/utils/smsOnce";
 import * as M from "@/utils/messages";
 import { firstNameOf, ownerAlert } from "@/utils/reactivation";
 import { prettyDate } from "@/utils/time";
+import { applyCredit, availableCents } from "@/utils/credits";
+import { DEPOSIT_CENTS } from "@/utils/pricing";
 
 export const config = {
   api: { bodyParser: false }, // ✅ raw body for Stripe signature verification
@@ -76,6 +78,79 @@ function addHoursTo24h(start24, hours) {
  * Never throws. A booking that's already paid for must not be undone because
  * the campaign bookkeeping had a bad day.
  */
+/**
+ * Spend any credit this client is owed on the booking they just made.
+ *
+ * Keyed by phone, like the reactivation credit above and for the same reason:
+ * it's the only thing that survives between a cancelled booking and a new
+ * one. The cancelled booking row is deleted outright.
+ *
+ * Returns the cents applied, so the owner alert can state a finished total.
+ * Never throws — the client has already paid, and failing here must not
+ * unwind a booking over bookkeeping.
+ *
+ * @returns {Promise<number>} cents applied, 0 if none
+ */
+async function applyClientCredit(bookingId, booking) {
+  try {
+    const phone = normalizePhone(booking.phone);
+    if (!phone) return 0;
+
+    const { data: rows, error } = await supabase
+      .from("client_credits")
+      .select("id, amount_cents, redeemed_cents")
+      .eq("phone", phone)
+      .order("created_at", { ascending: true }); // oldest credit first
+
+    if (error) {
+      console.error("⚠️ Credit lookup failed:", error.message);
+      return 0;
+    }
+
+    const open = (rows || []).filter((r) => r.amount_cents > r.redeemed_cents);
+    if (open.length === 0) return 0;
+
+    const { applied } = applyCredit({
+      quotedCents: booking.quoted_cents,
+      depositCents: DEPOSIT_CENTS,
+      availableCents: availableCents(open),
+    });
+    if (applied <= 0) return 0;
+
+    // Draw down the oldest credits first, only as much as each holds.
+    let left = applied;
+    for (const row of open) {
+      if (left <= 0) break;
+      const take = Math.min(row.amount_cents - row.redeemed_cents, left);
+      const { error: upErr } = await supabase
+        .from("client_credits")
+        .update({ redeemed_cents: row.redeemed_cents + take })
+        .eq("id", row.id);
+      if (upErr) {
+        console.error("⚠️ Couldn't redeem credit row:", upErr.message);
+        // Stop rather than keep drawing down rows we can't record, and only
+        // claim what actually stuck.
+        break;
+      }
+      left -= take;
+    }
+
+    const actuallyApplied = applied - left;
+    if (actuallyApplied <= 0) return 0;
+
+    await supabase
+      .from("bookings")
+      .update({ credit_applied_cents: actuallyApplied })
+      .eq("id", bookingId);
+
+    console.log(`💳 Applied ${actuallyApplied}c of credit to booking ${bookingId}`);
+    return actuallyApplied;
+  } catch (err) {
+    console.error("⚠️ applyClientCredit failed:", err?.message || err);
+    return 0;
+  }
+}
+
 async function creditReactivation(bookingId, booking) {
   try {
     const phone = normalizePhone(booking.phone);
@@ -313,6 +388,11 @@ if (conflicts && conflicts.length > 0) {
       M.bookingConfirmation({ name: insert.name, date: insert.date, startTime: insert.start_time })
     );
 
+    // If they cancelled a previous appointment, the deposit Mya kept is owed
+    // back to them as credit. Consume it now so the alert below and her
+    // dashboard both state the same finished total.
+    const creditApplied = await applyClientCredit(created.id, insert);
+
     // Mya has always been emailed about a new booking, but never texted —
     // an email is easy to miss mid-set. Failures are swallowed: the client
     // has already paid and been confirmed.
@@ -326,6 +406,7 @@ if (conflicts && conflicts.length > 0) {
           date: insert.date,
           startTime: insert.start_time,
           quotedCents: insert.quoted_cents,
+          creditAppliedCents: creditApplied,
         })
       );
     }

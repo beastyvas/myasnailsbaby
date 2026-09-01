@@ -5,7 +5,7 @@
 // Prices come from the same module the booking form prices against, so the
 // numbers a crawler reads and the numbers a client is charged are the same
 // numbers. pricing.js imports nothing, so there's no cycle here.
-import { BOOKABLE_SERVICES, PEDICURES } from "./pricing";
+import { BOOKABLE_SERVICES, PEDICURES } from "./pricing.js";
 
 export const SITE_NAME = "Mya's Nails Baby";
 export const SITE_TAGLINE = "Nail Artist in Las Vegas";
@@ -228,7 +228,7 @@ export function faqJsonLd() {
   const qa = [
     [
       "Do I need a deposit to book with Mya?",
-      `Yes. Every appointment is secured with a $${DEPOSIT_DOLLARS} deposit, which goes toward the cost of your service. It is refundable if you cancel at least 48 hours before your appointment.`,
+      `Yes. Every appointment is secured with a $${DEPOSIT_DOLLARS} deposit, which goes toward the cost of your service. It isn't refunded if you cancel, but it isn't lost either — it carries over as credit toward your next appointment.`,
     ],
     [
       "Where is Mya's Nails Baby located?",
@@ -244,7 +244,10 @@ export function faqJsonLd() {
     ],
     [
       "How do I cancel or reschedule my appointment?",
-      "Use the reschedule or cancel link on the website with the phone number you booked with, or DM @myasnailsbaby. Cancellations at least 48 hours ahead have the deposit refunded.",
+      // This used to say the deposit was refunded at 48 hours, which is not
+      // the policy — and being in the FAQ schema meant Google could show that
+      // promise directly in search results.
+      "Use the reschedule or cancel link on the website with the phone number you booked with, or DM @myasnailsbaby. The $20 deposit isn't refunded, but it carries over as credit toward your next appointment. Please give at least 48 hours' notice where you can.",
     ],
   ];
 

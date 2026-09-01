@@ -379,7 +379,12 @@ export default function Home() {
                   </svg>
                 ),
                 title: "Cancellation",
-                body: "Cancellations must be made at least 48 hours in advance to avoid a cancellation fee.",
+                // "avoid a cancellation fee" was vague and implied a refund
+                // existed at 48 hours. It doesn't — the deposit is never
+                // refunded. Saying it plainly, together with the part that
+                // makes it fair, avoids the conversation happening at the
+                // chair instead.
+                body: "Your $20 deposit isn't refundable, but it isn't lost either — it carries over to your next appointment. Please give at least 48 hours' notice so the slot can be filled.",
               },
             ].map(({ icon, title, body }) => (
               <div key={title} className="bg-white border border-stone-200 p-6 policy-card card-lift">

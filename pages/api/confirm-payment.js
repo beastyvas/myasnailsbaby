@@ -220,7 +220,7 @@ export default async function handler(req, res) {
 
                 <!-- Policy -->
                 <p style="color: #78716c; font-size: 12px; margin: 0 0 28px; line-height: 1.7; border-top: 1px solid #e7e5e4; padding-top: 20px;">
-                  Your $20 deposit is <strong style="color: #1c1917;">refundable</strong> if you cancel at least 48 hours before your appointment. To cancel or reschedule, visit myasnailsbaby.com or DM @myasnailsbaby.
+                  Your $20 deposit is <strong style="color: #1c1917;">non-refundable</strong>, but you don't lose it &mdash; if you cancel, it carries over as credit toward your next appointment. Please give at least 48 hours' notice where you can. To cancel or reschedule, visit myasnailsbaby.com or DM @myasnailsbaby.
                 </p>
 
                 <!-- CTA -->

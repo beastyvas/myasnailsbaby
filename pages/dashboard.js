@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
 import "react-calendar/dist/Calendar.css";
-import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent, discountedCents } from "@/utils/reactivation";
+import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
+import { chairTotal } from "@/utils/credits";
 import { normalizePhone } from "@/utils/sms";
 import { BOOKABLE_SERVICES, DEPOSIT_CENTS, formatPrice, serviceLabel } from "@/utils/pricing";
 import { GROWTH_ENABLED } from "@/utils/features";
@@ -1192,24 +1193,46 @@ export default function Dashboard() {
                                 details rather than among them, and names the
                                 figure so it isn't mental arithmetic with
                                 someone waiting. */}
-                            {booking.discount_percent > 0 && (
-                              <div className="mb-4 border border-rose-300 bg-rose-50 px-3 py-2">
-                                <p className="text-xs font-semibold text-rose-900 uppercase tracking-wider">
-                                  Came back · take {booking.discount_percent}% off
-                                </p>
-                                {booking.quoted_cents ? (
-                                  <p className="text-sm text-rose-900 mt-0.5">
-                                    {formatPrice(discountedCents(booking.quoted_cents, booking.discount_percent))}
-                                    <span className="text-rose-700"> instead of {formatPrice(booking.quoted_cents)}</span>
-                                    <span className="text-rose-700">
-                                      {" "}· {formatPrice(Math.max(0, discountedCents(booking.quoted_cents, booking.discount_percent) - DEPOSIT_CENTS))} due at the visit
-                                    </span>
+                            {/* ONE banner for everything that reduces the bill.
+                                A booking can carry a reactivation discount and
+                                a credit from a cancelled appointment at the
+                                same time; two separate banners each subtracted
+                                only the deposit, so both would have overstated
+                                the reduction. chairTotal() resolves the lot to
+                                a single number she can read out. */}
+                            {(booking.discount_percent > 0 || booking.credit_applied_cents > 0) && (() => {
+                              const t = chairTotal({
+                                quotedCents: booking.quoted_cents,
+                                discountPercent: booking.discount_percent || 0,
+                                depositCents: DEPOSIT_CENTS,
+                                creditCents: booking.credit_applied_cents || 0,
+                              });
+                              const reasons = [
+                                booking.discount_percent > 0 && `${booking.discount_percent}% off — came back`,
+                                booking.credit_applied_cents > 0 &&
+                                  `${formatPrice(booking.credit_applied_cents)} credit — cancelled appt`,
+                              ].filter(Boolean);
+                              return (
+                                <div className="mb-4 border border-rose-300 bg-rose-50 px-3 py-2">
+                                  <p className="text-xs font-semibold text-rose-900 uppercase tracking-wider">
+                                    {reasons.join(" · ")}
                                   </p>
-                                ) : (
-                                  <p className="text-sm text-rose-900 mt-0.5">Discount off whatever the set comes to.</p>
-                                )}
-                              </div>
-                            )}
+                                  {booking.quoted_cents ? (
+                                    <p className="text-sm text-rose-900 mt-0.5">
+                                      <strong>{formatPrice(t.dueCents)} due at the visit</strong>
+                                      <span className="text-rose-700">
+                                        {" "}· {formatPrice(t.listCents)} set, {formatPrice(DEPOSIT_CENTS)} deposit paid
+                                        {t.creditUsed > 0 ? `, ${formatPrice(t.creditUsed)} credit` : ""}
+                                      </span>
+                                    </p>
+                                  ) : (
+                                    <p className="text-sm text-rose-900 mt-0.5">
+                                      Take it off whatever the set comes to.
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()}
 
                             <div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4 text-sm">
                               {booking.service && booking.service !== "N/A" && (

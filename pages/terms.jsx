@@ -72,8 +72,8 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-bold text-stone-900 mb-4" style={sectionHeading}>4. Cancellation and Rescheduling Policy</h2>
             <div className="space-y-4 text-stone-700">
-              <div><h3 className="font-semibold text-stone-900 mb-1">4.1 Advance Cancellations</h3><p className="leading-relaxed">If you cancel at least 48 hours in advance, your deposit will be credited toward a future appointment within 90 days.</p></div>
-              <div><h3 className="font-semibold text-stone-900 mb-1">4.2 Late Cancellations</h3><p className="leading-relaxed">Cancellations made less than 48 hours before your appointment result in forfeiture of your deposit and a charge of 50% of the anticipated service cost.</p></div>
+              <div><h3 className="font-semibold text-stone-900 mb-1">4.1 Deposits Are Not Refunded</h3><p className="leading-relaxed">Your $20 deposit is not refunded to your payment method if you cancel, whenever you cancel. It is instead held as a credit on your account and applied to your next appointment. The credit does not expire.</p></div>
+              <div><h3 className="font-semibold text-stone-900 mb-1">4.2 Late Cancellations</h3><p className="leading-relaxed">Please cancel at least 48 hours in advance so the slot can be offered to someone else. Cancellations made less than 48 hours before your appointment may additionally incur a charge of up to 50% of the anticipated service cost.</p></div>
               <div><h3 className="font-semibold text-stone-900 mb-1">4.3 No-Shows</h3><p className="leading-relaxed">Failure to appear without prior notice results in forfeiture of your deposit and a charge of 50% of the anticipated service cost. Future bookings may require full prepayment.</p></div>
               <div><h3 className="font-semibold text-stone-900 mb-1">4.4 Rescheduling</h3><p className="leading-relaxed">You may reschedule up to 48 hours in advance without penalty. Contact us via phone at (702) 981-8428 or Instagram @myasnailsbaby. Online rescheduling is limited to 2 times per booking.</p></div>
             </div>

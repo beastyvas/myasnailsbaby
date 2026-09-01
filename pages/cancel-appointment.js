@@ -10,7 +10,6 @@ export default function CancelAppointmentPage() {
   const [phone, setPhone] = useState("");
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [refundIssued, setRefundIssued] = useState(false);
 
   const to12h = (time24) => {
     if (!time24) return "";
@@ -88,7 +87,6 @@ export default function CancelAppointmentPage() {
         return;
       }
 
-      setRefundIssued(data.refund_issued);
       setStep(3);
     } catch (err) {
       console.error(err);
@@ -98,8 +96,6 @@ export default function CancelAppointmentPage() {
     }
   };
 
-  const hoursUntil = booking?.hours_until ?? 0;
-  const refundEligible = hoursUntil > 48 && booking?.paid;
 
   const inputCls =
     "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 placeholder-stone-400 bg-white";
@@ -194,23 +190,21 @@ export default function CancelAppointmentPage() {
               ))}
             </div>
 
-            {/* Refund notice */}
-            {refundEligible ? (
-              <div className="bg-emerald-50 border border-emerald-200 p-4">
-                <p className="text-emerald-800 text-sm font-medium">
-                  Your $20 deposit will be refunded.
-                </p>
-                <p className="text-emerald-700 text-xs mt-1">
-                  Refunds typically appear in 5–10 business days.
-                </p>
-              </div>
-            ) : booking?.paid ? (
+            {/* Deposit notice.
+                No 48-hour branch any more: the deposit is non-refundable
+                whenever you cancel, which is what the booking page and the
+                terms have always said. This page used to promise a refund
+                past 48 hours and the API used to honour it — a client
+                cancelled and got their $20 back.
+                Both halves are said together, because "non-refundable" on
+                its own reads as "gone" and it isn't. */}
+            {booking?.paid ? (
               <div className="bg-amber-50 border border-amber-200 p-4">
                 <p className="text-amber-800 text-sm font-medium">
-                  Your $20 deposit will not be refunded.
+                  Your $20 deposit isn&rsquo;t refunded &mdash; but you don&rsquo;t lose it.
                 </p>
                 <p className="text-amber-700 text-xs mt-1">
-                  Cancellations within 48 hours of the appointment are non-refundable.
+                  It stays on your account and comes off your next appointment with Mya.
                 </p>
               </div>
             ) : null}
@@ -279,16 +273,13 @@ export default function CancelAppointmentPage() {
               </p>
             </div>
 
-            {refundIssued ? (
-              <div className="bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
-                <p className="font-medium">$20 refund initiated.</p>
-                <p className="text-emerald-700 text-xs mt-1">
-                  Allow 5–10 business days for the refund to appear.
-                </p>
-              </div>
-            ) : booking?.paid ? (
+            {booking?.paid ? (
               <div className="bg-stone-50 border border-stone-200 p-4 text-sm text-stone-700">
-                <p>Your $20 deposit was not refunded (cancelled within 48 hours).</p>
+                <p className="font-medium text-stone-900">Your $20 is saved for next time.</p>
+                <p className="text-stone-600 text-xs mt-1">
+                  It isn&rsquo;t refunded to your card, but it comes off your next
+                  appointment &mdash; just book again whenever you&rsquo;re ready.
+                </p>
               </div>
             ) : null}
 

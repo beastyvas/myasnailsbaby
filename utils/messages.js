@@ -164,13 +164,26 @@ export function optOutConfirmed() {
 
 /* ──────────────────────────── to Mya ───────────────────────────────── */
 
-export function ownerNewBooking({ name, service, pedicure, date, startTime, quotedCents }) {
-  // The estimate is what she's owed at the chair less the deposit already
-  // taken, so she can see what the appointment is worth as it lands.
-  const money =
-    quotedCents != null && quotedCents > 0
-      ? `\n~$${Math.round(quotedCents / 100)} · $${Math.round((quotedCents - 2000) / 100)} due at the visit`
-      : "";
+export function ownerNewBooking({
+  name, service, pedicure, date, startTime, quotedCents, creditAppliedCents = 0,
+}) {
+  // What she's owed at the chair: the estimate, less the deposit already
+  // taken, less any credit from an appointment they cancelled before.
+  //
+  // The finished number matters more than the workings. A client with credit
+  // has given her $40 — the deposit today plus the one she kept — and both
+  // come off. Doing that subtraction in her head with someone in the chair is
+  // exactly where a credit quietly doesn't get honoured.
+  let money = "";
+  if (quotedCents != null && quotedCents > 0) {
+    const dollars = (c) => `$${Math.round(c / 100)}`;
+    const afterDeposit = Math.max(0, quotedCents - 2000);
+    const due = Math.max(0, afterDeposit - creditAppliedCents);
+    money = `\n~${dollars(quotedCents)} · ${dollars(due)} due at the visit`;
+    if (creditAppliedCents > 0) {
+      money += `\n(incl. ${dollars(creditAppliedCents)} credit from a cancelled appt)`;
+    }
+  }
   return (
     `📅 New booking — ${name || "someone"}\n` +
     `${service || "Nails"}${pedicure === "yes" ? " + pedicure" : ""}\n` +
@@ -178,11 +191,15 @@ export function ownerNewBooking({ name, service, pedicure, date, startTime, quot
   );
 }
 
-export function ownerCancelled({ name, date, startTime, refundIssued }) {
+export function ownerCancelled({ name, date, startTime, creditIssued }) {
   return (
     `❌ Cancelled — ${name}\n` +
     `${prettyDate(date)} at ${to12h(startTime)}\n` +
-    (refundIssued ? "Deposit refunded (48h+ notice)." : "Deposit kept.") +
+    // She keeps the $20 either way; the second half is the bit she has to
+    // remember, so it says what she owes them rather than just "kept".
+    (creditIssued
+      ? "You keep the $20 — they have it as credit next time."
+      : "Deposit kept.") +
     "\nThat slot is open again."
   );
 }
