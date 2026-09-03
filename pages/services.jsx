@@ -184,9 +184,9 @@ export default function Services() {
             <div className="text-stone-700 leading-relaxed space-y-3">
               <p>
                 Every appointment is held with a {formatPrice(DEPOSIT_CENTS)} deposit,
-                which goes toward the cost of your service. It isn&rsquo;t refunded if you
-                cancel, but it isn&rsquo;t lost either &mdash; it carries over to your next
-                appointment. Please give at least 48 hours&rsquo; notice where you can.
+                which goes toward the cost of your service. It&rsquo;s non-refundable.
+                Need to move your appointment? Reschedule online. To cancel, message
+                Mya directly &mdash; at least 48 hours ahead where you can.
               </p>
               <p>
                 Arriving more than 5 minutes late may mean a shortened service or a

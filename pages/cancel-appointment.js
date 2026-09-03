@@ -4,8 +4,52 @@ import { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
 import Seo from "@/components/Seo";
+import { CLIENT_CANCEL_ENABLED } from "@/utils/features";
 
 export default function CancelAppointmentPage() {
+  // Cancelling online is off. The API returns 403, so without this the page
+  // would render a form that silently fails — worse than saying plainly what
+  // to do instead. Reschedule is offered first because that's the path Mya
+  // wants people using.
+  if (!CLIENT_CANCEL_ENABLED) {
+    return (
+      <main className="min-h-screen bg-stone-50 flex items-center justify-center px-6 py-16">
+        <Seo
+          path="/cancel-appointment"
+          title="Cancel an Appointment"
+          description="To cancel an appointment with Mya's Nails Baby, message Mya directly. Rescheduling is available online."
+          noindex
+        />
+        <div className="bg-white border border-stone-200 p-8 sm:p-10 max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-stone-900 mb-3" style={{ fontFamily: "Georgia, serif" }}>
+            Need to change your appointment?
+          </h1>
+          <p className="text-stone-600 leading-relaxed mb-6">
+            You can reschedule online any time. To cancel, please message Mya
+            directly &mdash; she&rsquo;ll sort you out.
+          </p>
+          <div className="space-y-3">
+            <Link
+              href="/reschedule"
+              className="block bg-rose-800 hover:bg-rose-900 text-white px-6 py-3 font-medium text-sm tracking-wide transition"
+            >
+              Reschedule instead
+            </Link>
+            <a
+              href="https://instagram.com/myasnailsbaby"
+              className="block border border-stone-300 hover:border-stone-900 text-stone-700 hover:text-stone-900 px-6 py-3 font-medium text-sm transition"
+            >
+              Message @myasnailsbaby
+            </a>
+          </div>
+          <p className="text-stone-400 text-xs mt-6">
+            <Link href="/" className="hover:text-stone-600 transition">&larr; Back to home</Link>
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   const [step, setStep] = useState(1); // 1=phone, 2=confirm, 3=done
   const [phone, setPhone] = useState("");
   const [booking, setBooking] = useState(null);
@@ -201,10 +245,11 @@ export default function CancelAppointmentPage() {
             {booking?.paid ? (
               <div className="bg-amber-50 border border-amber-200 p-4">
                 <p className="text-amber-800 text-sm font-medium">
-                  Your $20 deposit isn&rsquo;t refunded &mdash; but you don&rsquo;t lose it.
+                  Your $20 deposit is non-refundable.
                 </p>
                 <p className="text-amber-700 text-xs mt-1">
-                  It stays on your account and comes off your next appointment with Mya.
+                  If you&rsquo;d rather move your appointment than cancel it, you can
+                  reschedule instead and keep your deposit against it.
                 </p>
               </div>
             ) : null}
@@ -275,10 +320,9 @@ export default function CancelAppointmentPage() {
 
             {booking?.paid ? (
               <div className="bg-stone-50 border border-stone-200 p-4 text-sm text-stone-700">
-                <p className="font-medium text-stone-900">Your $20 is saved for next time.</p>
+                <p className="font-medium text-stone-900">Your $20 deposit was non-refundable.</p>
                 <p className="text-stone-600 text-xs mt-1">
-                  It isn&rsquo;t refunded to your card, but it comes off your next
-                  appointment &mdash; just book again whenever you&rsquo;re ready.
+                  Message @myasnailsbaby if you have any questions about it.
                 </p>
               </div>
             ) : null}

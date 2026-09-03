@@ -13,6 +13,7 @@ import Seo from "@/components/Seo";
 import { faqJsonLd, salonJsonLd } from "@/utils/seo";
 import { prettyDate, vegasParts } from "@/utils/time";
 import { BOOKABLE_SERVICES, formatPrice, hasQuote, isLengthPriced, quote, serviceMenuLabel } from "@/utils/pricing";
+import { CLIENT_CANCEL_ENABLED } from "@/utils/features";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -384,7 +385,7 @@ export default function Home() {
                 // refunded. Saying it plainly, together with the part that
                 // makes it fair, avoids the conversation happening at the
                 // chair instead.
-                body: "Your $20 deposit isn't refundable, but it isn't lost either — it carries over to your next appointment. Please give at least 48 hours' notice so the slot can be filled.",
+                body: "Your $20 deposit is non-refundable. You can reschedule online any time; to cancel, message Mya directly — at least 48 hours ahead so the slot can be filled.",
               },
             ].map(({ icon, title, body }) => (
               <div key={title} className="bg-white border border-stone-200 p-6 policy-card card-lift">
@@ -877,8 +878,14 @@ export default function Home() {
             <span>·</span>
             <Link href="/reschedule" className="hover:text-stone-700 transition">Reschedule Appointment</Link>
             <span>·</span>
-            <Link href="/cancel-appointment" className="hover:text-stone-700 transition">Cancel Appointment</Link>
-            <span>·</span>
+            {/* Cancelling online is off: Mya would rather clients text her so
+                she can handle the deposit case by case. Rescheduling stays. */}
+            {CLIENT_CANCEL_ENABLED && (
+              <>
+                <Link href="/cancel-appointment" className="hover:text-stone-700 transition">Cancel Appointment</Link>
+                <span>·</span>
+              </>
+            )}
             <Link href="/login" className="hover:text-stone-700 transition">Dashboard Login</Link>
           </div>
         </footer>

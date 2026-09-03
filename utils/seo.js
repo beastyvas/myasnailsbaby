@@ -228,7 +228,7 @@ export function faqJsonLd() {
   const qa = [
     [
       "Do I need a deposit to book with Mya?",
-      `Yes. Every appointment is secured with a $${DEPOSIT_DOLLARS} deposit, which goes toward the cost of your service. It isn't refunded if you cancel, but it isn't lost either — it carries over as credit toward your next appointment.`,
+      `Yes. Every appointment is secured with a $${DEPOSIT_DOLLARS} deposit, which goes toward the cost of your service. The deposit is non-refundable.`,
     ],
     [
       "Where is Mya's Nails Baby located?",
@@ -247,7 +247,7 @@ export function faqJsonLd() {
       // This used to say the deposit was refunded at 48 hours, which is not
       // the policy — and being in the FAQ schema meant Google could show that
       // promise directly in search results.
-      "Use the reschedule or cancel link on the website with the phone number you booked with, or DM @myasnailsbaby. The $20 deposit isn't refunded, but it carries over as credit toward your next appointment. Please give at least 48 hours' notice where you can.",
+      "Reschedule on the website using the phone number you booked with. To cancel, text or DM @myasnailsbaby directly — at least 48 hours ahead where you can. The $20 deposit is non-refundable.",
     ],
   ];
 

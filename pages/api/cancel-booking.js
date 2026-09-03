@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { normalizePhone, sendSms } from "@/utils/sms";
 import { DEPOSIT_CENTS } from "@/utils/pricing";
+import { CLIENT_CANCEL_ENABLED } from "@/utils/features";
 import * as M from "@/utils/messages";
 
 const supabase = createClient(
@@ -23,6 +24,17 @@ function to12h(time24) {
 }
 
 export default async function handler(req, res) {
+  // Checked first, before the method check even matters: while cancelling is
+  // off this route does not exist as far as any caller is concerned.
+  // Removing the footer link is cosmetic — an old bookmark or a browser
+  // autocomplete would still reach here, delete a real booking and write a
+  // credit Mya hasn't agreed to.
+  if (!CLIENT_CANCEL_ENABLED) {
+    return res.status(403).json({
+      error: "Cancelling online is turned off. Please text Mya to cancel.",
+    });
+  }
+
   if (req.method !== "POST") return res.status(405).end();
 
   const { phone, booking_id } = req.body;

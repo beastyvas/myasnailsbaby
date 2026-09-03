@@ -108,7 +108,9 @@ export default async function handler(req, res) {
       },
       mode: "payment",
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/cancel`,
+      // Back to the booking form, not /cancel — that page has never existed,
+      // so backing out of payment used to land on a 404.
+      cancel_url: `${req.headers.origin}/#booking`,
       metadata: {
   booking_id: bookingMetadata.booking_id,
   name: bookingMetadata.name,

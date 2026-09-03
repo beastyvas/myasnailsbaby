@@ -4,7 +4,7 @@ import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
 import "react-calendar/dist/Calendar.css";
 import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
-import { chairTotal } from "@/utils/credits";
+import { bookingCharge, shortAgo, summarizeClient } from "@/utils/clientSummary";
 import { normalizePhone } from "@/utils/sms";
 import { BOOKABLE_SERVICES, DEPOSIT_CENTS, formatPrice, serviceLabel } from "@/utils/pricing";
 import { GROWTH_ENABLED } from "@/utils/features";
@@ -1193,36 +1193,41 @@ export default function Dashboard() {
                                 details rather than among them, and names the
                                 figure so it isn't mental arithmetic with
                                 someone waiting. */}
-                            {/* ONE banner for everything that reduces the bill.
-                                A booking can carry a reactivation discount and
-                                a credit from a cancelled appointment at the
-                                same time; two separate banners each subtracted
-                                only the deposit, so both would have overstated
-                                the reduction. chairTotal() resolves the lot to
-                                a single number she can read out. */}
-                            {(booking.discount_percent > 0 || booking.credit_applied_cents > 0) && (() => {
-                              const t = chairTotal({
-                                quotedCents: booking.quoted_cents,
-                                discountPercent: booking.discount_percent || 0,
-                                depositCents: DEPOSIT_CENTS,
-                                creditCents: booking.credit_applied_cents || 0,
-                              });
+                            {/* What to charge, on every priced booking — not
+                                just discounted ones. This is the number she
+                                needs at the chair and the dashboard never
+                                showed it.
+
+                                bookingCharge() subtracts the deposit ONLY if
+                                it was actually paid. Appointments Mya adds
+                                herself are unpaid, and the old code took $20
+                                off those regardless, understating what she
+                                was owed on every one. */}
+                            {(() => {
+                              const c = bookingCharge(booking);
                               const reasons = [
                                 booking.discount_percent > 0 && `${booking.discount_percent}% off — came back`,
                                 booking.credit_applied_cents > 0 &&
                                   `${formatPrice(booking.credit_applied_cents)} credit — cancelled appt`,
                               ].filter(Boolean);
+                              const highlight = reasons.length > 0;
+                              if (!c.priced && !highlight) return null;
                               return (
-                                <div className="mb-4 border border-rose-300 bg-rose-50 px-3 py-2">
-                                  <p className="text-xs font-semibold text-rose-900 uppercase tracking-wider">
-                                    {reasons.join(" · ")}
-                                  </p>
-                                  {booking.quoted_cents ? (
-                                    <p className="text-sm text-rose-900 mt-0.5">
-                                      <strong>{formatPrice(t.dueCents)} due at the visit</strong>
-                                      <span className="text-rose-700">
-                                        {" "}· {formatPrice(t.listCents)} set, {formatPrice(DEPOSIT_CENTS)} deposit paid
-                                        {t.creditUsed > 0 ? `, ${formatPrice(t.creditUsed)} credit` : ""}
+                                <div className={`mb-4 border px-3 py-2 ${highlight ? "border-rose-300 bg-rose-50" : "border-stone-200 bg-stone-50"}`}>
+                                  {highlight && (
+                                    <p className="text-xs font-semibold text-rose-900 uppercase tracking-wider">
+                                      {reasons.join(" · ")}
+                                    </p>
+                                  )}
+                                  {c.priced ? (
+                                    <p className={`text-sm mt-0.5 ${highlight ? "text-rose-900" : "text-stone-900"}`}>
+                                      <strong>{formatPrice(c.dueCents)} due at the visit</strong>
+                                      <span className={highlight ? "text-rose-700" : "text-stone-500"}>
+                                        {" "}· est. {formatPrice(c.listCents)}
+                                        {c.depositPaid
+                                          ? `, ${formatPrice(DEPOSIT_CENTS)} deposit paid`
+                                          : ", no deposit paid"}
+                                        {c.creditUsed > 0 ? `, ${formatPrice(c.creditUsed)} credit` : ""}
                                       </span>
                                     </p>
                                   ) : (
@@ -1325,9 +1330,18 @@ export default function Dashboard() {
             if (!c.instagram && b.instagram) c.instagram = b.instagram;
           });
 
+          // Everything money-shaped comes from summarizeClient so the list,
+          // the detail panel and the Appointments tab can't disagree.
           const allClients = Object.entries(clientMap)
-            .map(([key, c]) => ({ key, ...c }))
-            .sort((a, b) => b.bookings.length - a.bookings.length);
+            .map(([key, c]) => ({ key, ...c, summary: summarizeClient(c.bookings, today) }))
+            // Anyone with something booked floats to the top — they're who
+            // she's about to see. Then most recently seen.
+            .sort((a, b) => {
+              if (!!b.summary.nextAppointment - !!a.summary.nextAppointment) {
+                return (b.summary.nextAppointment ? 1 : 0) - (a.summary.nextAppointment ? 1 : 0);
+              }
+              return String(b.summary.lastVisit || "").localeCompare(String(a.summary.lastVisit || ""));
+            });
 
           // 90 rows is a scroll to nowhere. Search first, then a capped list
           // with an explicit "show more" — the people she wants are almost
@@ -1356,9 +1370,9 @@ export default function Dashboard() {
             const currentLabel = profile.label || "";
             const labelMeta = LABELS.find((l) => l.value === currentLabel) || LABELS[0];
             const sorted = [...client.bookings].sort((a, b) => new Date(b.date) - new Date(a.date));
-            const paidCount = client.bookings.filter((b) => b.paid).length;
-            const totalDeposits = paidCount * 20;
-            const totalNoShowFees = client.noShowsCharged * 25;
+            const sum = client.summary;
+            const next = sum.nextAppointment;
+            const nextCharge = next ? bookingCharge(next) : null;
 
             return (
               <div className="bg-white border border-stone-200 flex flex-col h-full">
@@ -1386,12 +1400,49 @@ export default function Dashboard() {
                     </div>
                   </div>
 
+                  {/* The appointment she's about to do, and what to charge
+                      for it. Top of the panel because it's the only thing
+                      here that's time-sensitive. */}
+                  {next && (
+                    <div className="mt-5 border border-rose-300 bg-rose-50 p-3">
+                      <p className="text-xs font-semibold text-rose-900 uppercase tracking-wider">Next appointment</p>
+                      <p className="text-sm text-rose-900 mt-1">
+                        <strong>
+                          {new Date(next.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                          {next.start_time ? ` · ${formatTimeRange(next.start_time, next.end_time)}` : ""}
+                        </strong>
+                        {next.service && next.service !== "N/A" && (
+                          <span className="text-rose-700"> · {serviceLabel(next.service)}</span>
+                        )}
+                      </p>
+                      <p className="text-sm text-rose-900 mt-1">
+                        {nextCharge.priced ? (
+                          <>
+                            <strong>Charge {formatPrice(nextCharge.dueCents)}</strong>
+                            <span className="text-rose-700">
+                              {" "}· est. {formatPrice(nextCharge.listCents)}
+                              {nextCharge.depositPaid ? `, ${formatPrice(DEPOSIT_CENTS)} deposit paid` : ", no deposit paid"}
+                              {nextCharge.creditUsed > 0 ? `, ${formatPrice(nextCharge.creditUsed)} credit` : ""}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-rose-700">
+                            No price on this booking
+                            {nextCharge.depositPaid ? " · $20 deposit paid" : " · no deposit paid"}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Stats */}
                   <div className="grid grid-cols-3 gap-3 mt-5">
                     {[
-                      { label: "Visits",    value: client.bookings.length },
-                      { label: "Deposits",  value: `$${totalDeposits}` },
-                      { label: "No-Shows",  value: client.noShowsCharged, warn: client.noShowsCharged > 0 },
+                      { label: "Visits",    value: sum.visits },
+                      { label: "Est. spent", value: sum.pricedVisits > 0 ? formatPrice(sum.lifetimeCents) : "—" },
+                      sum.noShows > 0
+                        ? { label: "No-Shows", value: sum.noShows, warn: true }
+                        : { label: "Avg ticket", value: sum.pricedVisits > 0 ? formatPrice(sum.avgTicketCents) : "—" },
                     ].map(({ label, value, warn }) => (
                       <div key={label} className="bg-stone-50 border border-stone-200 p-3 text-center">
                         <p className={`text-xl font-bold ${warn ? "text-rose-800" : "text-stone-900"}`}>{value}</p>
@@ -1436,7 +1487,16 @@ export default function Dashboard() {
 
                 {/* Booking history */}
                 <div className="flex-1 overflow-y-auto p-5">
-                  <p className={`${labelCls} mb-3`}>Booking History</p>
+                  <p className={`${labelCls} mb-1`}>Booking History</p>
+                  {/* Said out loud rather than silently understating her
+                      totals: quoted_cents only exists on bookings made since
+                      prices started being stored, so a long-standing client's
+                      earlier visits genuinely have no figure. */}
+                  {sum.unpricedCount > 0 && (
+                    <p className="text-xs text-stone-400 mb-3">
+                      {sum.unpricedCount} earlier visit{sum.unpricedCount === 1 ? "" : "s"} with no price recorded &mdash; not counted in the totals above.
+                    </p>
+                  )}
                   {sorted.length === 0 ? (
                     <p className="text-stone-400 text-sm">No bookings found.</p>
                   ) : (
@@ -1465,8 +1525,20 @@ export default function Dashboard() {
                               </div>
                               <div className="flex flex-col items-end gap-1 flex-shrink-0">
                                 <span className={`text-xs font-semibold px-2 py-0.5 border ${b.paid ? "bg-green-50 text-green-800 border-green-200" : "bg-stone-100 text-stone-500 border-stone-200"}`}>
-                                  {b.paid ? "Paid $20" : "Unpaid"}
+                                  {b.paid ? "Deposit paid" : "No deposit"}
                                 </span>
+                                {/* What this visit was worth. The history had
+                                    no prices at all, which is the gap she
+                                    asked about. */}
+                                {(() => {
+                                  const c = bookingCharge(b);
+                                  if (!c.priced) return null;
+                                  return (
+                                    <span className="text-xs text-stone-500 whitespace-nowrap">
+                                      est. {formatPrice(c.listCents)} · {formatPrice(c.dueCents)} due
+                                    </span>
+                                  );
+                                })()}
                                 {b.no_show_charged && (
                                   <span className="text-xs font-semibold px-2 py-0.5 border bg-rose-50 text-rose-800 border-rose-200">No-show $25</span>
                                 )}
@@ -1577,13 +1649,25 @@ export default function Dashboard() {
                                     </span>
                                   )}
                                 </div>
+                                {/* Last seen beats the phone number here: the
+                                    question she's asking of this list is "who
+                                    is this and are they due?", and the number
+                                    is one tap away in the detail panel. */}
                                 <p className={`text-xs truncate mt-0.5 ${isSelected ? "text-stone-300" : "text-stone-500"}`}>
-                                  {client.phone || client.email || "—"}
+                                  {client.summary.visits > 0
+                                    ? `${shortAgo(client.summary.daysSince)} · ${client.summary.visits} visit${client.summary.visits === 1 ? "" : "s"}`
+                                    : "No visits yet"}
                                 </p>
                               </div>
-                              <p className={`text-xs font-semibold flex-shrink-0 ${isSelected ? "text-stone-300" : "text-stone-400"}`}>
-                                {client.bookings.length}×
-                              </p>
+                              {client.summary.nextAppointment ? (
+                                <span className={`text-xs font-semibold px-1.5 py-0.5 border flex-shrink-0 ${isSelected ? "bg-white/20 text-white border-white/30" : "bg-rose-50 text-rose-900 border-rose-200"}`}>
+                                  Booked
+                                </span>
+                              ) : (
+                                <p className={`text-xs font-semibold flex-shrink-0 ${isSelected ? "text-stone-300" : "text-stone-400"}`}>
+                                  {client.bookings.length}×
+                                </p>
+                              )}
                             </div>
                           </button>
                         );
