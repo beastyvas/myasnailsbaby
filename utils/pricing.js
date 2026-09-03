@@ -46,7 +46,9 @@ export const SERVICES = {
   "Structure Gel Manicure": { label: "Structure Gel Manicure", flat: 5500 },
   "Hard Gel with Tips": {
     label: "Hard Gel with Tips",
-    lengths: [5500, 6500, 7500, 8500, 9500],
+    // Ladder shifted up $10 across the board (was 55/65/75/85/95) so the
+    // shortest length starts at $65.
+    lengths: [6500, 7500, 8500, 9500, 10500],
     openEnded: true,
   },
   "Hard Gel Manicure": { label: "Hard Gel Manicure", flat: 6000 },
