@@ -10,6 +10,8 @@ import "react-calendar/dist/Calendar.css";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Seo from "@/components/Seo";
+import { InspoUploader } from "@/components/InspoPhotos";
+import { encodeInspoPaths } from "@/utils/inspo";
 import { faqJsonLd, salonJsonLd } from "@/utils/seo";
 import { prettyDate, vegasParts } from "@/utils/time";
 import { BOOKABLE_SERVICES, formatPrice, hasQuote, isLengthPriced, quote, serviceMenuLabel } from "@/utils/pricing";
@@ -40,6 +42,26 @@ export default function Home() {
   const [artLevel, setArtLevel] = useState("");
   const [nailLength, setNailLength] = useState("");
   const [spaPedi, setSpaPedi] = useState(false);
+  const [inspoPaths, setInspoPaths] = useState([]);
+
+  /**
+   * The booking's id, minted on first use.
+   *
+   * Inspo photos are uploaded before checkout — the row doesn't exist yet, so
+   * their storage paths have to be keyed to something, and this is the only
+   * identifier available that early. It used to be created inside
+   * handleSubmit, which is too late for an upload that happens while someone
+   * is still filling in the form.
+   *
+   * A ref rather than state, and lazy rather than an initializer, so no uuid
+   * is generated during server rendering — the server and the browser would
+   * produce different ones.
+   */
+  const bookingIdRef = useRef(null);
+  const bookingIdOnce = () => {
+    if (!bookingIdRef.current) bookingIdRef.current = uuidv4();
+    return bookingIdRef.current;
+  };
 
   useEffect(() => {
     let d = 0;
@@ -177,7 +199,8 @@ export default function Home() {
     const pedicureType = data.get("pedicureType") || "";
     const bookingNails = data.get("bookingNails") || "no";
     const spa_pedi = data.get("spaPedi") ? "yes" : "no";
-    const bookingId = uuidv4();
+    // Same id the inspo photos were uploaded under, so their paths resolve.
+    const bookingId = bookingIdOnce();
     const durationHours = duration;
 
     const payload = { id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, duration: durationHours, soakoff, referral, pedicure, pedicure_type: pedicureType, booking_nails: bookingNails, spa_pedi, email };
@@ -187,7 +210,7 @@ export default function Home() {
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error("Booking failed");
 
-      const bookingMetadata = { booking_id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, pedicure_type: pedicureType, booking_nails: bookingNails, spa_pedi, duration: durationHours, soakoff, referral, pedicure, email };
+      const bookingMetadata = { booking_id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, pedicure_type: pedicureType, booking_nails: bookingNails, spa_pedi, duration: durationHours, soakoff, referral, pedicure, email, inspo_urls: encodeInspoPaths(inspoPaths) };
 
       const stripeRes = await fetch("/api/create-checkout-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bookingMetadata }) });
       const stripeJson = await stripeRes.json();
@@ -739,6 +762,20 @@ export default function Home() {
                   <label htmlFor="notes" className="sr-only">Design ideas or special requests</label>
                   <textarea id="notes" name="notes" placeholder="Design ideas or special requests" rows="4"
                     className={`${inputCls} resize-none`} />
+
+                  {/* Attached to the notes rather than given its own step —
+                      a picture is how most people describe a set, so it
+                      belongs with the words, not somewhere else. */}
+                  <InspoUploader
+                    /* The getter, not the value — the uuid is minted on the
+                       first upload, so nothing is generated during server
+                       rendering. */
+                    bookingId={bookingIdOnce}
+                    paths={inspoPaths}
+                    onChange={setInspoPaths}
+                    label="Inspo photos (optional)"
+                    hint="Screenshots or saved pics of the look you want — Mya sees these with your booking."
+                  />
                 </div>
 
                 <div className="space-y-4">

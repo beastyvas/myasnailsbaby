@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { checkQuota, normalizePhone, sendSms, textbeltConfigured } from "@/utils/sms";
 import { GROWTH_ENABLED } from "@/utils/features";
+import { sweepInspoOrphans } from "@/utils/inspoSweep";
 import { hoursSince, hoursUntil, todayVegas, vegasParts } from "@/utils/time";
 import * as M from "@/utils/messages";
 import {
@@ -284,6 +285,9 @@ export default async function handler(req, res) {
   // nothing — and a quiet run is exactly when advance warning is useful.
   const creditsLeft = await checkQuota();
 
+  // Housekeeping, after the texts. Nothing here can fail the run.
+  const sweep = await sweepInspoOrphans(supabase, { now });
+
   // Record the run. Bookkeeping must never fail a run that already sent
   // texts — the messages are gone, and erroring now would only cause a
   // pointless retry. supabase-js resolves with { error } rather than
@@ -321,6 +325,11 @@ export default async function handler(req, res) {
     // missing sms_log table for a day.
     quietHours: quiet,
     heldForMorning: skippedQuiet,
+    // Unclaimed inspo photos removed this run. `skipped` says the sweep
+    // declined to act rather than found nothing — the two look identical from
+    // a zero, and that ambiguity is what hid the missing sms_log table.
+    inspoSwept: sweep.swept,
+    ...(sweep.skipped ? { inspoSweepSkipped: sweep.skipped } : {}),
     // Read by the workflow, which fails the run when this gets low — a
     // green tick while texts silently stop is the failure mode being closed.
     creditsLeft,

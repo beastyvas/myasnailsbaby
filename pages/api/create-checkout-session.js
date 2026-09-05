@@ -132,6 +132,12 @@ export default async function handler(req, res) {
   email: bookingMetadata.email ?? null,
   spa_pedi: bookingMetadata.spa_pedi ?? "no",
   quoted_cents: quotedCents == null ? "" : String(quotedCents),
+  // Storage paths for the client's inspo photos, comma-joined. They were
+  // uploaded before checkout because the booking row doesn't exist yet —
+  // this is how they find their way onto it. Three paths is ~150 chars
+  // against Stripe's 500-char limit; encodeInspoPaths throws rather than
+  // send an over-long value, since that would fail the session itself.
+  inspo_urls: bookingMetadata.inspo_urls ?? "",
 },
 
     });

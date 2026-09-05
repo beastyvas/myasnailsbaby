@@ -1,8 +1,10 @@
 // pages/dashboard.js
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import dynamic from "next/dynamic";
+import { v4 as uuidv4 } from "uuid";
 import "react-calendar/dist/Calendar.css";
+import { InspoStrip, InspoUploader } from "@/components/InspoPhotos";
 import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
 import { bookingCharge, shortAgo, summarizeClient } from "@/utils/clientSummary";
 import { normalizePhone } from "@/utils/sms";
@@ -74,6 +76,7 @@ function EditBookingForm({ booking, onSave, onCancel }) {
     returning: booking.returning || "no",
     referral: booking.referral || "",
     paid: booking.paid || false,
+    inspo_urls: booking.inspo_urls || [],
   });
 
   const handleSubmit = (e) => {
@@ -81,7 +84,10 @@ function EditBookingForm({ booking, onSave, onCancel }) {
     const [hour, minute] = formData.start_time.split(":");
     const endHour = parseInt(hour) + parseInt(formData.duration);
     const end_time = `${endHour.toString().padStart(2, "0")}:${minute || "00"}`;
-    onSave({ ...formData, end_time });
+    // Same null-for-empty convention as the webhook and the new-appointment
+    // form. Removing the last photo has to clear the column, not leave {}.
+    const inspo_urls = formData.inspo_urls?.length ? formData.inspo_urls : null;
+    onSave({ ...formData, inspo_urls, end_time });
   };
 
   return (
@@ -200,6 +206,15 @@ function EditBookingForm({ booking, onSave, onCancel }) {
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className={`${inputCls} resize-none`} />
       </div>
 
+      {/* Keyed to the real row id, since this booking already exists. Covers
+          the client who books first and texts the picture afterwards. */}
+      <InspoUploader
+        bookingId={booking.id}
+        paths={formData.inspo_urls}
+        onChange={(inspo_urls) => setFormData({ ...formData, inspo_urls })}
+        hint="Removing one takes it off the booking; the file is cleaned up automatically."
+      />
+
       <div className="flex justify-end gap-3 pt-2">
         <button type="button" onClick={onCancel} className={btnSecondary}>Cancel</button>
         <button type="submit" className={btnPrimary}>Save Changes</button>
@@ -215,14 +230,28 @@ function NewAppointmentForm({ onSuccess }) {
     service: "", art_level: "", length: "", soakoff: "none",
     pedicure: "no", pedicure_type: "", date: "", start_time: "",
     duration: 2, notes: "", returning: "no", referral: "", paid: false,
+    inspo_urls: [],
   });
+
+  // No row exists yet, so photos are keyed to a uuid minted here — the same
+  // arrangement the booking form uses. Lazy, so nothing is generated during
+  // server rendering.
+  const bookingIdRef = useRef(null);
+  const bookingIdOnce = () => {
+    if (!bookingIdRef.current) bookingIdRef.current = uuidv4();
+    return bookingIdRef.current;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const [hour, minute] = formData.start_time.split(":");
     const endHour = parseInt(hour) + parseInt(formData.duration);
     const end_time = `${endHour.toString().padStart(2, "0")}:${minute || "00"}`;
-    const { error } = await supabase.from("bookings").insert([{ ...formData, end_time }]);
+    // Null rather than an empty array for "no photos", matching what the
+    // Stripe webhook writes — one convention across both ways a booking is
+    // created, so a query doesn't have to handle both.
+    const inspo_urls = formData.inspo_urls?.length ? formData.inspo_urls : null;
+    const { error } = await supabase.from("bookings").insert([{ ...formData, inspo_urls, end_time }]);
     if (error) {
       alert("Failed to add appointment");
       console.error(error.message);
@@ -341,6 +370,13 @@ function NewAppointmentForm({ onSuccess }) {
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           placeholder="Special requests or inspo details..." className={`${inputCls} resize-none`} />
       </div>
+
+      <InspoUploader
+        bookingId={bookingIdOnce}
+        paths={formData.inspo_urls}
+        onChange={(inspo_urls) => setFormData({ ...formData, inspo_urls })}
+        hint="Pictures the client sent you."
+      />
 
       <div className="bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
         New appointments are marked <strong>NOT PAID</strong> by default.
@@ -1263,6 +1299,10 @@ export default function Dashboard() {
                               </div>
                             )}
 
+                            {/* What they actually want, next to what they
+                                wrote. Renders nothing when there are none. */}
+                            <InspoStrip paths={booking.inspo_urls} />
+
                             <div className="flex flex-wrap items-center justify-between gap-3">
                               <div className="flex flex-wrap gap-2">
                                 <span className={`text-xs font-semibold px-2.5 py-1 border ${booking.paid ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"}`}>
@@ -1558,6 +1598,11 @@ export default function Dashboard() {
                             {b.notes && (
                               <p className="text-xs text-stone-500 italic mb-3">&ldquo;{b.notes}&rdquo;</p>
                             )}
+
+                            {/* Smaller here — this is the "what did she have
+                                last time" view, so it's a reminder, not the
+                                working reference. */}
+                            <InspoStrip paths={b.inspo_urls} size="sm" />
 
                             {/* Charge button */}
                             {b.stripe_payment_method_id && !b.no_show_charged && (

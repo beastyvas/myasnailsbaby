@@ -8,6 +8,7 @@ import * as M from "@/utils/messages";
 import { firstNameOf, ownerAlert } from "@/utils/reactivation";
 import { prettyDate } from "@/utils/time";
 import { applyCredit, availableCents } from "@/utils/credits";
+import { decodeInspoPaths } from "@/utils/inspo";
 import { DEPOSIT_CENTS } from "@/utils/pricing";
 
 export const config = {
@@ -358,6 +359,10 @@ if (conflicts && conflicts.length > 0) {
       // Priced server-side in create-checkout-session; "" means the
       // selections couldn't be priced, which stays null rather than 0.
       quoted_cents: md.quoted_cents ? Number(md.quoted_cents) : null,
+      // The row finally claims the photos uploaded before payment. Null for
+      // none, never [""] — an empty string in the array renders as a broken
+      // image on Mya's dashboard.
+      inspo_urls: decodeInspoPaths(md.inspo_urls),
       paid: true,
       confirmed: true,
       session_id: session.id,
@@ -365,11 +370,35 @@ if (conflicts && conflicts.length > 0) {
       stripe_payment_method_id: stripePaymentMethodId,
     };
 
-    const { data: created, error: insertErr } = await supabase
+    let { data: created, error: insertErr } = await supabase
       .from("bookings")
       .insert([insert])
       .select("id")
       .single();
+
+    // If the only thing wrong is a column the database doesn't have yet,
+    // book them anyway without it.
+    //
+    // This insert is the single most expensive thing in the app to get wrong:
+    // the client has already been charged, so a rejected row means someone
+    // paid and has no appointment. A migration that hasn't been run yet is a
+    // silly reason for that to happen, and migrations in this project have
+    // been forgotten before — that is precisely the history this guards
+    // against. Losing the inspo photos off a booking is a bad day; losing the
+    // booking is a furious client and a refund.
+    if (insertErr && /inspo_urls/i.test(insertErr.message || "")) {
+      console.error(
+        "⚠️ bookings.inspo_urls is missing — has supabase/migrations/add_inspo.sql been run? " +
+          "Booking saved without the inspo photos."
+      );
+      const { inspo_urls, ...withoutInspo } = insert;
+      ({ data: created, error: insertErr } = await supabase
+        .from("bookings")
+        .insert([withoutInspo])
+        .select("id")
+        .single());
+    }
+
     if (insertErr) {
       console.error("❌ Supabase insert error:", insertErr.message);
       return res.status(200).json({ received: true }); // ack so Stripe stops retrying
