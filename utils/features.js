@@ -41,3 +41,22 @@ export const GROWTH_ENABLED = false;
  * The /cancel-appointment page stays in the repo, unlinked and inert.
  */
 export const CLIENT_CANCEL_ENABLED = false;
+
+/**
+ * Mya's portfolio on the public homepage.
+ *
+ * OFF. She doesn't want it, and it's her work and her site.
+ *
+ * Worth recording what this costs so the decision can be revisited with the
+ * facts rather than re-argued from memory: "Myas nails baby photos" is one of
+ * the searches Google itself suggests for her name, and with this off the
+ * answer is nowhere on the site — a visitor has to leave for Instagram to see
+ * any of her sets. Her nail photos were also the only image content the site
+ * had for image search.
+ *
+ * The Gallery tab in her dashboard is untouched. She can keep uploading, and
+ * those photos stay visible to her; they just don't render publicly. So
+ * flipping this to `true` brings the section back with whatever she's posted
+ * in the meantime already in it.
+ */
+export const PUBLIC_GALLERY_ENABLED = false;

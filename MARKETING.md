@@ -378,16 +378,17 @@ You don't need to think about any of this — noted so you know it exists.
   too.
 - Sitemap and robots at `/sitemap.xml` and `/robots.txt`.
 - Link previews (`/api/og`) so the site looks right when shared in a DM.
-- **Your gallery is now on the website.** It wasn't before — the Gallery tab
-  uploaded photos that appeared nowhere public, so a visitor had to leave for
-  Instagram to see any of your work. It now shows on the homepage right under
-  the hero. Worth knowing: *"Myas nails baby photos"* is one of the searches
-  Google itself suggests for her name, so people were looking for exactly this
-  and finding nothing.
-- The description you type when uploading a set becomes that photo's alt text
-  — what Google reads to know what the picture shows. "Set 12" tells it
-  nothing; "chrome french tips on medium almond gel-x" is how her work turns
-  up in image search.
+- **The website gallery is off, by Mya's choice.** Her Gallery tab still
+  works and the photos stay visible to her — they just don't show publicly, so
+  a visitor has to go to Instagram to see her work. One consequence worth
+  knowing: *"Myas nails baby photos"* is one of the searches Google itself
+  suggests for her name, and there's currently nothing on the site to answer
+  it. It's a one-line change to turn back on
+  (`PUBLIC_GALLERY_ENABLED` in `utils/features.js`) and anything she's
+  uploaded meanwhile appears straight away.
+- Because of that, **the Business Profile photos in section 1 matter more, not
+  less.** They're now the only place her work is visible outside Instagram,
+  and listings with fresh photos get meaningfully more clicks.
 
 ---
 

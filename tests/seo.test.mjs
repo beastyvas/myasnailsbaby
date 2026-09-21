@@ -58,22 +58,37 @@ for (const page of PUBLIC_PAGES) {
   ok("the wordmark is still on the page", /MyasNailsBaby\s*<\/span>/.test(src));
 }
 
-// ── her work is actually on her website ──────────────────────────────────
+// ── the public gallery, parked at Mya's request ──────────────────────────
+//
+// She doesn't want her work on the site. Parked behind a flag rather than
+// deleted, the same way the cancel flow is — so the tests here check that off
+// really means off, and that flipping it back would still produce a correct
+// section rather than bitrot.
 {
   const src = read("pages/index.js");
-  ok("the gallery component is imported", /import NailGallery from/.test(src));
-  ok("the gallery is rendered", /<NailGallery\b/.test(src));
+  const feat = await load("utils/features.js");
 
-  // The whole point: rendered from server-fetched props, not a useEffect.
-  // A portfolio behind JavaScript is close to invisible to image search.
-  ok("the homepage fetches server-side", /export async function getServerSideProps/.test(src));
-  ok("the gallery comes from props", /<NailGallery items=\{gallery\}/.test(src));
+  ok("the gallery flag is off", feat.PUBLIC_GALLERY_ENABLED === false);
+  ok("the render is gated on the flag", /\{PUBLIC_GALLERY_ENABLED && <NailGallery/.test(src));
 
+  // Off means no query, not a query whose result is thrown away.
+  const gsp = src.slice(src.indexOf("getServerSideProps"));
+  const guard = gsp.indexOf("!PUBLIC_GALLERY_ENABLED");
+  ok("the flag is checked inside getServerSideProps", guard > -1);
+  ok(
+    "it returns before hitting Supabase",
+    guard > -1 && guard < gsp.indexOf("createClient"),
+    "the gallery query should be skipped entirely when off"
+  );
+
+  // Still correct if she changes her mind — the flag is only a one-line flip
+  // if what it turns on still works.
   const gal = read("components/NailGallery.jsx");
   ok("gallery takes items as a prop", /function NailGallery\(\{\s*items/.test(gal));
   ok("gallery does not fetch its own data", !/from\("gallery"\)/.test(gal));
   ok("every gallery image has an alt", !/<img(?![^>]*\balt=)/.test(gal));
   ok("gallery images lazy-load", /loading="lazy"/.test(gal));
+  ok("gallery renders nothing when empty", /if \(!items\.length\) return null/.test(gal));
 }
 
 // ── alt text must not be a keyword list ──────────────────────────────────

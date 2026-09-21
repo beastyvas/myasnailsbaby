@@ -16,7 +16,7 @@ import { encodeInspoPaths } from "@/utils/inspo";
 import { faqJsonLd, salonJsonLd } from "@/utils/seo";
 import { prettyDate, vegasParts } from "@/utils/time";
 import { BOOKABLE_SERVICES, formatPrice, hasQuote, isLengthPriced, quote, serviceMenuLabel } from "@/utils/pricing";
-import { CLIENT_CANCEL_ENABLED } from "@/utils/features";
+import { CLIENT_CANCEL_ENABLED, PUBLIC_GALLERY_ENABLED } from "@/utils/features";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -41,6 +41,9 @@ const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KE
  * included.
  */
 export async function getServerSideProps() {
+  // Off by Mya's choice — don't pay for a query whose result nothing renders.
+  if (!PUBLIC_GALLERY_ENABLED) return { props: { gallery: [] } };
+
   try {
     const { createClient } = await import("@supabase/supabase-js");
     const admin = createClient(
@@ -418,10 +421,11 @@ export default function Home({ gallery = [] }) {
         </section>
 
         {/* ── HER WORK ──
-            Directly after the hero, before the policies and the form: it's
-            what someone came to see, and it's what decides whether they book.
-            Renders nothing at all when she hasn't uploaded any sets. */}
-        <NailGallery items={gallery} />
+            Off: she doesn't want a gallery on the site. See
+            PUBLIC_GALLERY_ENABLED in utils/features.js for what that costs
+            and how to bring it back. Her dashboard Gallery tab still works,
+            so anything she uploads meanwhile appears here if it's flipped on. */}
+        {PUBLIC_GALLERY_ENABLED && <NailGallery items={gallery} />}
 
         {/* ── BOOKING POLICIES ── */}
         <section id="policies" className="py-14 border-b border-stone-200">
