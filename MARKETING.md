@@ -5,6 +5,51 @@ the highest-value hour you will ever spend on this business.
 
 ---
 
+## 0. Where she actually stands (checked September 2026)
+
+Read this first, because it's the evidence for everything below.
+
+**Searching "myas nails baby" — her own name — shows three competitors.**
+Google's "Businesses" box returns Mia Nail Spa (277 reviews), Your Nail Salon
+(36), and Miss Lashes Nail Spa (276). Mya isn't ranked low in that box; she
+isn't in it, so Google fills it with whoever is nearby. Every person who
+half-remembers her name and searches it is handed someone else's chair.
+
+Below that box the page runs out of her and starts padding: a "TOP 10 Kids
+Nail Salon" listicle, a different Mya in Alabama, a TikTok about babies,
+another salon's new hire also called Mya — several flagged *"Missing: myas"*.
+That isn't a ranking problem. There simply isn't enough of her on the internet.
+
+**The website is not the weak link.** It ranks #1 for her name with sitelinks
+(Prices, Contact, Policies, Book), and `/services` ranks separately for price
+searches. The gap is entirely off the site.
+
+### What's realistically winnable
+
+Compare who holds the map box for each search:
+
+| Search | Reviews held by the winners |
+| --- | --- |
+| "las vegas nail tech" | 1,300 · 2,300 · 835 |
+| "myas nails baby" | 277 · 36 · **276** |
+
+Chasing "las vegas nail tech" means out-reviewing salons with thousands. That
+is years away and it is how you waste a year. But **one of those slots on her
+own name is held with 36 reviews.** That tier is reachable this quarter.
+
+So the targets that are actually worth the effort:
+
+1. **Her own name.** Needs only a Business Profile to exist. Fixable in days.
+2. **"nail tech near me"** for someone physically near Flamingo & Eastern.
+   Proximity is weighted heavily and there's little competition in that suite
+   complex.
+3. **Service searches** — "gel-x price las vegas", "structure gel las vegas".
+   The `/services` page and the service pages already target these.
+
+Anyone promising the head term faster than that is selling something.
+
+---
+
 ## 1. Google Business Profile — do this first
 
 For a nail studio, the Business Profile outranks the website itself. When
@@ -72,12 +117,25 @@ a listing can carry both names where the booking form shouldn't.
 
 ---
 
-## 2. Reviews — already automatic
+## 2. Reviews — automatic, but currently NOT SENDING
 
 Reviews are the number one thing deciding where you land in that map box, and
 the number one thing deciding whether someone picks you once they see it.
+Section 0 shows a slot on her own name being held with 36 of them.
 
-**The site already handles the asking.** A couple of hours after every
+> **Two things are broken right now, and they cancel each other out.**
+>
+> 1. **The texts aren't going out.** The Textbelt key stopped being
+>    recognised, so every automatic message — reminders included — is
+>    currently dead. Until that's replaced, nobody is being asked.
+> 2. **There's nowhere to leave one.** The review text says *"search Mya's
+>    Nails Baby Las Vegas on Google and tap Reviews"* — and with no Business
+>    Profile, there is nothing to tap.
+>
+> Fixing either alone achieves nothing. Section 1 creates somewhere for
+> reviews to land; a working SMS key is what starts asking for them. Do both.
+
+**How the asking works once it's on.** A couple of hours after every
 appointment ends, the client gets a thank-you text that asks for a Google
 review and tells them exactly how to find you. That timing is deliberate —
 it's while they're still looking at their hands and loving them.
@@ -97,12 +155,98 @@ carriers, and it works before your profile even has a short link.
 "Ask for reviews" button that gives you a short link. Send that personally to
 your ten favourite clients. A personal ask converts better than any automation.
 
+### The in-chair ask — works with no texts at all
+
+This costs nothing, needs no working SMS, and converts better than everything
+else in this document. Say it while they're admiring their hands, before they
+stand up:
+
+> "Hey — if you like how these came out, would you mind leaving me a Google
+> review? I'm just getting my page set up and honestly the first few make a
+> huge difference for me. Takes like thirty seconds, I can pull it up for you
+> right now if you want."
+
+Three things make that work: you ask at the peak moment, you say *why* it
+matters to you, and you offer to hand them the phone. Asking someone to do it
+later means they won't.
+
+Then actually hand them the phone with the review form open. The gap between
+"I'll do it tonight" and "it's done" is most of your reviews.
+
 **Target: 20 reviews.** That's roughly the point where a local listing starts
-holding its own in a competitive city.
+holding its own in a competitive city — and per section 0, even 36 is enough
+to hold a slot on her own name.
+
+**Never buy reviews or post them yourself.** Google detects clustered fake
+reviews and the penalty is the listing being suspended — losing the exact
+thing this whole document is trying to build. Every review has to come from
+someone who actually sat in the chair.
 
 ---
 
-## 3. Rebooking — already automatic
+## 3. The other places that rank — Yelp, Booksy, Reddit
+
+Look at what actually fills page one for "las vegas nail tech": a Yelp
+listicle, a Booksy directory page, and **two separate r/vegaslocals threads**.
+Those are search results Mya could be inside, and she's in none of them.
+
+The point isn't the traffic from each site. It's that every one of these is
+another result carrying her name — which is what fixes the "Missing: myas"
+padding in section 0.
+
+### Yelp — claim it (free)
+
+Yelp pages rank for exactly the searches she wants, and a claimed page beats
+an unclaimed one. [biz.yelp.com](https://biz.yelp.com) — search the address
+first in case a listing already exists to claim.
+
+Same name, address, phone and hours as section 1 — **character for
+character**. Google cross-checks these across the web and quietly discounts a
+business whose details disagree with themselves.
+
+Description to paste:
+
+> Custom nail sets by Mya in a private suite on E. Flamingo Rd, Las Vegas.
+> Gel-X, acrylic, hard gel and structure gel, plus hand-painted nail art and
+> gel pedicures. By appointment only — book online at myasnailsbaby.com with a
+> $20 deposit that comes off the price of your set. One client at a time, so
+> the whole appointment is yours.
+
+Don't solicit Yelp reviews — Yelp actively filters solicited ones and it can
+hurt. Claim it, fill it, leave it. It's there to be a search result.
+
+### Booksy — a listing, not a booking system
+
+Booksy's Las Vegas directory ranks on page one. Worth a free profile **purely
+as a search result that points at her own site.**
+
+Do not move booking to it. The site already takes deposits, holds cards for
+no-shows, and drives the reminder and rebooking automations. Splitting
+bookings across two systems is how double-bookings happen.
+
+### r/vegaslocals — where people actually ask
+
+Two threads on that subreddit rank for "las vegas nail tech," and they are
+people literally asking for a recommendation. This is the highest-intent free
+channel in this document.
+
+**How to do it without getting banned:**
+
+- Mya replies **as herself, saying she's the nail tech.** Most local subs are
+  fine with an honest "hi, I'm a nail tech on Flamingo, here's my work" and
+  ruthless about anything pretending otherwise.
+- Read the subreddit rules first. Some require a flair or restrict promotion
+  to a weekly thread — use it if so.
+- Be useful before being promotional. Answering "how much should gel-x cost
+  in Vegas" honestly earns far more than dropping a link.
+
+**Never do this:** a second account pretending to be a happy customer, or
+asking friends to post as clients. It's the fastest way to get the account
+banned and the business named, and in a city subreddit people notice.
+
+---
+
+## 4. Rebooking — already automatic
 
 The single biggest lever on income for a nail tech isn't new clients, it's the
 same clients coming back on schedule.
@@ -117,7 +261,7 @@ Change the timing or switch it off under Settings → Automatic Texts.
 
 ---
 
-## 4. Reactivation — one tap
+## 5. Reactivation — one tap
 
 For the ones who slipped through anyway: Dashboard → **Reactivate**. Anyone
 45 days quiet with nothing booked shows up there. Tick who you want and send.
@@ -143,25 +287,67 @@ not every week; an offer that always exists stops being an offer.
 
 ---
 
-## 5. Instagram → bookings
+## 6. Instagram → bookings
 
 Your IG is the top of the funnel and the site is the bottom. The handoff is
 the bio link.
 
-- **Bio link:** `https://www.myasnailsbaby.com` — straight to booking. Don't
-  send people to a Linktree; every extra tap loses people.
-- **Bio formula:** `Nail Artist | Las Vegas 💅 Gel-X · Acrylic · Custom Art |
-  Book below ⬇️`
+### Instagram ranks on Google — more than I first thought
+
+Page one for "las vegas nail tech" contains two Instagram profiles:
+`@nailedbyliz_` (7.8K followers) and `@nailsby_yuki` (40K). Not their posts —
+their **profiles**, ranking for the generic search, above most salon websites.
+
+That's worth correcting plainly: an Instagram account is a Google ranking
+asset for this exact term, not just a place to post work. The difference is
+scale. Mya has around 700 followers against 7.8K and 40K — the same channel,
+roughly ten to fifty times short of the accounts winning on it.
+
+Which means growing the account isn't separate from the search problem. It's
+one of the few routes into "las vegas nail tech" that doesn't require
+out-reviewing a salon with 2,300 reviews.
+
+### The bio
+
+Google indexes bio text, so it needs the words people type.
+
+**Check the spelling first.** The live bio appears to read "nails **pas**
+vegas, nv" — worth opening the app and checking, because if that's real it's
+costing the single most important word in it.
+
+Paste this:
+
+> Licensed Nail Artist 💅 Las Vegas, NV
+> Gel-X · Acrylic · Hard Gel · Structure Gel · Custom Nail Art
+> Private suite — Flamingo & Eastern
+> Book below ⬇️
+
+Three deliberate choices: "Las Vegas, NV" spelled out and spelled right;
+service names as the words people search rather than the words on her menu;
+and the cross street, because "flamingo nail tech" is a real search with
+almost no competition.
+
+**Bio link:** `https://www.myasnailsbaby.com` — straight to booking. Don't
+send people to a Linktree; every extra tap loses people.
+
+### Posting
+
 - **What converts:** before/afters, close-ups in natural light, and
   hands-moving video. Static flat-lays get likes; video gets bookings.
 - **Every caption ends with a CTA.** "Booking link in bio" — every time, even
   when it feels repetitive. It doesn't to them; they see one post, not all of
   them.
+- **Say the service and the city in the caption**, in words: "structure gel
+  overlay, medium almond, Las Vegas". Captions are indexed; hashtags mostly
+  aren't.
 - **Tag the location** on every post. Geotagged posts feed local discovery.
+- **Cross-post the same sets** to the Business Profile (section 1) and the
+  website gallery. One set photographed once, posted three places — that's
+  three results carrying her name instead of one.
 
 ---
 
-## 6. Abandoned checkouts — already automatic
+## 7. Abandoned checkouts — already automatic
 
 Someone picks a time, gets to the card form, and stops. It happens constantly
 on phones, and they'd already decided — they just got interrupted.
@@ -169,7 +355,7 @@ on phones, and they'd already decided — they just got interrupted.
 Half an hour later they get one text saying the slot is still open. One only,
 never a second, and never if they've already booked something else.
 
-## 7. What's already handled in code
+## 8. What's already handled in code
 
 You don't need to think about any of this — noted so you know it exists.
 
@@ -192,6 +378,40 @@ You don't need to think about any of this — noted so you know it exists.
   too.
 - Sitemap and robots at `/sitemap.xml` and `/robots.txt`.
 - Link previews (`/api/og`) so the site looks right when shared in a DM.
+- **Your gallery is now on the website.** It wasn't before — the Gallery tab
+  uploaded photos that appeared nowhere public, so a visitor had to leave for
+  Instagram to see any of your work. It now shows on the homepage right under
+  the hero. Worth knowing: *"Myas nails baby photos"* is one of the searches
+  Google itself suggests for her name, so people were looking for exactly this
+  and finding nothing.
+- The description you type when uploading a set becomes that photo's alt text
+  — what Google reads to know what the picture shows. "Set 12" tells it
+  nothing; "chrome french tips on medium almond gel-x" is how her work turns
+  up in image search.
+
+---
+
+## 9. Do it in this order
+
+Everything above, sequenced. The first two are the whole game.
+
+| # | Do | Who | Time |
+| --- | --- | --- | --- |
+| 1 | **Create the Business Profile** (§1) — start it today, verification takes days | You | 1 hour |
+| 2 | **Replace the SMS key** so reminders and review asks send again | You | 15 min |
+| 3 | **Ask in the chair** (§2) — start before the profile is even verified | Mya | free |
+| 4 | Fix the Instagram bio (§6) | Mya | 5 min |
+| 5 | Upload 10+ sets to the Business Profile and the website gallery | Mya | 1 hour |
+| 6 | Claim Yelp, add Booksy (§3) | You | 30 min |
+| 7 | Submit the sitemap in Search Console (§8) | You | 10 min |
+| 8 | Answer the next r/vegaslocals nail thread, as herself (§3) | Mya | ongoing |
+
+**What to expect.** Her own name should start showing her Business Profile
+within days to weeks of verification. Proximity searches follow as reviews
+build. "Las vegas nail tech" is not on this list on purpose — see section 0.
+
+Local search moves over weeks and months. The compounding part is reviews and
+posting consistently; there is no version of this that works in a weekend.
 
 **One thing to do after deploying:** submit
 `https://www.myasnailsbaby.com/sitemap.xml` at
