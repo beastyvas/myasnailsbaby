@@ -751,9 +751,14 @@ export default function Dashboard() {
   }
 
   async function handleUpload() {
-    if (!preview || !caption) { alert("Please choose a photo and enter a name."); return; }
+    if (!preview || !caption) { alert("Please choose a photo and describe the set."); return; }
     const file = dataURLtoFile(preview, `${caption}.png`);
-    const filePath = `nails/${caption}-${Date.now()}.png`;
+    // The caption goes on screen; a slug of it goes in the path. Interpolating
+    // the raw text meant a description containing "/" silently created a
+    // nested folder, and one containing "#" or "?" produced a URL that
+    // wouldn't load at all.
+    const slug = caption.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "set";
+    const filePath = `nails/${slug}-${Date.now()}.png`;
     const { error: uploadError } = await supabase.storage.from("gallery").upload(filePath, file);
     if (uploadError) { alert("Upload failed"); console.error(uploadError.message); return; }
     const { error: insertError } = await supabase.from("gallery").insert({ image_url: filePath, caption });
@@ -1985,9 +1990,16 @@ export default function Dashboard() {
                   </label>
                 </div>
                 <div>
-                  <label className={labelCls}>Set Name</label>
+                  <label className={labelCls}>Describe this set</label>
                   <input type="text" value={caption} onChange={(e) => setCaption(e.target.value)}
-                    placeholder="e.g. Valentine's Set" className={inputCls} />
+                    placeholder="e.g. Chrome french tips on medium almond gel-x" className={inputCls} />
+                  {/* This text is the image's alt attribute on the website —
+                      it's what Google reads to know what the photo shows, and
+                      what's read aloud to anyone using a screen reader. "Set
+                      12" tells both of them nothing. */}
+                  <p className="text-xs text-stone-400 mt-1.5">
+                    Shown under the photo on your website, and it&apos;s how Google finds your work — describe the shape, colour and style.
+                  </p>
                 </div>
                 <button onClick={handleUpload} disabled={!preview || !caption} className={`w-full ${btnPrimary}`}>
                   UPLOAD SET

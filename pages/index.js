@@ -10,6 +10,7 @@ import "react-calendar/dist/Calendar.css";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Seo from "@/components/Seo";
+import NailGallery from "@/components/NailGallery";
 import { InspoUploader } from "@/components/InspoPhotos";
 import { encodeInspoPaths } from "@/utils/inspo";
 import { faqJsonLd, salonJsonLd } from "@/utils/seo";
@@ -20,7 +21,50 @@ import { CLIENT_CANCEL_ENABLED } from "@/utils/features";
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-export default function Home() {
+/**
+ * Mya's portfolio, fetched on the server.
+ *
+ * It has to be server-rendered to be worth anything: the photos are the only
+ * image content on the site, and a useEffect fetch would leave a crawler
+ * looking at an empty div. This is also the page's first server-side data
+ * fetch — everything else loads in the browser, which is fine for a booking
+ * form and wrong for a portfolio.
+ *
+ * Service role, created here rather than imported: getServerSideProps is
+ * stripped from the browser bundle, so the key never leaves the server. Using
+ * the anon client would have made this depend on the gallery table's RLS
+ * policy, and an empty portfolio would have looked like "she has no photos"
+ * rather than "the read was refused".
+ *
+ * Never throws. A portfolio that fails to load costs a section; a
+ * getServerSideProps that throws costs the entire homepage, booking form
+ * included.
+ */
+export async function getServerSideProps() {
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    const { data, error } = await admin
+      .from("gallery")
+      .select("image_url, caption")
+      .order("created_at", { ascending: false })
+      .limit(12);
+
+    if (error) {
+      console.error("Homepage: couldn't load the gallery:", error.message);
+      return { props: { gallery: [] } };
+    }
+    return { props: { gallery: data || [] } };
+  } catch (err) {
+    console.error("Homepage: gallery fetch threw:", err?.message || err);
+    return { props: { gallery: [] } };
+  }
+}
+
+export default function Home({ gallery = [] }) {
   const formRef = useRef();
   const [selectedDate, setSelectedDate] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -293,9 +337,13 @@ export default function Home() {
       {/* Sticky Header */}
       <header className="bg-white border-b border-stone-200 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-stone-900" style={sectionHeading}>
+          {/* A wordmark, not a heading. This used to be the page's <h1>,
+              which spent the single strongest on-page signal there is on a
+              word nobody searches for — and left the real heading below it
+              as an <h2> under a logo. */}
+          <span className="text-xl font-bold text-stone-900" style={sectionHeading}>
             MyasNailsBaby
-          </h1>
+          </span>
           <nav className="hidden sm:flex items-center space-x-6 text-sm">
             {/* A real <Link> to /services, not an anchor. Without an internal
                 link the page is reachable only via the sitemap, which is a
@@ -339,9 +387,14 @@ export default function Home() {
                 />
               </div>
             </div>
-            <h2 className="text-6xl sm:text-7xl text-stone-900 mb-4" style={scriptHeading}>
-              Your Nail Artist
-            </h2>
+            {/* The page's one <h1>. "Your Nail Artist" said nothing about
+                what she does or where — the two things somebody searching
+                "las vegas nail tech" is actually typing. Same script face and
+                placement, so it reads as it always did; slightly smaller at
+                the mobile breakpoint because the line is longer now. */}
+            <h1 className="text-5xl sm:text-7xl text-stone-900 mb-4" style={scriptHeading}>
+              Your Las Vegas Nail Artist
+            </h1>
             <p className="text-lg text-stone-600 mb-8 leading-relaxed">
               {bioText || "Las Vegas based nail artist specializing in custom designs"}
             </p>
@@ -363,6 +416,12 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* ── HER WORK ──
+            Directly after the hero, before the policies and the form: it's
+            what someone came to see, and it's what decides whether they book.
+            Renders nothing at all when she hasn't uploaded any sets. */}
+        <NailGallery items={gallery} />
 
         {/* ── BOOKING POLICIES ── */}
         <section id="policies" className="py-14 border-b border-stone-200">
