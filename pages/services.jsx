@@ -10,7 +10,7 @@ import {
   LENGTH_OPTIONS,
   PEDICURES,
   REMOVALS,
-  SPA_PEDI_CENTS,
+  PEDI_FRENCH_CENTS,
   formatPrice,
 } from "@/utils/pricing";
 
@@ -69,7 +69,7 @@ export default function Services() {
       <Seo
         path="/services"
         title="Nail Prices & Services"
-        description="Starting prices at Mya's Nails Baby in Las Vegas — Gel-X from $45, acrylic from $55, hard gel, structure gel, gel manicures, pedicures and custom nail art. Estimates; final price confirmed at your appointment. $20 deposit books your time."
+        description="Starting prices at Mya's Nails Baby in Las Vegas — Gel-X from $60, acrylic from $65, hard gel, structure gel, gel manicures, pedicures and custom nail art. Estimates; final price confirmed at your appointment. $20 deposit books your time."
         jsonLd={[servicesJsonLd(), salonJsonLd()]}
       />
 
@@ -123,7 +123,7 @@ export default function Services() {
                       {s.lengths.map((cents, i) => (
                         <td key={i} className="py-2.5 text-right text-stone-900 font-medium whitespace-nowrap">
                           {formatPrice(cents)}
-                          {/* Her list prints the top acrylic length as "$95+" —
+                          {/* Her list prints the top acrylic length as "$85+" —
                               a genuinely enormous custom set can run over. */}
                           {s.openEnded && i === s.lengths.length - 1 ? "+" : ""}
                         </td>
@@ -169,15 +169,11 @@ export default function Services() {
               ))}
           </Section>
 
-          <Section title="Pedicures">
+          <Section title="Pedicures" intro="Performed dry.">
             {pedicures.map(([name, cents]) => (
               <Row key={name} label={name} value={formatPrice(cents)} />
             ))}
-            <Row
-              label="Spa add-on"
-              note="soak, scrub, mask"
-              value={`+${formatPrice(SPA_PEDI_CENTS)}`}
-            />
+            <Row label="French tips add-on" value={`+${formatPrice(PEDI_FRENCH_CENTS)}`} />
           </Section>
 
           <Section title="Booking &amp; Deposits">

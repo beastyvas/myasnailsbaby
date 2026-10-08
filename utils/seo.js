@@ -172,13 +172,13 @@ export function salonJsonLd() {
  * RANGES, NOT EXACT PRICES. Every figure here is a minimum, because the work
  * genuinely varies: length changes the price, art level is Mya's judgement
  * about the design in front of her, and the site only ever collects a $20
- * deposit — the balance is settled at the chair. Publishing `price: 45.00`
+ * deposit — the balance is settled at the chair. Publishing `price: 60.00`
  * would be advertising a number she can't be held to. `minPrice` says the
- * true thing, and Google renders it as "from $45" rather than a promise.
+ * true thing, and Google renders it as "from $60" rather than a promise.
  *
  * `maxPrice` is only set where a real ceiling exists — the top of a length
  * ladder. Acrylic and hard gel are open-ended (her list prints the longest
- * length as "$95+"), so those get no maximum, and neither do flat-priced
+ * length as "$85+"), so those get no maximum, and neither do flat-priced
  * services, which can always have art added on top.
  *
  * Built from utils/pricing.js rather than a second hand-written list, so the

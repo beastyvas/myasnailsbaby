@@ -10,7 +10,8 @@
  */
 
 export const DEPOSIT_CENTS = 2000;
-export const SPA_PEDI_CENTS = 1000;
+/** French tips on a pedicure — the list prices it as an add-on to any pedi. */
+export const PEDI_FRENCH_CENTS = 500;
 
 /** Sets priced by nail length. Keys match the form's Length values. */
 const BY_LENGTH = {
@@ -28,7 +29,7 @@ export const LENGTH_OPTIONS = Object.keys(BY_LENGTH);
  *
  * `lengths` is the five-price ladder (XS/S → XXL). `flat` is a single price
  * with no length. `openEnded` marks a service whose top length the list
- * itself prints with a "+" — acrylic XXL is "$95+", because a genuinely
+ * itself prints with a "+" — acrylic XXL is "$85+", because a genuinely
  * enormous custom set can run over.
  *
  * KEY ORDER IS THE MENU ORDER. The booking form and both dashboard dropdowns
@@ -41,19 +42,19 @@ export const LENGTH_OPTIONS = Object.keys(BY_LENGTH);
  */
 export const SERVICES = {
   // Mya's order, from her list.
-  "Gel-X": { label: "Gel-X", lengths: [4500, 5500, 6500, 7500, 8500] },
+  "Gel-X": { label: "Gel-X", lengths: [6000, 6500, 7000, 7500, 8000] },
   "Gel Manicure": { label: "Gel Manicure", flat: 4500 },
   "Structure Gel Manicure": { label: "Structure Gel Manicure", flat: 5500 },
   "Hard Gel with Tips": {
     label: "Hard Gel with Tips",
-    // Ladder shifted up $10 across the board (was 55/65/75/85/95) so the
-    // shortest length starts at $65.
-    lengths: [6500, 7500, 8500, 9500, 10500],
+    // Same ladder as acrylic — her list prints them as one section,
+    // "Acrylic or hard gel with tips".
+    lengths: [6500, 7000, 7500, 8000, 8500],
     openEnded: true,
   },
   "Hard Gel Manicure": { label: "Hard Gel Manicure", flat: 6000 },
-  Acrylic: { label: "Acrylic", lengths: [5500, 6500, 7500, 8500, 9500], openEnded: true },
-  "Basic Manicure": { label: "Basic Manicure (no polish)", flat: 3500 },
+  Acrylic: { label: "Acrylic", lengths: [6500, 7000, 7500, 8000, 8500], openEnded: true },
+  "Basic Manicure": { label: "Basic Manicure (no polish)", flat: 4000 },
 
   // Structure gel and builder gel are the same service — Mya asked for the
   // name change. The old name is the string sitting on every historical
@@ -118,7 +119,7 @@ export function serviceLabel(value) {
 }
 
 /**
- * "Gel-X — from $45", "Basic Manicure (no polish) — $35".
+ * "Gel-X — from $60", "Basic Manicure (no polish) — $40".
  *
  * Derived rather than typed into the markup, so a price change in this file
  * can't leave a stale figure sitting in the dropdown. "from" for anything
@@ -141,7 +142,7 @@ export function serviceMenuLabel(value) {
  * @returns {{
  *   lines: {label: string, cents: number}[],
  *   total: number,
- *   isFrom: boolean,   // true when a component is open-ended ("$95+")
+ *   isFrom: boolean,   // true when a component is open-ended ("$85+")
  *   unknown: boolean,  // a selection couldn't be priced — show nothing
  *   depositCents: number,
  *   balanceCents: number
@@ -155,7 +156,6 @@ export function quote({
   soakoff,
   pedicure,
   pedicureType,
-  spaPedi,
 } = {}) {
   const lines = [];
   let isFrom = false;
@@ -201,7 +201,6 @@ export function quote({
       // Normalize the label so the legacy typo never reaches a client.
       const label = pedicureType.replace("pedciure", "pedicure");
       lines.push({ label, cents: pedi });
-      if (spaPedi) lines.push({ label: "Spa pedi (soak, scrub, mask)", cents: SPA_PEDI_CENTS });
     }
   }
 

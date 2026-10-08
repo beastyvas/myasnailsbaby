@@ -82,7 +82,6 @@ export default async function handler(req, res) {
       soakoff: bookingMetadata.soakoff,
       pedicure: bookingMetadata.pedicure,
       pedicureType: bookingMetadata.pedicure_type,
-      spaPedi: bookingMetadata.spa_pedi === "yes",
     });
     const quotedCents = priced.unknown ? null : priced.total;
 

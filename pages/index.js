@@ -88,7 +88,6 @@ export default function Home({ gallery = [] }) {
   const [step, setStep] = useState(1);
   const [artLevel, setArtLevel] = useState("");
   const [nailLength, setNailLength] = useState("");
-  const [spaPedi, setSpaPedi] = useState(false);
   const [inspoPaths, setInspoPaths] = useState([]);
 
   /**
@@ -245,19 +244,18 @@ export default function Home({ gallery = [] }) {
     const pedicure = data.get("pedicure");
     const pedicureType = data.get("pedicureType") || "";
     const bookingNails = data.get("bookingNails") || "no";
-    const spa_pedi = data.get("spaPedi") ? "yes" : "no";
     // Same id the inspo photos were uploaded under, so their paths resolve.
     const bookingId = bookingIdOnce();
     const durationHours = duration;
 
-    const payload = { id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, duration: durationHours, soakoff, referral, pedicure, pedicure_type: pedicureType, booking_nails: bookingNails, spa_pedi, email };
+    const payload = { id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, duration: durationHours, soakoff, referral, pedicure, pedicure_type: pedicureType, booking_nails: bookingNails, email };
 
     try {
       const res = await fetch("/api/book", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error("Booking failed");
 
-      const bookingMetadata = { booking_id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, pedicure_type: pedicureType, booking_nails: bookingNails, spa_pedi, duration: durationHours, soakoff, referral, pedicure, email, inspo_urls: encodeInspoPaths(inspoPaths) };
+      const bookingMetadata = { booking_id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, pedicure_type: pedicureType, booking_nails: bookingNails, duration: durationHours, soakoff, referral, pedicure, email, inspo_urls: encodeInspoPaths(inspoPaths) };
 
       const stripeRes = await fetch("/api/create-checkout-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bookingMetadata }) });
       const stripeJson = await stripeRes.json();
@@ -302,7 +300,7 @@ export default function Home({ gallery = [] }) {
   // quote, so what the client is shown can never drift from what's recorded.
   const priceQuote = quote({
     bookingNails, service, length: nailLength, artLevel, soakoff,
-    pedicure, pedicureType, spaPedi,
+    pedicure, pedicureType,
   });
   const showPrice = hasQuote(priceQuote);
 
@@ -650,17 +648,6 @@ export default function Home({ gallery = [] }) {
                       <option value="Gel pedicure + Acrylic big toes">Gel Pedicure + Acrylic Big Toes — $55</option>
                       <option value="Acrylic Pedicure">Acrylic Pedicure — $65</option>
                     </select>
-                    {/* Pedis are dry by default. This was only capturable by
-                        typing "spa pedi" into the notes, where it got missed
-                        and never priced. */}
-                    <label className="flex items-start gap-3 cursor-pointer mt-4">
-                      <input type="checkbox" name="spaPedi" checked={spaPedi}
-                        onChange={(e) => setSpaPedi(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
-                      <span className="text-sm text-stone-700 leading-relaxed">
-                        Make it a <strong>spa pedi</strong> — soak, scrub and mask <span className="text-stone-500">(+$10)</span>
-                      </span>
-                    </label>
                   </div>
                 )}
 
