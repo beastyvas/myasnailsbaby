@@ -2,10 +2,20 @@
 
 import Link from "next/link";
 import Seo from "@/components/Seo";
+import { studioFor, studioPostal } from "@/utils/location";
+import { vegasParts } from "@/utils/time";
 
 const sectionHeading = { fontFamily: "Georgia, serif" };
 
-export default function PrivacyPolicy() {
+/** Today's Vegas date, so the address switches to the new studio on move
+ *  day. Regenerated hourly — the page stays static and fast, and the switch
+ *  needs no deploy. */
+export async function getStaticProps() {
+  return { props: { today: vegasParts().date }, revalidate: 3600 };
+}
+
+export default function PrivacyPolicy({ today = "" }) {
+  const studio = studioFor(today);
   return (
     <main className="min-h-screen bg-stone-50">
       <Seo path="/privacy" title="Privacy Policy" description="How Mya's Nails Baby collects, uses and protects your information, including SMS consent and how to opt out of promotional texts." />
@@ -153,7 +163,7 @@ export default function PrivacyPolicy() {
             <h2 className="text-xl font-bold text-stone-900 mb-3" style={sectionHeading}>12. Contact Us</h2>
             <div className="text-stone-700 space-y-1 text-sm">
               <p><span className="font-semibold text-stone-900">Business:</span> MyasNailsBaby</p>
-              <p><span className="font-semibold text-stone-900">Address:</span> 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, NV 89119</p>
+              <p><span className="font-semibold text-stone-900">Address:</span> {studioPostal(studio)}</p>
               <p><span className="font-semibold text-stone-900">Phone:</span> (702) 981-8428</p>
               <p><span className="font-semibold text-stone-900">Email:</span> myasnailsbaby@gmail.com</p>
               <p><span className="font-semibold text-stone-900">Instagram:</span> @myasnailsbaby</p>

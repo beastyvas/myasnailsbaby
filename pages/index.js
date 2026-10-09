@@ -329,7 +329,7 @@ export default function Home({ gallery = [], today = "" }) {
         bareTitle
         title="Mya's Nails Baby | Nail Artist in Las Vegas — Gel-X, Acrylic & Nail Art"
         description="Custom nail sets by Mya in Las Vegas. Gel-X, acrylic, hard gel, structure gel and hand-painted nail art, plus gel pedicures. Book online with a $20 deposit."
-        jsonLd={[salonJsonLd(), faqJsonLd()]}
+        jsonLd={[salonJsonLd(today), faqJsonLd(today)]}
       />
       <Toaster position="bottom-center" />
 
@@ -651,7 +651,7 @@ export default function Home({ gallery = [], today = "" }) {
                   <div className="bg-stone-50 p-5 border border-stone-200">
                     <label htmlFor="pedicureType" className="sr-only">Pedicure type</label>
                     <select id="pedicureType" name="pedicureType" value={pedicureType} onChange={(e) => setPedicureType(e.target.value)} className={selectCls}>
-                      <option value="">Pedicure Type</option>
+                      <option value="">Select Pedicure Type</option>
                       <option value="Gel pedicure">Gel Pedicure — $50</option>
                       <option value="Gel pedicure + Acrylic big toes">Gel Pedicure + Acrylic Big Toes — $55</option>
                       <option value="Acrylic Pedicure">Acrylic Pedicure — $65</option>

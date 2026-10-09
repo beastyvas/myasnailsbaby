@@ -24,4 +24,20 @@ ok(M.movedByMya({ name: "Ana", oldDate: "2026-10-15", oldTime: "10:00", newDate:
 ok(F.EXTRA_TEXTS_ENABLED === false, "extra automated texts are off");
 ok(F.GROWTH_ENABLED === false, "rebooking nudge is off");
 
+// The public site and Google's copy of the address flip on move day too.
+const S = await load("utils/seo.js");
+const before2 = S.salonJsonLd("2026-10-20"), after2 = S.salonJsonLd("2026-10-21");
+ok(before2.address.streetAddress.includes("Flamingo") && before2.geo, "structured data says Flamingo, with its pin, until the move");
+ok(after2.address.streetAddress.includes("Pecos") && after2.address.addressLocality === "Henderson" && after2.address.postalCode === "89074", "structured data says Pecos, Henderson 89074 from move day");
+ok(!after2.geo, "no guessed coordinates for the new studio");
+ok(JSON.stringify(S.faqJsonLd("2026-10-21")).includes("Pecos"), "FAQ answer moves too");
+
+const { read } = await import("./helpers/repo.mjs");
+for (const page of ["pages/terms.jsx", "pages/privacy.jsx", "pages/services.jsx"]) {
+  const src = read(page);
+  ok(!/Flamingo/.test(src), `${page} has no hardcoded address`);
+  ok(/revalidate:\s*3600/.test(src), `${page} regenerates hourly so it flips without a deploy`);
+}
+ok(/salonJsonLd\(today\)/.test(read("pages/index.js")), "homepage structured data is date-aware");
+
 h.done();

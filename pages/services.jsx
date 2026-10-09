@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import Seo from "@/components/Seo";
+import { studioFor, studioPostal } from "@/utils/location";
+import { vegasParts } from "@/utils/time";
 import { salonJsonLd, servicesJsonLd } from "@/utils/seo";
 import {
   ART_LEVELS,
@@ -63,14 +65,22 @@ function Section({ title, children, intro }) {
   );
 }
 
-export default function Services() {
+/** Today's Vegas date, so the address switches to the new studio on move
+ *  day. Regenerated hourly — the page stays static and fast, and the switch
+ *  needs no deploy. */
+export async function getStaticProps() {
+  return { props: { today: vegasParts().date }, revalidate: 3600 };
+}
+
+export default function Services({ today = "" }) {
+  const studio = studioFor(today);
   return (
     <main className="min-h-screen bg-stone-50">
       <Seo
         path="/services"
         title="Nail Prices & Services"
         description="Starting prices at Mya's Nails Baby in Las Vegas — Gel-X from $60, acrylic from $65, hard gel, structure gel, gel manicures, pedicures and custom nail art. Estimates; final price confirmed at your appointment. $20 deposit books your time."
-        jsonLd={[servicesJsonLd(), salonJsonLd()]}
+        jsonLd={[servicesJsonLd(), salonJsonLd(today)]}
       />
 
       <header className="bg-white border-b border-stone-200">
@@ -84,7 +94,7 @@ export default function Services() {
         <div className="mb-10">
           <h1 className="text-4xl font-bold text-stone-900 mb-2" style={sectionHeading}>Nail Prices &amp; Services</h1>
           <p className="text-stone-600 leading-relaxed max-w-2xl">
-            Custom sets by Mya in a private suite on E. Flamingo Rd, Las Vegas. By
+            Custom sets by Mya in a private suite on {studio.area}. By
             appointment only. A {formatPrice(DEPOSIT_CENTS)} deposit books your
             time and comes off the price of your set.
           </p>

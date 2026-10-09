@@ -70,11 +70,15 @@ and mismatches quietly cost you ranking.
 | Business name | `Mya's Nails Baby` |
 | Category (primary) | **Nail salon** |
 | Categories (secondary) | Nail technician, Beauty salon |
-| Address | `2080 E. Flamingo Rd. Suite #106, Room 4, Las Vegas, NV 89119` |
+| Address | Through Oct 20, 2026: `2080 E. Flamingo Rd. Suite #106, Room 4, Las Vegas, NV 89119`<br>**From Oct 21, 2026:** `178 N Pecos Rd. Suite 1, Henderson, NV 89074` |
 | Phone | `(702) 981-8428` |
 | Website | `https://www.myasnailsbaby.com` |
 | Booking link | `https://www.myasnailsbaby.com/#booking` |
 | Menu / services link | `https://www.myasnailsbaby.com/services` |
+
+> **Moving day (Oct 21):** the website switches to the Pecos address on its
+> own that morning. Change the address on the Business Profile (and Yelp,
+> Instagram bio, anywhere else it's listed) the same day so they keep matching.
 
 **Hours** — match the site exactly:
 

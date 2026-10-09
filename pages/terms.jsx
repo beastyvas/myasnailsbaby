@@ -2,10 +2,20 @@
 
 import Link from "next/link";
 import Seo from "@/components/Seo";
+import { studioFor, studioPostal } from "@/utils/location";
+import { vegasParts } from "@/utils/time";
 
 const sectionHeading = { fontFamily: "Georgia, serif" };
 
-export default function TermsOfService() {
+/** Today's Vegas date, so the address switches to the new studio on move
+ *  day. Regenerated hourly — the page stays static and fast, and the switch
+ *  needs no deploy. */
+export async function getStaticProps() {
+  return { props: { today: vegasParts().date }, revalidate: 3600 };
+}
+
+export default function TermsOfService({ today = "" }) {
+  const studio = studioFor(today);
   return (
     <main className="min-h-screen bg-stone-50">
       <Seo path="/terms" title="Terms of Service" description="Booking terms for Mya's Nails Baby — deposits, cancellation and rescheduling windows, late arrivals, and no-show fees." />
@@ -48,7 +58,7 @@ export default function TermsOfService() {
               <li>Builder gel manicures</li>
               <li>Nail art and custom designs</li>
             </ul>
-            <p className="text-stone-700 leading-relaxed">All services are provided at our Las Vegas location: 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, NV.</p>
+            <p className="text-stone-700 leading-relaxed">All services are provided at our studio: {studio.name ? `${studio.name}, ` : ""}{studioPostal(studio)}.</p>
           </section>
 
           <section>
@@ -146,7 +156,7 @@ export default function TermsOfService() {
             <h2 className="text-xl font-bold text-stone-900 mb-3" style={sectionHeading}>15. Contact Information</h2>
             <div className="text-stone-700 space-y-1 text-sm">
               <p><span className="font-semibold text-stone-900">Business:</span> MyasNailsBaby</p>
-              <p><span className="font-semibold text-stone-900">Address:</span> 2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, NV 89119</p>
+              <p><span className="font-semibold text-stone-900">Address:</span> {studioPostal(studio)}</p>
               <p><span className="font-semibold text-stone-900">Phone:</span> (702) 981-8428</p>
               <p><span className="font-semibold text-stone-900">Email:</span> myasnailsbaby@gmail.com</p>
               <p><span className="font-semibold text-stone-900">Instagram:</span> @myasnailsbaby</p>

@@ -6,6 +6,7 @@
 // numbers a crawler reads and the numbers a client is charged are the same
 // numbers. pricing.js imports nothing, so there's no cycle here.
 import { BOOKABLE_SERVICES, PEDICURES } from "./pricing.js";
+import { studioFor } from "./location.js";
 
 export const SITE_NAME = "Mya's Nails Baby";
 export const SITE_TAGLINE = "Nail Artist in Las Vegas";
@@ -18,16 +19,20 @@ export const CONTACT = {
   instagram: "https://instagram.com/myasnailsbaby",
 };
 
-export const ADDRESS = {
-  street: "2080 E. Flamingo Rd. Suite #106, Room 4",
-  city: "Las Vegas",
-  region: "NV",
-  postalCode: "89119",
-  country: "US",
-  /** From the studio's map pin — lets Google place the business precisely. */
-  latitude: 36.1136458,
-  longitude: -115.1218948,
-};
+/** The studio's postal address on a given day (YYYY-MM-DD, Vegas). It moves
+ *  on MOVE_DATE in utils/location.js, which owns both addresses. */
+export function addressOn(today) {
+  const s = studioFor(today);
+  return {
+    street: s.street,
+    city: s.city,
+    region: s.region,
+    postalCode: s.postalCode,
+    country: "US",
+    latitude: s.latitude,
+    longitude: s.longitude,
+  };
+}
 
 /** Matches the Studio Hours block on the homepage. Sun/Wed/Thu are closed
  *  and are simply absent — schema.org reads a missing day as closed. */
@@ -94,7 +99,8 @@ export function jsonLdSafe(value) {
 
 /** NailSalon is a recognized schema.org type and a more specific signal to
  *  Google than the generic LocalBusiness — it's what drives the map pack. */
-export function salonJsonLd() {
+export function salonJsonLd(today) {
+  const ADDRESS = addressOn(today);
   return {
     "@context": "https://schema.org",
     "@type": "NailSalon",
@@ -118,11 +124,10 @@ export function salonJsonLd() {
       postalCode: ADDRESS.postalCode,
       addressCountry: ADDRESS.country,
     },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: ADDRESS.latitude,
-      longitude: ADDRESS.longitude,
-    },
+    // Only when there's a real pin — a guessed coordinate is worse than none.
+    ...(ADDRESS.latitude != null
+      ? { geo: { "@type": "GeoCoordinates", latitude: ADDRESS.latitude, longitude: ADDRESS.longitude } }
+      : {}),
     areaServed: {
       "@type": "City",
       name: "Las Vegas",
@@ -224,7 +229,8 @@ export function servicesJsonLd() {
 
 /** Questions people actually ask before booking. Eligible for the FAQ rich
  *  result, and answered from the policies already stated on the homepage. */
-export function faqJsonLd() {
+export function faqJsonLd(today) {
+  const ADDRESS = addressOn(today);
   const qa = [
     [
       "Do I need a deposit to book with Mya?",
