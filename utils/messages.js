@@ -17,8 +17,7 @@
  */
 
 import { prettyDate, to12h } from "./time.js";
-
-export const STUDIO_ADDRESS = "2080 E. Flamingo Rd. Suite #106 Room 4, Las Vegas, NV";
+import { studioAddressFor } from "./location.js";
 export const BRAND = "Mya's Nails Baby";
 export const IG = "@myasnailsbaby";
 
@@ -33,7 +32,7 @@ export function bookingConfirmation({ name, date, startTime }) {
   return (
     `Hey love! Your appointment with Mya is confirmed for ${prettyDate(date)} ` +
     `at ${to12h(startTime)} 💅\n` +
-    `📍 ${STUDIO_ADDRESS}\n` +
+    `📍 ${studioAddressFor(date)}\n` +
     `DM ${IG} if you need anything!\n` +
     `Reply STOP to unsubscribe.`
   );
@@ -44,17 +43,17 @@ export function reminder24h({ name, date, startTime }) {
   return (
     `Hi ${firstName(name)}! Reminder from ${BRAND} — your appointment is tomorrow, ` +
     `${prettyDate(date)} at ${to12h(startTime)}.\n` +
-    `📍 ${STUDIO_ADDRESS}\n` +
+    `📍 ${studioAddressFor(date)}\n` +
     `Please arrive on time. Deposits are non-refundable and no extra guests please.\n` +
     `DM ${IG} if anything changes!`
   );
 }
 
 /** 2–4 hours out. Short on purpose — they already know the details. */
-export function reminderDayOf({ name, startTime }) {
+export function reminderDayOf({ name, date, startTime }) {
   return (
     `See you today at ${to12h(startTime)}, ${firstName(name)}! 💅\n` +
-    `📍 ${STUDIO_ADDRESS}\n` +
+    `📍 ${studioAddressFor(date)}\n` +
     `— ${BRAND}`
   );
 }
@@ -139,7 +138,7 @@ export function rescheduledByClient({ name, oldDate, oldTime, newDate, newTime }
     `Hi ${firstName(name)}! Your appointment with Mya has been rescheduled:\n\n` +
     `Old: ${prettyDate(oldDate)} at ${to12h(oldTime)}\n` +
     `New: ${prettyDate(newDate)} at ${to12h(newTime)}\n\n` +
-    `📍 ${STUDIO_ADDRESS}\n\n` +
+    `📍 ${studioAddressFor(newDate)}\n\n` +
     `DM ${IG} with questions! 💖\n\n` +
     `Reply STOP to unsubscribe.`
   );
@@ -150,7 +149,7 @@ export function movedByMya({ name, oldDate, oldTime, newDate, newTime }) {
   let msg = `Hi ${firstName(name)}! Your appointment with Mya has been updated:\n\n`;
   if (oldDate !== newDate) msg += `📅 New Date: ${prettyDate(newDate)}\n`;
   if (oldTime !== newTime) msg += `🕐 New Time: ${to12h(newTime)}\n`;
-  msg += `\n📍 ${STUDIO_ADDRESS}\n\nDM ${IG} if you have any questions! 💖`;
+  msg += `\n📍 ${studioAddressFor(newDate)}\n\nDM ${IG} if you have any questions! 💖`;
   return msg;
 }
 

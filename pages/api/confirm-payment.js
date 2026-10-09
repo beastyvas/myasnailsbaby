@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import { sendSmsOnce } from "@/utils/smsOnce";
 import * as M from "@/utils/messages";
+import { studioFor } from "@/utils/location";
 import { prettyDate } from "@/utils/time";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -215,7 +216,7 @@ export default async function handler(req, res) {
                 <!-- Location -->
                 <div style="border-left: 3px solid #9f1239; padding: 14px 18px; margin-bottom: 24px; background: #fafaf9;">
                   <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Location</p>
-                  <p style="margin: 0; color: #44403c; font-size: 13px; line-height: 1.6;">2080 E. Flamingo Rd., Suite #106, Room 4<br>Las Vegas, NV 89119</p>
+                  <p style="margin: 0; color: #44403c; font-size: 13px; line-height: 1.6;">${studioFor(booking.date).line1}<br>${studioFor(booking.date).line2}</p>
                 </div>
 
                 <!-- Policy -->

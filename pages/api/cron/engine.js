@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { checkQuota, normalizePhone, sendSms, textbeltConfigured } from "@/utils/sms";
-import { GROWTH_ENABLED } from "@/utils/features";
+import { EXTRA_TEXTS_ENABLED, GROWTH_ENABLED } from "@/utils/features";
 import { sweepInspoOrphans } from "@/utils/inspoSweep";
 import { hoursSince, hoursUntil, todayVegas, vegasParts } from "@/utils/time";
 import * as M from "@/utils/messages";
@@ -28,10 +28,13 @@ const LOOKBACK_DAYS = 120;
  * here, so there's one place to reason about what a client receives.
  *
  *   · 24h reminder        — appointments 6–26h out
- *   · day-of reminder     — appointments 0–6h out
- *   · review request      — 2–24h after the appointment ended
- *   · rebooking nudge     — at the fill interval, before they drift
- *   · checkout recovery   — 30 min after a checkout was started and dropped
+ *   · day-of reminder     — appointments 0–6h out         (EXTRA_TEXTS_ENABLED)
+ *   · review request      — 2–24h after the appointment ended (EXTRA_TEXTS_ENABLED)
+ *   · rebooking nudge     — at the fill interval, before they drift (GROWTH_ENABLED)
+ *   · checkout recovery   — 30 min after a checkout was started and dropped (EXTRA_TEXTS_ENABLED)
+ *
+ * Mya only wants the confirmation (sent from the webhook) and the day-before
+ * reminder, so everything flagged above is currently off.
  *
  * Those windows are wide on purpose. This job is scheduled hourly and does
  * not run hourly — GitHub throttles free-tier cron to every 2–4 hours — so
@@ -152,11 +155,11 @@ export default async function handler(req, res) {
         "reminder_24h",
         M.reminder24h({ name: b.name, date: b.date, startTime: b.start_time })
       );
-    } else if (dueForDayOf(until)) {
+    } else if (EXTRA_TEXTS_ENABLED && dueForDayOf(until)) {
       await sendOnce(
         b,
         "reminder_day_of",
-        M.reminderDayOf({ name: b.name, startTime: b.start_time })
+        M.reminderDayOf({ name: b.name, date: b.date, startTime: b.start_time })
       );
     }
   }
@@ -167,7 +170,7 @@ export default async function handler(req, res) {
   // nails is the moment they'll actually do it. No link on purpose: the ask
   // tells them what to search, which works before the Business Profile has
   // a short link and doesn't trip Textbelt's link filter.
-  if (reviewsOn) {
+  if (EXTRA_TEXTS_ENABLED && reviewsOn) {
     for (const b of live) {
       if (b.no_show) continue;
       const sinceEnd = hoursSince(b.date, b.end_time || b.start_time, now);
@@ -227,53 +230,55 @@ export default async function handler(req, res) {
   // Someone who picked a time and stalled at the card form is the most
   // recoverable person in the funnel — they'd already decided. One text,
   // half an hour later, while the intent is still warm. Never a second.
-  const recoverCutoffNew = new Date(now - 30 * 60_000).toISOString();
-  const recoverCutoffOld = new Date(now - 12 * 3_600_000).toISOString();
+  if (EXTRA_TEXTS_ENABLED) {
+    const recoverCutoffNew = new Date(now - 30 * 60_000).toISOString();
+    const recoverCutoffOld = new Date(now - 12 * 3_600_000).toISOString();
 
-  const { data: abandoned, error: pendingErr } = await supabase
-    .from("pending_checkouts")
-    .select("id, name, phone, service, date, start_time")
-    .eq("completed", false)
-    .is("recovered_at", null)
-    .lt("created_at", recoverCutoffNew)
-    .gt("created_at", recoverCutoffOld);
+    const { data: abandoned, error: pendingErr } = await supabase
+      .from("pending_checkouts")
+      .select("id, name, phone, service, date, start_time")
+      .eq("completed", false)
+      .is("recovered_at", null)
+      .lt("created_at", recoverCutoffNew)
+      .gt("created_at", recoverCutoffOld);
 
-  if (pendingErr) {
-    console.error("Engine: couldn't load pending checkouts:", pendingErr.message);
-  } else {
-    // Someone who abandoned one checkout and booked a different slot later
-    // shouldn't be chased about the one they dropped.
-    const bookedPhones = new Set(live.map((b) => normalizePhone(b.phone)));
+    if (pendingErr) {
+      console.error("Engine: couldn't load pending checkouts:", pendingErr.message);
+    } else {
+      // Someone who abandoned one checkout and booked a different slot later
+      // shouldn't be chased about the one they dropped.
+      const bookedPhones = new Set(live.map((b) => normalizePhone(b.phone)));
 
-    for (const p of abandoned || []) {
-      // Same rule as sendOnce, and same reason to check before claiming: the
-      // recovered_at stamp is this path's idempotency guard, so setting it
-      // without sending would lose the nudge for good. The 30min–12h window
-      // is wide enough that a morning run still catches an overnight drop.
-      if (quiet) { skippedQuiet++; continue; }
+      for (const p of abandoned || []) {
+        // Same rule as sendOnce, and same reason to check before claiming: the
+        // recovered_at stamp is this path's idempotency guard, so setting it
+        // without sending would lose the nudge for good. The 30min–12h window
+        // is wide enough that a morning run still catches an overnight drop.
+        if (quiet) { skippedQuiet++; continue; }
 
-      const phone = normalizePhone(p.phone);
-      if (!phone || optedOut.has(phone) || bookedPhones.has(phone)) continue;
+        const phone = normalizePhone(p.phone);
+        if (!phone || optedOut.has(phone) || bookedPhones.has(phone)) continue;
 
-      // Claim it first — a stalled send must not leave the row eligible for
-      // a second run to pick up and text again.
-      const { error: claimErr } = await supabase
-        .from("pending_checkouts")
-        .update({ recovered_at: new Date().toISOString() })
-        .eq("id", p.id)
-        .is("recovered_at", null);
-      if (claimErr) continue;
+        // Claim it first — a stalled send must not leave the row eligible for
+        // a second run to pick up and text again.
+        const { error: claimErr } = await supabase
+          .from("pending_checkouts")
+          .update({ recovered_at: new Date().toISOString() })
+          .eq("id", p.id)
+          .is("recovered_at", null);
+        if (claimErr) continue;
 
-      const sent = await sendSms(
-        p.phone,
-        M.checkoutRecovery({ name: p.name, date: p.date, startTime: p.start_time }),
-        { listenForReplies: true }
-      );
+        const sent = await sendSms(
+          p.phone,
+          M.checkoutRecovery({ name: p.name, date: p.date, startTime: p.start_time }),
+          { listenForReplies: true }
+        );
 
-      if (sent) counts.checkout_recovery++;
-      else {
-        await supabase.from("pending_checkouts").update({ recovered_at: null }).eq("id", p.id);
-        failures.push({ pending: p.id, kind: "checkout_recovery" });
+        if (sent) counts.checkout_recovery++;
+        else {
+          await supabase.from("pending_checkouts").update({ recovered_at: null }).eq("id", p.id);
+          failures.push({ pending: p.id, kind: "checkout_recovery" });
+        }
       }
     }
   }

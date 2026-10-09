@@ -17,12 +17,20 @@
  * sites, so restoring it is a one-line diff instead of an archaeology
  * exercise.
  *
- * NOT covered by this switch, on purpose: appointment reminders, review
- * requests and abandoned-checkout recovery. Reminders in particular are core
- * service rather than marketing — a client who paid a deposit expects to be
- * reminded — so they keep running.
+ * Appointment reminders aren't covered by this switch — see EXTRA_TEXTS_ENABLED.
  */
 export const GROWTH_ENABLED = false;
+
+/**
+ * Automated client texts beyond the essentials: the review ask after a visit,
+ * the "see you today" text a few hours before, and the abandoned-checkout
+ * nudge.
+ *
+ * OFF. Mya only wants clients to get two texts: the booking confirmation and
+ * the reminder the day before. Those two always run. Flip this to `true` to
+ * bring the other three back.
+ */
+export const EXTRA_TEXTS_ENABLED = false;
 
 /**
  * The client-facing "cancel my appointment" flow.

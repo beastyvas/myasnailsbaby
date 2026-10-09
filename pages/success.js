@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Seo from "@/components/Seo";
+import { studioAddressFor } from "@/utils/location";
 
 export default function SuccessPage() {
   const router = useRouter();
@@ -180,7 +181,7 @@ export default function SuccessPage() {
             </div>
 
             <div className="text-center space-y-1 text-sm text-stone-600">
-              <p>2080 E. Flamingo Rd. Suite #106 Room 4 · Las Vegas, NV</p>
+              <p>{studioAddressFor(bookingDetails?.date)}</p>
               <p>
                 DM{" "}
                 <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-rose-800 font-medium hover:underline">

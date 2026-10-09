@@ -9,7 +9,7 @@ import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils
 import { bookingCharge, shortAgo, summarizeClient } from "@/utils/clientSummary";
 import { normalizePhone } from "@/utils/sms";
 import { BOOKABLE_SERVICES, DEPOSIT_CENTS, formatPrice, serviceLabel } from "@/utils/pricing";
-import { GROWTH_ENABLED } from "@/utils/features";
+import { EXTRA_TEXTS_ENABLED, GROWTH_ENABLED } from "@/utils/features";
 import { todayVegas } from "@/utils/time";
 
 /** How long a past appointment stays on the Appointments tab. */
@@ -2306,10 +2306,13 @@ export default function Dashboard() {
             <div className="bg-white border border-stone-200 p-6">
               <SectionHeading>Automatic Texts</SectionHeading>
               <p className="text-xs text-stone-500 mb-5 leading-relaxed">
-                These go out on their own, every hour, without you touching anything. Appointment
-                reminders always send — they&apos;re part of the booking.
+                These go out on their own, without you touching anything. Clients get the booking
+                confirmation and a reminder the day before — those always send.
               </p>
               <div className="space-y-4">
+                {/* Review ask: hidden while extra texts are off, same as the
+                    rebooking nudge below. */}
+                {EXTRA_TEXTS_ENABLED && (
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" checked={automations.reviews_enabled}
                     onChange={(e) => setAutomations({ ...automations, reviews_enabled: e.target.checked })}
@@ -2320,6 +2323,7 @@ export default function Dashboard() {
                     searches &ldquo;nails near me&rdquo;.
                   </span>
                 </label>
+                )}
                 {/* Rebooking nudge: hidden while the growth switch is off,
                     so the control doesn't sit there implying it does
                     something. The setting itself is untouched underneath. */}
