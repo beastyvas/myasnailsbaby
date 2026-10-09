@@ -10,6 +10,10 @@ import { bookingCharge, shortAgo, summarizeClient } from "@/utils/clientSummary"
 import { normalizePhone } from "@/utils/sms";
 import { BOOKABLE_SERVICES, DEPOSIT_CENTS, formatPrice, serviceLabel } from "@/utils/pricing";
 import { GROWTH_ENABLED } from "@/utils/features";
+import { todayVegas } from "@/utils/time";
+
+/** How long a past appointment stays on the Appointments tab. */
+const RECENT_DAYS = 14;
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
@@ -427,6 +431,7 @@ export default function Dashboard() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [newSlot, setNewSlot] = useState({ start: "", end: "" });
   const [bookings, setBookings] = useState([]);
+  const [recentBookings, setRecentBookings] = useState([]);
   const [editingBooking, setEditingBooking] = useState(null);
   const [showNewAppointmentForm, setShowNewAppointmentForm] = useState(false);
   const [bio, setBio] = useState("");
@@ -670,31 +675,27 @@ export default function Dashboard() {
     if (!error) setAvailability(data || []);
   }
 
-  function convertTo24Hr(timeStr) {
-    if (!timeStr || typeof timeStr !== "string") return "00:00";
-    const match = timeStr.match(/^(\d{1,2}):?(\d{2})?\s*(AM|PM)$/i);
-    if (!match) return "00:00";
-    let [, hourStr, minuteStr, modifier] = match;
-    let hour = parseInt(hourStr, 10);
-    let minutes = parseInt(minuteStr || "00", 10);
-    if (modifier.toUpperCase() === "PM" && hour !== 12) hour += 12;
-    if (modifier.toUpperCase() === "AM" && hour === 12) hour = 0;
-    return `${hour.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-  }
-
   async function fetchBookings() {
     const { data, error } = await supabase.from("bookings").select("*").order("date", { ascending: true });
     if (error) { console.error(error.message); return; }
     const all = data || [];
     setAllBookings(all);
-    const now = new Date();
-    const upcoming = all.filter((b) => {
-      if (!b.date || !b.start_time) return false;
-      const start = typeof b.start_time === "string" && b.start_time.includes("AM")
-        ? convertTo24Hr(b.start_time) : b.start_time;
-      return new Date(`${b.date}T${start}`).getTime() > now.getTime() - 5 * 60 * 1000;
-    });
+    // Today's appointments stay up for the whole day. They used to vanish five
+    // minutes after the start time — a 10am set was gone by the time Mya went
+    // to check the art at 11.
+    const today = todayVegas();
+    const upcoming = all.filter((b) => b.date && b.start_time && b.date >= today);
     setBookings(upcoming);
+
+    // The last two weeks, newest first, with the full card. Nothing is
+    // deleted: older visits simply stop showing here and live on under the
+    // client in the Clients tab, where history, totals and win-backs need them.
+    const [y, m, d] = today.split("-").map(Number);
+    const cutoff = new Date(Date.UTC(y, m - 1, d - RECENT_DAYS)).toISOString().slice(0, 10);
+    const recent = all
+      .filter((b) => b.date && b.date < today && b.date >= cutoff && b.referral !== "MANUAL BLOCK")
+      .sort((a, b) => b.date.localeCompare(a.date) || String(b.start_time).localeCompare(String(a.start_time)));
+    setRecentBookings(recent);
   }
 
   const handleChargeNoShow = async (booking) => {
@@ -936,7 +937,155 @@ export default function Dashboard() {
     { id: "settings", label: "Settings" },
   ];
 
-  const today = new Date().toISOString().split("T")[0];
+  // One card for both the upcoming list and the recent one, so the two can
+  // never drift apart — the recent card is the one she checks mid-set for
+  // the art and inspo, so it has to show exactly the same things.
+  const renderBookingCard = (booking) => {
+    const isReturning = booking.returning === "yes";
+    const editingThis = editingBooking?.id === booking.id;
+    return (
+      <div key={booking.id} className="border border-stone-200 hover:border-stone-400 transition-colors p-5 booking-card">
+        {!editingThis ? (
+          <>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-base font-bold text-stone-900">{booking.name}</h3>
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
+                  {booking.instagram && <p className="text-xs text-stone-500">@{booking.instagram}</p>}
+                  {booking.phone && <p className="text-xs text-stone-500">{booking.phone}</p>}
+                  {booking.email && <p className="text-xs text-stone-500">{booking.email}</p>}
+                </div>
+              </div>
+              <div className="text-left sm:text-right flex-shrink-0">
+                <p className="font-semibold text-stone-900 text-sm">{booking.date}</p>
+                <p className="text-xs text-stone-500">{formatTimeRange(booking.start_time, booking.end_time)}</p>
+                <p className="text-xs text-stone-400">{booking.duration}h appointment</p>
+              </div>
+            </div>
+
+            {/* The whole reactivation mechanism, from Mya's
+                side. There is no code for the client to
+                redeem — this flag is how she knows to take
+                the discount off, so it sits above the
+                details rather than among them, and names the
+                figure so it isn't mental arithmetic with
+                someone waiting. */}
+            {/* What to charge, on every priced booking — not
+                just discounted ones. This is the number she
+                needs at the chair and the dashboard never
+                showed it.
+
+                bookingCharge() subtracts the deposit ONLY if
+                it was actually paid. Appointments Mya adds
+                herself are unpaid, and the old code took $20
+                off those regardless, understating what she
+                was owed on every one. */}
+            {(() => {
+              const c = bookingCharge(booking);
+              const reasons = [
+                booking.discount_percent > 0 && `${booking.discount_percent}% off — came back`,
+                booking.credit_applied_cents > 0 &&
+                  `${formatPrice(booking.credit_applied_cents)} credit — cancelled appt`,
+              ].filter(Boolean);
+              const highlight = reasons.length > 0;
+              if (!c.priced && !highlight) return null;
+              return (
+                <div className={`mb-4 border px-3 py-2 ${highlight ? "border-rose-300 bg-rose-50" : "border-stone-200 bg-stone-50"}`}>
+                  {highlight && (
+                    <p className="text-xs font-semibold text-rose-900 uppercase tracking-wider">
+                      {reasons.join(" · ")}
+                    </p>
+                  )}
+                  {c.priced ? (
+                    <p className={`text-sm mt-0.5 ${highlight ? "text-rose-900" : "text-stone-900"}`}>
+                      <strong>{formatPrice(c.dueCents)} due at the visit</strong>
+                      <span className={highlight ? "text-rose-700" : "text-stone-500"}>
+                        {" "}· est. {formatPrice(c.listCents)}
+                        {c.depositPaid
+                          ? `, ${formatPrice(DEPOSIT_CENTS)} deposit paid`
+                          : ", no deposit paid"}
+                        {c.creditUsed > 0 ? `, ${formatPrice(c.creditUsed)} credit` : ""}
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-sm text-rose-900 mt-0.5">
+                      Take it off whatever the set comes to.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4 text-sm">
+              {booking.service && booking.service !== "N/A" && (
+                <p className="text-stone-700"><span className="text-stone-400">Service: </span>{serviceLabel(booking.service)}</p>
+              )}
+              {booking.art_level && booking.art_level !== "N/A" && (
+                <p className="text-stone-700"><span className="text-stone-400">Art: </span>{booking.art_level}</p>
+              )}
+              {booking.length && booking.length !== "N/A" && (
+                <p className="text-stone-700"><span className="text-stone-400">Length: </span>{booking.length}</p>
+              )}
+              {booking.soakoff && booking.soakoff !== "none" && (
+                <p className="text-stone-700"><span className="text-stone-400">Soak-Off: </span>{booking.soakoff}</p>
+              )}
+              {booking.pedicure === "yes" && (
+                <p className="text-stone-700"><span className="text-stone-400">Pedicure: </span>{booking.pedicure_type || "Yes"}</p>
+              )}
+            </div>
+
+            {booking.notes && (
+              <div className="mb-4 bg-stone-50 border border-stone-200 p-3 text-sm text-stone-700 italic">
+                &ldquo;{booking.notes}&rdquo;
+              </div>
+            )}
+
+            {/* What they actually want, next to what they
+                wrote. Renders nothing when there are none. */}
+            <InspoStrip paths={booking.inspo_urls} />
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                <span className={`text-xs font-semibold px-2.5 py-1 border ${booking.paid ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"}`}>
+                  {booking.paid ? "PAID" : "UNPAID"}
+                </span>
+                <span className={`text-xs font-semibold px-2.5 py-1 border ${isReturning ? "bg-stone-100 text-stone-700 border-stone-200" : "bg-amber-50 text-amber-800 border-amber-200"}`}>
+                  {isReturning ? "RETURNING" : "NEW CLIENT"}
+                </span>
+              </div>
+              <div className="flex gap-4 items-center">
+                {booking.stripe_payment_method_id && (
+                  <button
+                    onClick={() => handleChargeNoShow(booking)}
+                    disabled={booking.no_show_charged || chargingNoShow.has(booking.id)}
+                    className={`text-xs font-semibold uppercase tracking-wide transition ${
+                      booking.no_show_charged
+                        ? "text-stone-400 cursor-default"
+                        : chargingNoShow.has(booking.id)
+                        ? "text-amber-400 cursor-wait"
+                        : "text-amber-700 hover:text-amber-900"
+                    }`}
+                  >
+                    {booking.no_show_charged ? "No-Show Charged ✓" : chargingNoShow.has(booking.id) ? "Charging…" : "Charge No-Show"}
+                  </button>
+                )}
+                <button onClick={() => setEditingBooking(booking)} className="text-xs font-semibold text-stone-600 hover:text-stone-900 transition uppercase tracking-wide">Edit</button>
+                <button onClick={() => handleDeleteBooking(booking)} className="text-xs font-semibold text-red-600 hover:text-red-800 transition uppercase tracking-wide">Delete</button>
+              </div>
+            </div>
+
+            {!isReturning && booking.referral?.trim() && booking.referral !== "MANUAL BLOCK" && (
+              <p className="mt-3 pt-3 border-t border-stone-100 text-xs text-stone-400">Referred by: {booking.referral}</p>
+            )}
+          </>
+        ) : (
+          <EditBookingForm booking={editingBooking} onSave={handleUpdateBooking} onCancel={() => setEditingBooking(null)} />
+        )}
+      </div>
+    );
+  };
+
+  const today = todayVegas();
 
   return (
     <main className="min-h-screen bg-stone-100">
@@ -1204,150 +1353,25 @@ export default function Dashboard() {
                 <p className="text-stone-500 text-sm text-center py-12">No upcoming appointments.</p>
               ) : (
                 <div className="space-y-4">
-                  {bookings.map((booking) => {
-                    const isReturning = booking.returning === "yes";
-                    const editingThis = editingBooking?.id === booking.id;
-                    return (
-                      <div key={booking.id} className="border border-stone-200 hover:border-stone-400 transition-colors p-5 booking-card">
-                        {!editingThis ? (
-                          <>
-                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-                              <div>
-                                <h3 className="text-base font-bold text-stone-900">{booking.name}</h3>
-                                <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
-                                  {booking.instagram && <p className="text-xs text-stone-500">@{booking.instagram}</p>}
-                                  {booking.phone && <p className="text-xs text-stone-500">{booking.phone}</p>}
-                                  {booking.email && <p className="text-xs text-stone-500">{booking.email}</p>}
-                                </div>
-                              </div>
-                              <div className="text-left sm:text-right flex-shrink-0">
-                                <p className="font-semibold text-stone-900 text-sm">{booking.date}</p>
-                                <p className="text-xs text-stone-500">{formatTimeRange(booking.start_time, booking.end_time)}</p>
-                                <p className="text-xs text-stone-400">{booking.duration}h appointment</p>
-                              </div>
-                            </div>
+                  {bookings.map((booking) => renderBookingCard(booking))}
+                </div>
+              )}
+            </div>
 
-                            {/* The whole reactivation mechanism, from Mya's
-                                side. There is no code for the client to
-                                redeem — this flag is how she knows to take
-                                the discount off, so it sits above the
-                                details rather than among them, and names the
-                                figure so it isn't mental arithmetic with
-                                someone waiting. */}
-                            {/* What to charge, on every priced booking — not
-                                just discounted ones. This is the number she
-                                needs at the chair and the dashboard never
-                                showed it.
+            {/* Past appointments, so the card she was working from doesn't
+                disappear mid-appointment. */}
+            <div className="bg-white border border-stone-200 p-6">
+              <div className="flex items-center justify-between mb-1">
+                <SectionHeading>Recent Appointments</SectionHeading>
+                <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-3 py-1">{recentBookings.length} total</span>
+              </div>
+              <p className="text-xs text-stone-500 -mt-4 mb-6">Last 2 weeks. Older visits are still under each client in the Clients tab.</p>
 
-                                bookingCharge() subtracts the deposit ONLY if
-                                it was actually paid. Appointments Mya adds
-                                herself are unpaid, and the old code took $20
-                                off those regardless, understating what she
-                                was owed on every one. */}
-                            {(() => {
-                              const c = bookingCharge(booking);
-                              const reasons = [
-                                booking.discount_percent > 0 && `${booking.discount_percent}% off — came back`,
-                                booking.credit_applied_cents > 0 &&
-                                  `${formatPrice(booking.credit_applied_cents)} credit — cancelled appt`,
-                              ].filter(Boolean);
-                              const highlight = reasons.length > 0;
-                              if (!c.priced && !highlight) return null;
-                              return (
-                                <div className={`mb-4 border px-3 py-2 ${highlight ? "border-rose-300 bg-rose-50" : "border-stone-200 bg-stone-50"}`}>
-                                  {highlight && (
-                                    <p className="text-xs font-semibold text-rose-900 uppercase tracking-wider">
-                                      {reasons.join(" · ")}
-                                    </p>
-                                  )}
-                                  {c.priced ? (
-                                    <p className={`text-sm mt-0.5 ${highlight ? "text-rose-900" : "text-stone-900"}`}>
-                                      <strong>{formatPrice(c.dueCents)} due at the visit</strong>
-                                      <span className={highlight ? "text-rose-700" : "text-stone-500"}>
-                                        {" "}· est. {formatPrice(c.listCents)}
-                                        {c.depositPaid
-                                          ? `, ${formatPrice(DEPOSIT_CENTS)} deposit paid`
-                                          : ", no deposit paid"}
-                                        {c.creditUsed > 0 ? `, ${formatPrice(c.creditUsed)} credit` : ""}
-                                      </span>
-                                    </p>
-                                  ) : (
-                                    <p className="text-sm text-rose-900 mt-0.5">
-                                      Take it off whatever the set comes to.
-                                    </p>
-                                  )}
-                                </div>
-                              );
-                            })()}
-
-                            <div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4 text-sm">
-                              {booking.service && booking.service !== "N/A" && (
-                                <p className="text-stone-700"><span className="text-stone-400">Service: </span>{serviceLabel(booking.service)}</p>
-                              )}
-                              {booking.art_level && booking.art_level !== "N/A" && (
-                                <p className="text-stone-700"><span className="text-stone-400">Art: </span>{booking.art_level}</p>
-                              )}
-                              {booking.length && booking.length !== "N/A" && (
-                                <p className="text-stone-700"><span className="text-stone-400">Length: </span>{booking.length}</p>
-                              )}
-                              {booking.soakoff && booking.soakoff !== "none" && (
-                                <p className="text-stone-700"><span className="text-stone-400">Soak-Off: </span>{booking.soakoff}</p>
-                              )}
-                              {booking.pedicure === "yes" && (
-                                <p className="text-stone-700"><span className="text-stone-400">Pedicure: </span>{booking.pedicure_type || "Yes"}</p>
-                              )}
-                            </div>
-
-                            {booking.notes && (
-                              <div className="mb-4 bg-stone-50 border border-stone-200 p-3 text-sm text-stone-700 italic">
-                                &ldquo;{booking.notes}&rdquo;
-                              </div>
-                            )}
-
-                            {/* What they actually want, next to what they
-                                wrote. Renders nothing when there are none. */}
-                            <InspoStrip paths={booking.inspo_urls} />
-
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <div className="flex flex-wrap gap-2">
-                                <span className={`text-xs font-semibold px-2.5 py-1 border ${booking.paid ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"}`}>
-                                  {booking.paid ? "PAID" : "UNPAID"}
-                                </span>
-                                <span className={`text-xs font-semibold px-2.5 py-1 border ${isReturning ? "bg-stone-100 text-stone-700 border-stone-200" : "bg-amber-50 text-amber-800 border-amber-200"}`}>
-                                  {isReturning ? "RETURNING" : "NEW CLIENT"}
-                                </span>
-                              </div>
-                              <div className="flex gap-4 items-center">
-                                {booking.stripe_payment_method_id && (
-                                  <button
-                                    onClick={() => handleChargeNoShow(booking)}
-                                    disabled={booking.no_show_charged || chargingNoShow.has(booking.id)}
-                                    className={`text-xs font-semibold uppercase tracking-wide transition ${
-                                      booking.no_show_charged
-                                        ? "text-stone-400 cursor-default"
-                                        : chargingNoShow.has(booking.id)
-                                        ? "text-amber-400 cursor-wait"
-                                        : "text-amber-700 hover:text-amber-900"
-                                    }`}
-                                  >
-                                    {booking.no_show_charged ? "No-Show Charged ✓" : chargingNoShow.has(booking.id) ? "Charging…" : "Charge No-Show"}
-                                  </button>
-                                )}
-                                <button onClick={() => setEditingBooking(booking)} className="text-xs font-semibold text-stone-600 hover:text-stone-900 transition uppercase tracking-wide">Edit</button>
-                                <button onClick={() => handleDeleteBooking(booking)} className="text-xs font-semibold text-red-600 hover:text-red-800 transition uppercase tracking-wide">Delete</button>
-                              </div>
-                            </div>
-
-                            {!isReturning && booking.referral?.trim() && booking.referral !== "MANUAL BLOCK" && (
-                              <p className="mt-3 pt-3 border-t border-stone-100 text-xs text-stone-400">Referred by: {booking.referral}</p>
-                            )}
-                          </>
-                        ) : (
-                          <EditBookingForm booking={editingBooking} onSave={handleUpdateBooking} onCancel={() => setEditingBooking(null)} />
-                        )}
-                      </div>
-                    );
-                  })}
+              {recentBookings.length === 0 ? (
+                <p className="text-stone-500 text-sm text-center py-12">No appointments in the last 2 weeks.</p>
+              ) : (
+                <div className="space-y-4">
+                  {recentBookings.map((booking) => renderBookingCard(booking))}
                 </div>
               )}
             </div>
