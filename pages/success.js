@@ -66,6 +66,7 @@ export default function SuccessPage() {
               soakoff: md.soakoff || "",
               pedicure: md.pedicure || "no",
               pedicure_type: md.pedicure_type || "",
+              pedi_french: md.pedi_french || "no",
               notes: md.notes || "",
               duration: md.duration || "",
             };
@@ -89,7 +90,9 @@ export default function SuccessPage() {
     if (!bookingDetails) return [];
     const services = [];
     if (bookingDetails.booking_nails === "yes" && bookingDetails.service) services.push(bookingDetails.service);
-    if (bookingDetails.pedicure === "yes" && bookingDetails.pedicure_type) services.push(bookingDetails.pedicure_type);
+    if (bookingDetails.pedicure === "yes" && bookingDetails.pedicure_type) {
+      services.push(bookingDetails.pedicure_type + (bookingDetails.pedi_french === "yes" ? " + French tips" : ""));
+    }
     return services;
   };
 

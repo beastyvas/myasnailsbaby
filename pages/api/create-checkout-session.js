@@ -82,6 +82,7 @@ export default async function handler(req, res) {
       soakoff: bookingMetadata.soakoff,
       pedicure: bookingMetadata.pedicure,
       pedicureType: bookingMetadata.pedicure_type,
+      pediFrench: bookingMetadata.pedi_french === "yes",
     });
     const quotedCents = priced.unknown ? null : priced.total;
 
@@ -130,6 +131,7 @@ export default async function handler(req, res) {
   pedicure: bookingMetadata.pedicure,
   email: bookingMetadata.email ?? null,
   spa_pedi: bookingMetadata.spa_pedi ?? "no",
+  pedi_french: bookingMetadata.pedi_french === "yes" ? "yes" : "no",
   quoted_cents: quotedCents == null ? "" : String(quotedCents),
   // Storage paths for the client's inspo photos, comma-joined. They were
   // uploaded before checkout because the booking row doesn't exist yet —

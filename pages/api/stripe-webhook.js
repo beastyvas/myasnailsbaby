@@ -356,6 +356,8 @@ if (conflicts && conflicts.length > 0) {
       email: md.email ?? null,
       booking_nails: md.booking_nails ?? null,
       spa_pedi: md.spa_pedi ?? null,
+      // The pedicure french-tips box. "yes"/"no", same shape as spa_pedi.
+      pedi_french: md.pedi_french ?? null,
       // Priced server-side in create-checkout-session; "" means the
       // selections couldn't be priced, which stays null rather than 0.
       quoted_cents: md.quoted_cents ? Number(md.quoted_cents) : null,
@@ -370,14 +372,23 @@ if (conflicts && conflicts.length > 0) {
       stripe_payment_method_id: stripePaymentMethodId,
     };
 
+    // Columns a not-yet-run migration might be missing, and how to book
+    // without each one.
+    const OPTIONAL_COLUMNS = {
+      inspo_urls: "run supabase/migrations/add_inspo.sql; saved without the inspo photos",
+      pedi_french: "run supabase/migrations/add_pedi_french.sql; the choice went into the notes instead",
+    };
+    let row = { ...insert };
+
     let { data: created, error: insertErr } = await supabase
       .from("bookings")
-      .insert([insert])
+      .insert([row])
       .select("id")
       .single();
 
     // If the only thing wrong is a column the database doesn't have yet,
     // book them anyway without it.
+    // Loops so two missing columns at once are both dropped.
     //
     // This insert is the single most expensive thing in the app to get wrong:
     // the client has already been charged, so a rejected row means someone
@@ -386,15 +397,20 @@ if (conflicts && conflicts.length > 0) {
     // been forgotten before — that is precisely the history this guards
     // against. Losing the inspo photos off a booking is a bad day; losing the
     // booking is a furious client and a refund.
-    if (insertErr && /inspo_urls/i.test(insertErr.message || "")) {
-      console.error(
-        "⚠️ bookings.inspo_urls is missing — has supabase/migrations/add_inspo.sql been run? " +
-          "Booking saved without the inspo photos."
-      );
-      const { inspo_urls, ...withoutInspo } = insert;
+    for (;;) {
+      const missing = insertErr &&
+        Object.keys(OPTIONAL_COLUMNS).find((col) => col in row && new RegExp(col, "i").test(insertErr.message || ""));
+      if (!missing) break;
+      console.error(`⚠️ bookings.${missing} is missing (${OPTIONAL_COLUMNS[missing]}).`);
+      const { [missing]: dropped, ...rest } = row;
+      row = rest;
+      // Mya still needs to see the french-tips box was ticked.
+      if (missing === "pedi_french" && dropped === "yes") {
+        row.notes = [row.notes, "French tips on pedicure (+$5)"].filter(Boolean).join(" · ");
+      }
       ({ data: created, error: insertErr } = await supabase
         .from("bookings")
-        .insert([withoutInspo])
+        .insert([row])
         .select("id")
         .single());
     }
@@ -432,6 +448,7 @@ if (conflicts && conflicts.length > 0) {
           name: insert.name,
           service: insert.service,
           pedicure: insert.pedicure,
+          pediFrench: insert.pedi_french === "yes",
           date: insert.date,
           startTime: insert.start_time,
           quotedCents: insert.quoted_cents,

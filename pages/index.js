@@ -15,8 +15,9 @@ import { InspoUploader } from "@/components/InspoPhotos";
 import { encodeInspoPaths } from "@/utils/inspo";
 import { faqJsonLd, salonJsonLd } from "@/utils/seo";
 import { prettyDate, vegasParts } from "@/utils/time";
-import { BOOKABLE_SERVICES, formatPrice, hasQuote, isLengthPriced, quote, serviceMenuLabel } from "@/utils/pricing";
+import { BOOKABLE_SERVICES, PEDI_FRENCH_CENTS, formatPrice, hasQuote, isLengthPriced, quote, serviceMenuLabel } from "@/utils/pricing";
 import { CLIENT_CANCEL_ENABLED, PUBLIC_GALLERY_ENABLED } from "@/utils/features";
+import { MOVE_DATE, NEW_STUDIO, OLD_STUDIO, mapEmbedUrl, studioFor } from "@/utils/location";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -41,8 +42,12 @@ const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KE
  * included.
  */
 export async function getServerSideProps() {
+  // Today in Vegas, decided on the server so the Location section flips to
+  // the new studio on move day by itself, and server and browser agree.
+  const today = vegasParts().date;
+
   // Off by Mya's choice — don't pay for a query whose result nothing renders.
-  if (!PUBLIC_GALLERY_ENABLED) return { props: { gallery: [] } };
+  if (!PUBLIC_GALLERY_ENABLED) return { props: { gallery: [], today } };
 
   try {
     const { createClient } = await import("@supabase/supabase-js");
@@ -58,16 +63,16 @@ export async function getServerSideProps() {
 
     if (error) {
       console.error("Homepage: couldn't load the gallery:", error.message);
-      return { props: { gallery: [] } };
+      return { props: { gallery: [], today } };
     }
-    return { props: { gallery: data || [] } };
+    return { props: { gallery: data || [], today } };
   } catch (err) {
     console.error("Homepage: gallery fetch threw:", err?.message || err);
-    return { props: { gallery: [] } };
+    return { props: { gallery: [], today } };
   }
 }
 
-export default function Home({ gallery = [] }) {
+export default function Home({ gallery = [], today = "" }) {
   const formRef = useRef();
   const [selectedDate, setSelectedDate] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,6 +90,7 @@ export default function Home({ gallery = [] }) {
   const [isReturning, setIsReturning] = useState(false);
   const [bookingNails, setBookingNails] = useState("");
   const [pedicureType, setPedicureType] = useState("");
+  const [pediFrench, setPediFrench] = useState(false);
   const [step, setStep] = useState(1);
   const [artLevel, setArtLevel] = useState("");
   const [nailLength, setNailLength] = useState("");
@@ -243,19 +249,21 @@ export default function Home({ gallery = [] }) {
     const soakoff = data.get("soakoff");
     const pedicure = data.get("pedicure");
     const pedicureType = data.get("pedicureType") || "";
+    // Only counts when a pedicure is actually being booked.
+    const pedi_french = pedicure === "yes" && data.get("pediFrench") ? "yes" : "no";
     const bookingNails = data.get("bookingNails") || "no";
     // Same id the inspo photos were uploaded under, so their paths resolve.
     const bookingId = bookingIdOnce();
     const durationHours = duration;
 
-    const payload = { id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, duration: durationHours, soakoff, referral, pedicure, pedicure_type: pedicureType, booking_nails: bookingNails, email };
+    const payload = { id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, duration: durationHours, soakoff, referral, pedicure, pedicure_type: pedicureType, booking_nails: bookingNails, pedi_french, email };
 
     try {
       const res = await fetch("/api/book", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error("Booking failed");
 
-      const bookingMetadata = { booking_id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, pedicure_type: pedicureType, booking_nails: bookingNails, duration: durationHours, soakoff, referral, pedicure, email, inspo_urls: encodeInspoPaths(inspoPaths) };
+      const bookingMetadata = { booking_id: bookingId, name, instagram, phone, service, artLevel, date, start_time, length, notes, returning, pedicure_type: pedicureType, booking_nails: bookingNails, pedi_french, duration: durationHours, soakoff, referral, pedicure, email, inspo_urls: encodeInspoPaths(inspoPaths) };
 
       const stripeRes = await fetch("/api/create-checkout-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bookingMetadata }) });
       const stripeJson = await stripeRes.json();
@@ -300,13 +308,13 @@ export default function Home({ gallery = [] }) {
   // quote, so what the client is shown can never drift from what's recorded.
   const priceQuote = quote({
     bookingNails, service, length: nailLength, artLevel, soakoff,
-    pedicure, pedicureType,
+    pedicure, pedicureType, pediFrench,
   });
   const showPrice = hasQuote(priceQuote);
 
   const summaryService = [
     nailsChosen ? service : null,
-    pedChosen ? (pedicureType || "Pedicure") : null,
+    pedChosen ? `${pedicureType || "Pedicure"}${pediFrench ? " w/ french tips" : ""}` : null,
   ].filter(Boolean).join(" + ");
   const summaryDetails = [
     artLevel && artLevel !== "N/A" ? artLevel : null,
@@ -648,6 +656,16 @@ export default function Home({ gallery = [] }) {
                       <option value="Gel pedicure + Acrylic big toes">Gel Pedicure + Acrylic Big Toes — $55</option>
                       <option value="Acrylic Pedicure">Acrylic Pedicure — $65</option>
                     </select>
+                    {/* Saved on the booking as pedi_french and shown on Mya's
+                        dashboard, so she knows before they sit down. */}
+                    <label className="flex items-start gap-3 cursor-pointer mt-4">
+                      <input type="checkbox" name="pediFrench" checked={pediFrench}
+                        onChange={(e) => setPediFrench(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
+                      <span className="text-sm text-stone-700 leading-relaxed">
+                        Add <strong>french tips</strong> <span className="text-stone-500">(+{formatPrice(PEDI_FRENCH_CENTS)})</span>
+                      </span>
+                    </label>
                   </div>
                 )}
 
@@ -885,14 +903,33 @@ export default function Home({ gallery = [] }) {
         {/* ── LOCATION ── */}
         <section className="py-14 border-b border-stone-200">
           <h3 className="text-5xl text-stone-900 text-center mb-6 section-title-accent" style={scriptHeading}>Location</h3>
-          <p className="text-center text-stone-600 text-sm mb-8">2080 E. Flamingo Rd. Suite #106 Room 4 · Las Vegas, Nevada</p>
-          <div className="border border-stone-200 overflow-hidden">
-            <iframe
-              title="Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3226.887402048895!2d-115.1218948!3d36.1136458!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80c8c6d4c4b0e1f5%3A0x1c9624dbd4a87b5b!2s2080%20E%20Flamingo%20Rd%2C%20Las%20Vegas%2C%20NV%2089119!5e0!3m2!1sen!2sus!4v1689200000000!5m2!1sen!2sus"
-              width="100%" height="360" style={{ border: 0 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-            />
-          </div>
+          {(() => {
+            // Until move day it shows where she is now and says where she's
+            // going; from MOVE_DATE on, only the new suite.
+            const studio = studioFor(today);
+            const moving = studio === OLD_STUDIO;
+            return (
+              <>
+                <p className="text-center text-stone-600 text-sm mb-2">
+                  {[studio.name, studio.street, studio.cityLine].filter(Boolean).join(" · ")}
+                </p>
+                {moving && (
+                  <p className="text-center text-rose-800 text-sm font-medium mb-2">
+                    Moving {prettyDate(MOVE_DATE)}: {NEW_STUDIO.name}, {NEW_STUDIO.street}, {NEW_STUDIO.cityLine}.
+                    Appointments from then on are at the new suite.
+                  </p>
+                )}
+                <div className="mb-6" />
+                <div className="border border-stone-200 overflow-hidden">
+                  <iframe
+                    title="Location"
+                    src={mapEmbedUrl(studio)}
+                    width="100%" height="360" style={{ border: 0 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              </>
+            );
+          })()}
         </section>
 
         {/* ── TAG ME ── */}

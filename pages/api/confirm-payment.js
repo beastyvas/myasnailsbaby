@@ -4,7 +4,7 @@ import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import { sendSmsOnce } from "@/utils/smsOnce";
 import * as M from "@/utils/messages";
-import { studioFor } from "@/utils/location";
+import { studioLines } from "@/utils/location";
 import { prettyDate } from "@/utils/time";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -73,6 +73,7 @@ export default async function handler(req, res) {
       soakoff = "N/A",
       duration = null,
       pedicure_type = "N/A",
+      pedi_french = "no",
       booking_nails = "N/A",
       start_time: startLabelRaw = null,
       date: dateRaw = null,
@@ -150,6 +151,7 @@ export default async function handler(req, res) {
           <p><strong>Booking Nails?:</strong> ${booking_nails}</p>
           <p><strong>Service:</strong> ${service}</p>
           <p><strong>Pedicure Type:</strong> ${pedicure_type}</p>
+          <p><strong>Pedicure French Tips:</strong> ${pedi_french === "yes" ? "YES (+$5)" : "no"}</p>
           <p><strong>Art Level:</strong> ${artLevel}</p>
           <p><strong>Length:</strong> ${length}</p>
           <p><strong>Soak-Off:</strong> ${soakoff}</p>
@@ -216,7 +218,7 @@ export default async function handler(req, res) {
                 <!-- Location -->
                 <div style="border-left: 3px solid #9f1239; padding: 14px 18px; margin-bottom: 24px; background: #fafaf9;">
                   <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Location</p>
-                  <p style="margin: 0; color: #44403c; font-size: 13px; line-height: 1.6;">${studioFor(booking.date).line1}<br>${studioFor(booking.date).line2}</p>
+                  <p style="margin: 0; color: #44403c; font-size: 13px; line-height: 1.6;">${studioLines(booking.date).join("<br>")}</p>
                 </div>
 
                 <!-- Policy -->

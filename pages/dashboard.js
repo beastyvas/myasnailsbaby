@@ -1030,7 +1030,15 @@ export default function Dashboard() {
                 <p className="text-stone-700"><span className="text-stone-400">Soak-Off: </span>{booking.soakoff}</p>
               )}
               {booking.pedicure === "yes" && (
-                <p className="text-stone-700"><span className="text-stone-400">Pedicure: </span>{booking.pedicure_type || "Yes"}</p>
+                <p className="text-stone-700">
+                  <span className="text-stone-400">Pedicure: </span>{booking.pedicure_type || "Yes"}
+                  {/* The french-tips box on the booking form. Always says
+                      one way or the other, so "no" is an answer rather than
+                      something she has to wonder about. */}
+                  {booking.pedi_french === "yes"
+                    ? <span className="font-semibold text-rose-800"> + French tips</span>
+                    : booking.pedi_french === "no" && <span className="text-stone-400"> · no french</span>}
+                </p>
               )}
             </div>
 
@@ -1577,6 +1585,7 @@ export default function Dashboard() {
                           b.length,
                           b.soakoff && b.soakoff !== "none" && b.soakoff,
                           b.pedicure === "yes" && (b.pedicure_type || "Pedicure"),
+                          b.pedicure === "yes" && b.pedi_french === "yes" && "French tips (pedi)",
                           b.duration && `${b.duration}h`,
                         ].filter(Boolean);
 

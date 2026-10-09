@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { sendSms } from "@/utils/sms";
 import * as M from "@/utils/messages";
-import { studioFor } from "@/utils/location";
+import { studioLines } from "@/utils/location";
 
 // Initialize clients
 const supabase = createClient(
@@ -211,7 +211,7 @@ export default async function handler(req, res) {
                 <!-- Location -->
                 <div style="border-left: 3px solid #9f1239; padding: 14px 18px; margin-bottom: 28px; background: #fafaf9;">
                   <p style="margin: 0 0 4px; font-size: 10px; font-weight: bold; color: #a8a29e; text-transform: uppercase; letter-spacing: 2px;">Location</p>
-                  <p style="margin: 0; color: #44403c; font-size: 13px; line-height: 1.6;">${studioFor(new_date).line1}<br>${studioFor(new_date).line2}</p>
+                  <p style="margin: 0; color: #44403c; font-size: 13px; line-height: 1.6;">${studioLines(new_date).join("<br>")}</p>
                 </div>
 
                 <!-- CTA -->

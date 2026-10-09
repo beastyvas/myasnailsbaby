@@ -156,6 +156,7 @@ export function quote({
   soakoff,
   pedicure,
   pedicureType,
+  pediFrench,
 } = {}) {
   const lines = [];
   let isFrom = false;
@@ -201,6 +202,7 @@ export function quote({
       // Normalize the label so the legacy typo never reaches a client.
       const label = pedicureType.replace("pedciure", "pedicure");
       lines.push({ label, cents: pedi });
+      if (pediFrench) lines.push({ label: "French tips (pedicure)", cents: PEDI_FRENCH_CENTS });
     }
   }
 

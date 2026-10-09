@@ -17,7 +17,7 @@ ok(L.studioFor(undefined) === L.OLD_STUDIO, "no date falls back to the current s
 const before = M.reminder24h({ name: "Ana", date: "2026-10-15", startTime: "10:00" });
 const after = M.reminder24h({ name: "Ana", date: "2026-10-22", startTime: "10:00" });
 ok(before.includes("Flamingo") && !before.includes("Pecos"), "reminder before the move says Flamingo");
-ok(after.includes("178 N Pecos") && !after.includes("Flamingo"), "reminder after the move says Pecos");
+ok(after.includes("178 N Pecos Rd. Suite 1") && after.includes("Henderson, NV 89074") && !after.includes("Flamingo"), "reminder after the move says Pecos, Henderson");
 ok(M.bookingConfirmation({ name: "Ana", date: "2026-11-01", startTime: "10:00" }).includes("Pecos"), "confirmation after the move says Pecos");
 ok(M.movedByMya({ name: "Ana", oldDate: "2026-10-15", oldTime: "10:00", newDate: "2026-10-25", newTime: "10:00" }).includes("Pecos"), "moved past the cut-over uses the new date's address");
 

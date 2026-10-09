@@ -164,7 +164,7 @@ export function optOutConfirmed() {
 /* ──────────────────────────── to Mya ───────────────────────────────── */
 
 export function ownerNewBooking({
-  name, service, pedicure, date, startTime, quotedCents, creditAppliedCents = 0,
+  name, service, pedicure, pediFrench, date, startTime, quotedCents, creditAppliedCents = 0,
 }) {
   // What she's owed at the chair: the estimate, less the deposit already
   // taken, less any credit from an appointment they cancelled before.
@@ -185,7 +185,7 @@ export function ownerNewBooking({
   }
   return (
     `📅 New booking — ${name || "someone"}\n` +
-    `${service || "Nails"}${pedicure === "yes" ? " + pedicure" : ""}\n` +
+    `${service || "Nails"}${pedicure === "yes" ? ` + pedicure${pediFrench ? " w/ french tips" : ""}` : ""}\n` +
     `${prettyDate(date)} at ${to12h(startTime)}` + money
   );
 }
