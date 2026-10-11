@@ -19,10 +19,17 @@ const after = M.reminder24h({ name: "Ana", date: "2026-10-22", startTime: "10:00
 ok(before.includes("Flamingo") && !before.includes("Pecos"), "reminder before the move says Flamingo");
 ok(after.includes("178 N Pecos Rd. Suite 1") && after.includes("Henderson, NV 89074") && !after.includes("Flamingo"), "reminder after the move says Pecos, Henderson");
 ok(M.bookingConfirmation({ name: "Ana", date: "2026-11-01", startTime: "10:00" }).includes("Pecos"), "confirmation after the move says Pecos");
-ok(M.movedByMya({ name: "Ana", oldDate: "2026-10-15", oldTime: "10:00", newDate: "2026-10-25", newTime: "10:00" }).includes("Pecos"), "moved past the cut-over uses the new date's address");
+ok(M.updatedByMya({ name: "Ana", date: "2026-10-25", startTime: "10:00" }).includes("Pecos"), "an edit past the cut-over uses the new date's address");
 
 ok(F.EXTRA_TEXTS_ENABLED === false, "extra automated texts are off");
 ok(F.GROWTH_ENABLED === false, "rebooking nudge is off");
+
+{
+  const m = M.updatedByMya({ name: "Ana Lopez", date: "2026-10-22", startTime: "14:00", service: "Gel-X", length: "Medium", artLevel: "Level 2", soakoff: "foreign", pedicure: "yes", pedicureType: "Gel pedicure", pediFrench: true });
+  ok(m.includes("Ana!") && m.includes("2:00") && m.includes("Gel-X, Medium, Art level 2, Foreign soak-off"), "edit text carries the full appointment");
+  ok(m.includes("Gel pedicure + French tips"), "edit text includes the pedicure and french tips");
+  ok(m.length < 480, "edit text stays within three SMS segments");
+}
 
 // The public site and Google's copy of the address flip on move day too.
 const S = await load("utils/seo.js");

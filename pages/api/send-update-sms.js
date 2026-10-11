@@ -1,58 +1,53 @@
 import { isAdmin } from "@/utils/requireAdmin";
-import { sendSms } from '@/utils/sms';
+import { sendSms } from "@/utils/sms";
 import * as M from "@/utils/messages";
 
+/**
+ * Texts a client their appointment after Mya edits it in the dashboard.
+ *
+ * The dashboard decides WHETHER to send (only when something the client cares
+ * about changed, on an upcoming appointment, with the box ticked); this route
+ * just builds the message from the booking as saved and sends it.
+ */
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // ✅ AUTHENTICATION CHECK
   if (!(await isAdmin(req, res))) {
-    return res.status(401).json({ error: 'Unauthorized — must be logged in' });
+    return res.status(401).json({ error: "Unauthorized — must be logged in" });
   }
 
-  const { phone, name, oldDate, oldTime, newDate, newTime } = req.body;
+  const b = req.body || {};
 
-  // ✅ INPUT VALIDATION
-  if (!phone || typeof phone !== 'string' || phone.replace(/\D/g, '').length !== 10) {
-    return res.status(400).json({ error: 'Invalid phone number' });
+  if (!b.phone || typeof b.phone !== "string" || b.phone.replace(/\D/g, "").length < 10) {
+    return res.status(400).json({ error: "Invalid phone number" });
+  }
+  if (!b.name || typeof b.name !== "string" || b.name.length > 100) {
+    return res.status(400).json({ error: "Invalid name" });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(b.date || "")) {
+    return res.status(400).json({ error: "Invalid date format" });
+  }
+  if (!/^\d{1,2}:\d{2}/.test(b.start_time || "")) {
+    return res.status(400).json({ error: "Invalid time" });
   }
 
-  if (!name || typeof name !== 'string' || name.length > 100) {
-    return res.status(400).json({ error: 'Invalid name' });
-  }
+  const message = M.updatedByMya({
+    name: b.name,
+    date: b.date,
+    startTime: b.start_time,
+    service: b.service,
+    length: b.length,
+    artLevel: b.art_level,
+    soakoff: b.soakoff,
+    pedicure: b.pedicure,
+    pedicureType: b.pedicure_type,
+    pediFrench: b.pedi_french === "yes",
+  });
 
-  if (newDate && !/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
-    return res.status(400).json({ error: 'Invalid date format' });
-  }
+  const ok = await sendSms(b.phone, message);
+  if (!ok) return res.status(500).json({ error: "Failed to send SMS" });
 
-  // Format time for display
-  function formatTime(time24) {
-    if (!time24) return "";
-    const [hourStr, minuteStr = "00"] = time24.split(":");
-    const hour = parseInt(hourStr, 10);
-    const suffix = hour >= 12 ? "PM" : "AM";
-    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-    return `${hour12}:${minuteStr}${suffix}`;
-  }
-
-  // Format date for display
-  function formatDate(dateStr) {
-    const date = new Date(dateStr + 'T00:00:00');
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  }
-
-  // Build message based on what changed
-  const message = M.movedByMya({ name, oldDate, oldTime, newDate, newTime });
-
-  const ok = await sendSms(phone, message);
-  if (!ok) return res.status(500).json({ error: 'Failed to send SMS' });
-
-  console.log(`✅ Update SMS sent to ${phone}`);
   return res.status(200).json({ success: true });
 }

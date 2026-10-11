@@ -18,6 +18,7 @@
 
 import { prettyDate, to12h } from "./time.js";
 import { studioAddressFor } from "./location.js";
+import { serviceLabel } from "./pricing.js";
 export const BRAND = "Mya's Nails Baby";
 export const IG = "@myasnailsbaby";
 
@@ -144,12 +145,29 @@ export function rescheduledByClient({ name, oldDate, oldTime, newDate, newTime }
   );
 }
 
-/** Mya moved it from the dashboard. Only names what actually changed. */
-export function movedByMya({ name, oldDate, oldTime, newDate, newTime }) {
-  let msg = `Hi ${firstName(name)}! Your appointment with Mya has been updated:\n\n`;
-  if (oldDate !== newDate) msg += `📅 New Date: ${prettyDate(newDate)}\n`;
-  if (oldTime !== newTime) msg += `🕐 New Time: ${to12h(newTime)}\n`;
-  msg += `\n📍 ${studioAddressFor(newDate)}\n\nDM ${IG} if you have any questions! 💖`;
+/**
+ * Mya edited the booking from her dashboard. Sends the whole appointment as
+ * it now stands rather than a diff, so the client has one text with
+ * everything right in it — date, time, what they're getting, where.
+ */
+export function updatedByMya({
+  name, date, startTime, service, length, artLevel, soakoff, pedicure, pedicureType, pediFrench,
+}) {
+  const nails = [
+    service && service !== "N/A" && serviceLabel(service),
+    length && length !== "N/A" && length,
+    artLevel && artLevel !== "N/A" && (artLevel === "French Tips" ? "French tips" : `Art ${artLevel.toLowerCase()}`),
+    soakoff && soakoff !== "none" && soakoff !== "N/A" && (soakoff === "foreign" ? "Foreign soak-off" : "Soak-off"),
+  ].filter(Boolean).join(", ");
+  const pedi = pedicure === "yes"
+    ? `${(pedicureType || "Pedicure").replace("pedciure", "pedicure")}${pediFrench ? " + French tips" : ""}`
+    : "";
+
+  let msg = `Hi ${firstName(name)}! Mya updated your appointment. Here's what you're booked for:\n\n`;
+  msg += `📅 ${prettyDate(date)} at ${to12h(startTime)}\n`;
+  if (nails) msg += `💅 ${nails}\n`;
+  if (pedi) msg += `🦶 ${pedi}\n`;
+  msg += `📍 ${studioAddressFor(date)}\n\nDM ${IG} if anything looks off! 💖`;
   return msg;
 }
 

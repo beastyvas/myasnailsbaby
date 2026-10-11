@@ -82,6 +82,9 @@ function EditBookingForm({ booking, onSave, onCancel }) {
     paid: booking.paid || false,
     inspo_urls: booking.inspo_urls || [],
   });
+  // On by default: when Mya changes something the client needs to know,
+  // they get it. Untick for a quiet fix (a typo, a record correction).
+  const [textClient, setTextClient] = useState(true);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -91,7 +94,7 @@ function EditBookingForm({ booking, onSave, onCancel }) {
     // Same null-for-empty convention as the webhook and the new-appointment
     // form. Removing the last photo has to clear the column, not leave {}.
     const inspo_urls = formData.inspo_urls?.length ? formData.inspo_urls : null;
-    onSave({ ...formData, inspo_urls, end_time });
+    onSave({ ...formData, inspo_urls, end_time }, { textClient });
   };
 
   return (
@@ -218,6 +221,15 @@ function EditBookingForm({ booking, onSave, onCancel }) {
         onChange={(inspo_urls) => setFormData({ ...formData, inspo_urls })}
         hint="Removing one takes it off the booking; the file is cleaned up automatically."
       />
+
+      <label className="flex items-start gap-3 cursor-pointer">
+        <input type="checkbox" checked={textClient} onChange={(e) => setTextClient(e.target.checked)}
+          className="w-4 h-4 accent-rose-800 mt-0.5" />
+        <span className="text-sm text-stone-700 leading-relaxed">
+          Text {(formData.name || "the client").split(" ")[0]} the updated appointment
+          <span className="text-stone-500"> — only sends if the date, time or service details changed</span>
+        </span>
+      </label>
 
       <div className="flex justify-end gap-3 pt-2">
         <button type="button" onClick={onCancel} className={btnSecondary}>Cancel</button>
@@ -855,25 +867,32 @@ export default function Dashboard() {
     else { fetchBookings(); }
   };
 
-  const handleUpdateBooking = async (updatedData) => {
-    const dateChanged = editingBooking.date !== updatedData.date;
-    const timeChanged = editingBooking.start_time !== updatedData.start_time;
+  /** The fields a client would want to hear about if Mya changed them. Notes,
+   *  inspo, paid status and the like are her own records — no text for those. */
+  const CLIENT_FIELDS = ["date", "start_time", "service", "length", "art_level", "soakoff", "pedicure", "pedicure_type"];
+
+  const handleUpdateBooking = async (updatedData, { textClient = true } = {}) => {
+    const changed = CLIENT_FIELDS.some((f) => String(editingBooking[f] ?? "") !== String(updatedData[f] ?? ""));
     const { error } = await supabase.from("bookings").update(updatedData).eq("id", editingBooking.id);
     if (error) { alert("Failed to update"); console.error(error.message); return; }
-    if ((dateChanged || timeChanged) && updatedData.phone) {
+
+    // Upcoming only: fixing the record of a visit that's already happened
+    // shouldn't text the client about it.
+    let note = "";
+    if (textClient && changed && updatedData.phone && updatedData.date >= todayVegas()) {
       try {
-        await fetch("/api/send-update-sms", {
+        const res = await fetch("/api/send-update-sms", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: updatedData.phone, name: updatedData.name,
-            oldDate: editingBooking.date, oldTime: editingBooking.start_time,
-            newDate: updatedData.date, newTime: updatedData.start_time,
-          }),
+          body: JSON.stringify({ ...updatedData, pedi_french: editingBooking.pedi_french }),
         });
-      } catch (e) { console.error("SMS error:", e); }
+        note = res.ok ? " Client texted the new details." : " But the text to the client didn't go through — let them know yourself.";
+      } catch (e) {
+        console.error("SMS error:", e);
+        note = " But the text to the client didn't go through — let them know yourself.";
+      }
     }
-    alert("Appointment updated!");
+    alert("Appointment updated!" + note);
     setEditingBooking(null);
     fetchBookings();
   };
