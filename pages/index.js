@@ -18,6 +18,7 @@ import { prettyDate, vegasParts } from "@/utils/time";
 import { BOOKABLE_SERVICES, PEDI_FRENCH_CENTS, formatPrice, hasQuote, isLengthPriced, quote, serviceMenuLabel } from "@/utils/pricing";
 import { CLIENT_CANCEL_ENABLED, PUBLIC_GALLERY_ENABLED } from "@/utils/features";
 import { MOVE_DATE, NEW_STUDIO, OLD_STUDIO, mapEmbedUrl, studioFor } from "@/utils/location";
+import Logo from "@/components/Logo";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -350,8 +351,8 @@ export default function Home({ gallery = [], today = "" }) {
               which spent the single strongest on-page signal there is on a
               word nobody searches for — and left the real heading below it
               as an <h2> under a logo. */}
-          <span className="text-xl font-bold text-stone-900" style={sectionHeading}>
-            MyasNailsBaby
+          <span className="block">
+            <Logo className="h-14 w-auto" />
           </span>
           <nav className="hidden sm:flex items-center space-x-6 text-sm">
             {/* A real <Link> to /services, not an anchor. Without an internal

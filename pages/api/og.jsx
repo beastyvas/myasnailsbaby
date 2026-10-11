@@ -11,7 +11,9 @@ export const config = { runtime: "edge" };
  * on iMessage, Instagram or a text thread rendered a blank card. A route
  * can't go missing the way a file can, and it restyles with the site.
  */
-export default function handler() {
+export default function handler(req) {
+  // The monogram is served from /public on this same deployment.
+  const logo = `${new URL(req.url).origin}/logo.png`;
   const stone = "#FAFAF9";
   const ink = "#1C1917";
   const maroon = "#9F1239";
@@ -44,12 +46,15 @@ export default function handler() {
           Las Vegas
         </div>
 
+        {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
+        <img src={logo} width={260} height={202} style={{ marginTop: 28 }} />
+
         <div
           style={{
             display: "flex",
-            fontSize: 118,
+            fontSize: 92,
             fontWeight: 700,
-            marginTop: 24,
+            marginTop: 18,
             letterSpacing: -2,
           }}
         >
@@ -62,8 +67,8 @@ export default function handler() {
             width: 220,
             height: 3,
             background: maroon,
-            marginTop: 40,
-            marginBottom: 40,
+            marginTop: 30,
+            marginBottom: 30,
           }}
         />
 

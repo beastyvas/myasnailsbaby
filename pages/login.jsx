@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import Link from "next/link";
 import Seo from "@/components/Seo";
+import Logo from "@/components/Logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -32,8 +33,8 @@ export default function LoginPage() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-stone-900 mb-1" style={{ fontFamily: "Georgia, serif" }}>
-            MyasNailsBaby
+          <h1 className="mb-2 flex justify-center">
+            <Logo className="h-20 w-auto" />
           </h1>
           <p className="text-stone-500 text-sm">Dashboard Login</p>
         </div>

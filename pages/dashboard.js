@@ -11,6 +11,7 @@ import { normalizePhone } from "@/utils/sms";
 import { BOOKABLE_SERVICES, DEPOSIT_CENTS, formatPrice, serviceLabel } from "@/utils/pricing";
 import { EXTRA_TEXTS_ENABLED, GROWTH_ENABLED } from "@/utils/features";
 import { todayVegas } from "@/utils/time";
+import Logo from "@/components/Logo";
 
 /** How long a past appointment stays on the Appointments tab. */
 const RECENT_DAYS = 14;
@@ -1127,7 +1128,7 @@ export default function Dashboard() {
                   alt="Mya" className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-white text-lg font-bold" style={{ fontFamily: "Georgia, serif" }}>M</span>
+                <Logo white className="w-9 h-auto" />
               )}
             </div>
             <div>

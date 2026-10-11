@@ -55,7 +55,10 @@ for (const page of PUBLIC_PAGES) {
   // It used to be the logo text in the nav — the strongest on-page signal
   // there is, spent on a word nobody searches.
   ok("the wordmark is no longer an h1", !/<h1[^>]*>\s*MyasNailsBaby/.test(src));
-  ok("the wordmark is still on the page", /MyasNailsBaby\s*<\/span>/.test(src));
+  // Now Mya's MNB monogram, whose alt text carries the business name.
+  ok("the logo is in the header", /<Logo\b/.test(src));
+  ok("the logo isn't the h1 either", !/<h1[^>]*>\s*<Logo/.test(src));
+  ok("the logo's alt text is the business name", /alt="Mya's Nails Baby"/.test(read("components/Logo.jsx")));
 }
 
 // ── the public gallery, parked at Mya's request ──────────────────────────

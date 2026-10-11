@@ -5,6 +5,7 @@ import toast, { Toaster } from "react-hot-toast";
 import Link from "next/link";
 import Seo from "@/components/Seo";
 import { CLIENT_CANCEL_ENABLED } from "@/utils/features";
+import Logo from "@/components/Logo";
 
 export default function CancelAppointmentPage() {
   // Cancelling online is off. The API returns 403, so without this the page
@@ -151,9 +152,7 @@ export default function CancelAppointmentPage() {
 
       <header className="bg-white border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-stone-900" style={{ fontFamily: "Georgia, serif" }}>
-            MyasNailsBaby
-          </Link>
+          <Link href="/" aria-label="Home"><Logo className="h-14 w-auto" /></Link>
           <Link href="/" className="text-sm text-stone-500 hover:text-stone-900 transition">
             ← Back to Home
           </Link>

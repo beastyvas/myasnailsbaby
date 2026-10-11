@@ -23,7 +23,12 @@ export default function Document() {
 
         {/* Tints the phone browser chrome — matches the stone page background. */}
         <meta name="theme-color" content="#FAFAF9" />
-        <link rel="icon" href="/favicon.ico" />
+        {/* Mya's MNB monogram, everywhere a browser or phone shows an icon. */}
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="apple-mobile-web-app-title" content="MNB" />
       </Head>
       <body>
         <Main />

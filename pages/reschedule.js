@@ -9,6 +9,7 @@ import Seo from "@/components/Seo";
 import { vegasParts } from "@/utils/time";
 import { serviceLabel } from "@/utils/pricing";
 import "react-calendar/dist/Calendar.css";
+import Logo from "@/components/Logo";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 
@@ -252,7 +253,7 @@ export default function ReschedulePage() {
       {/* Header */}
       <header className="bg-white border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-stone-900" style={{ fontFamily: "Georgia, serif" }}>MyasNailsBaby</Link>
+          <Link href="/" aria-label="Home"><Logo className="h-14 w-auto" /></Link>
           <Link href="/" className="text-sm text-stone-500 hover:text-stone-900 transition">← Back to Home</Link>
         </div>
       </header>

@@ -182,7 +182,7 @@ export default async function handler(req, res) {
             <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; background: #fafaf9; border: 1px solid #e7e5e4;">
               <!-- Header -->
               <div style="background: #1c1917; padding: 32px; text-align: center;">
-                <p style="color: #c9848c; margin: 0 0 6px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">MyasNailsBaby</p>
+                <img src="https://www.myasnailsbaby.com/logo-white-sm.png" alt="Mya's Nails Baby" width="96" height="75" style="display:block;margin:0 auto 10px;border:0;" />
                 <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: normal; letter-spacing: 1px;">Appointment Confirmed</h1>
                 <div style="width: 48px; height: 1px; background: linear-gradient(90deg, transparent, #c9848c, #e8b4b8, #c9848c, transparent); margin: 16px auto 0;"></div>
               </div>

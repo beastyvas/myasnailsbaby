@@ -4,6 +4,7 @@ import Link from "next/link";
 import Seo from "@/components/Seo";
 import { studioFor, studioPostal } from "@/utils/location";
 import { vegasParts } from "@/utils/time";
+import Logo from "@/components/Logo";
 
 const sectionHeading = { fontFamily: "Georgia, serif" };
 
@@ -22,7 +23,7 @@ export default function TermsOfService({ today = "" }) {
       {/* Header */}
       <header className="bg-white border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-stone-900" style={sectionHeading}>MyasNailsBaby</Link>
+          <Link href="/" aria-label="Home"><Logo className="h-14 w-auto" /></Link>
           <Link href="/" className="text-sm text-stone-500 hover:text-stone-900 transition">← Back to Home</Link>
         </div>
       </header>

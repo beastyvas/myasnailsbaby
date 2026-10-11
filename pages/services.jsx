@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Seo from "@/components/Seo";
+import Logo from "@/components/Logo";
 import { studioFor, studioPostal } from "@/utils/location";
 import { vegasParts } from "@/utils/time";
 import { salonJsonLd, servicesJsonLd } from "@/utils/seo";
@@ -85,7 +86,7 @@ export default function Services({ today = "" }) {
 
       <header className="bg-white border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-stone-900" style={sectionHeading}>MyasNailsBaby</Link>
+          <Link href="/" aria-label="Home"><Logo className="h-14 w-auto" /></Link>
           <Link href="/#booking" className="bg-rose-800 hover:bg-rose-900 text-white px-5 py-2 text-sm font-medium transition">Book</Link>
         </div>
       </header>
