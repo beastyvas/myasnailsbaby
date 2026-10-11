@@ -64,9 +64,10 @@ export function studioPostal(studio) {
   return `${studio.street}, ${studio.cityLine}`;
 }
 
-/** One line, for texts. */
+/** One line, for texts. Abbreviation dots dropped ("Rd." → "Rd") — Textbelt's
+ *  link filter is touchy, and a text with no dots in the address can't trip it. */
 export function studioAddressFor(date) {
-  return studioLines(date).join(", ");
+  return studioLines(date).join(", ").replace(/\b([A-Za-z]{1,3})\.(?=\s)/g, "$1");
 }
 
 /** A keyless Google Maps embed for a studio. */

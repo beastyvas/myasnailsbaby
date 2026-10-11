@@ -55,17 +55,33 @@ export function siteUrl() {
   );
 }
 
-/** The same message with every link replaced by the bare domain.
+/** The same message with nothing Textbelt could read as a link.
+ *
+ *  Textbelt refuses any text it thinks contains a URL — not just "https://…"
+ *  but bare domains like "myasnailsbaby.com" too. This used to swap a full
+ *  link for the bare domain, which is itself a link to Textbelt, so the
+ *  rewrite still got refused. Now links become "myasnailsbaby dot com" and
+ *  any word.word left over is broken up the same way.
  *
  *  A client who hears nothing is far worse than a client who's told where to
  *  go, so a message that would be refused is rewritten rather than dropped. */
 export function stripLinks(message, siteName = SITE_HOST) {
-  if (!/https?:\/\//.test(message)) return message;
-  return message
+  return String(message)
     .replace(URL_PATTERN, siteName)
+    // "name.com", "www.site.co" → "name dot com". Letters on both sides of
+    // the dot with no space, so sentences, prices and times are untouched.
+    .replace(/\b([A-Za-z0-9-]+)\.(?=[A-Za-z]{2,}\b)/g, "$1 dot ")
     // collapse the blank lines a removed link can leave behind
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+/** Last resort when Textbelt still says "link": no dots, no @handles. Plain
+ *  enough that nothing in it can look like an address on the web. */
+export function plainText(message) {
+  return stripLinks(message)
+    .replace(/@(\w)/g, "IG $1")
+    .replace(/\./g, "");
 }
 
 /** Textbelt's wording varies; anything mentioning links or URLs means the
@@ -125,11 +141,12 @@ export async function sendSms(phone, message, opts = {}) {
   const sent = await post(to, body, opts);
   if (sent.ok) return true;
 
-  // Belt and braces: if a link slips through some future edit and Textbelt
-  // refuses it, resend without rather than leave the client uninformed.
-  if (isLinkRejection(sent.error) && /https?:\/\//.test(body)) {
-    console.warn(`Textbelt refused a link for ${to} — resending without it.`);
-    const retry = await post(to, stripLinks(body), opts);
+  // Belt and braces: if Textbelt still sees a link in something, resend a
+  // plain version rather than leave the client uninformed. Its detector is
+  // broader than "http", so this no longer waits for one to be present.
+  if (isLinkRejection(sent.error)) {
+    console.warn(`Textbelt refused a link for ${to} — resending as plain text.`);
+    const retry = await post(to, plainText(body), opts);
     return retry.ok;
   }
 

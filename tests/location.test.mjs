@@ -17,7 +17,7 @@ ok(L.studioFor(undefined) === L.OLD_STUDIO, "no date falls back to the current s
 const before = M.reminder24h({ name: "Ana", date: "2026-10-15", startTime: "10:00" });
 const after = M.reminder24h({ name: "Ana", date: "2026-10-22", startTime: "10:00" });
 ok(before.includes("Flamingo") && !before.includes("Pecos"), "reminder before the move says Flamingo");
-ok(after.includes("178 N Pecos Rd. Suite 1") && after.includes("Henderson, NV 89074") && !after.includes("Flamingo"), "reminder after the move says Pecos, Henderson");
+ok(after.includes("178 N Pecos Rd Suite 1") && after.includes("Henderson, NV 89074") && !after.includes("Flamingo"), "reminder after the move says Pecos, Henderson");
 ok(M.bookingConfirmation({ name: "Ana", date: "2026-11-01", startTime: "10:00" }).includes("Pecos"), "confirmation after the move says Pecos");
 ok(M.updatedByMya({ name: "Ana", date: "2026-10-25", startTime: "10:00" }).includes("Pecos"), "an edit past the cut-over uses the new date's address");
 
@@ -29,6 +29,17 @@ ok(F.GROWTH_ENABLED === false, "rebooking nudge is off");
   ok(m.includes("Ana!") && m.includes("2:00") && m.includes("Gel-X, Medium, Art level 2, Foreign soak-off"), "edit text carries the full appointment");
   ok(m.includes("Gel pedicure + French tips"), "edit text includes the pedicure and french tips");
   ok(m.length < 480, "edit text stays within three SMS segments");
+}
+
+// Nothing Textbelt could read as a link.
+{
+  const S2 = await load("utils/sms.js");
+  const out = S2.stripLinks("Book at https://www.myasnailsbaby.com/#booking or myasnailsbaby.com. $20.50 at 2:00PM.");
+  ok(!/https?:|[A-Za-z]\.[A-Za-z]{2,}/.test(out), "links and bare domains are broken up");
+  ok(out.includes("$20.50") && out.includes("2:00PM"), "prices and times are left alone");
+  ok(!/\w\.\w/.test(S2.plainText("DM @myasnailsbaby. myasnailsbaby.com")) && !S2.plainText("DM @x").includes("@"), "the last-resort version has no dots or @");
+  const upd = M.updatedByMya({ name: "Ana", date: "2026-10-22", startTime: "14:00", service: "Gel-X" });
+  ok(!/https?:|\w\.\w{2,}|Rd\./.test(upd), "the update text has no links and no abbreviation dots");
 }
 
 // The public site and Google's copy of the address flip on move day too.
