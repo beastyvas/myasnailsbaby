@@ -21,7 +21,6 @@ const ALLOW_LINKS = false;
  *  never .test() — a /g regex keeps state between .test() calls. */
 const URL_PATTERN = /https?:\/\/\S+/g;
 
-const SITE_HOST = "myasnailsbaby.com";
 
 /**
  * The Textbelt API key.
@@ -57,20 +56,19 @@ export function siteUrl() {
 
 /** The same message with nothing Textbelt could read as a link.
  *
- *  Textbelt refuses any text it thinks contains a URL — not just "https://…"
- *  but bare domains like "myasnailsbaby.com" too. This used to swap a full
- *  link for the bare domain, which is itself a link to Textbelt, so the
- *  rewrite still got refused. Now links become "myasnailsbaby dot com" and
- *  any word.word left over is broken up the same way.
- *
- *  A client who hears nothing is far worse than a client who's told where to
- *  go, so a message that would be refused is rewritten rather than dropped. */
-export function stripLinks(message, siteName = SITE_HOST) {
+ *  Mya's Textbelt key isn't whitelisted for links, so texts never carry one —
+ *  not a full URL, not a bare "name.com", and no "dot com" workaround either.
+ *  None of the templates in utils/messages.js contain a link; this only
+ *  catches one that slips in later (or arrives in data), and removes it
+ *  outright rather than sending something Textbelt will refuse. */
+export function stripLinks(message) {
   return String(message)
-    .replace(URL_PATTERN, siteName)
-    // "name.com", "www.site.co" → "name dot com". Letters on both sides of
-    // the dot with no space, so sentences, prices and times are untouched.
-    .replace(/\b([A-Za-z0-9-]+)\.(?=[A-Za-z]{2,}\b)/g, "$1 dot ")
+    .replace(URL_PATTERN, "")
+    // bare domains: "name.com", "www.site.co" (letters both sides, no space,
+    // so sentences, prices and times are untouched)
+    .replace(/\b(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}\b/g, (m) => (/[A-Za-z]\.[A-Za-z]/.test(m) ? "" : m))
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ +([,.!?])/g, "$1")
     // collapse the blank lines a removed link can leave behind
     .replace(/\n{3,}/g, "\n\n")
     .trim();

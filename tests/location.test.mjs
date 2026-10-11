@@ -35,7 +35,7 @@ ok(F.GROWTH_ENABLED === false, "rebooking nudge is off");
 {
   const S2 = await load("utils/sms.js");
   const out = S2.stripLinks("Book at https://www.myasnailsbaby.com/#booking or myasnailsbaby.com. $20.50 at 2:00PM.");
-  ok(!/https?:|[A-Za-z]\.[A-Za-z]{2,}/.test(out), "links and bare domains are broken up");
+  ok(!/https?:|[A-Za-z]\.[A-Za-z]{2,}|dot com/i.test(out), "links and bare domains are removed, not rewritten");
   ok(out.includes("$20.50") && out.includes("2:00PM"), "prices and times are left alone");
   ok(!/\w\.\w/.test(S2.plainText("DM @myasnailsbaby. myasnailsbaby.com")) && !S2.plainText("DM @x").includes("@"), "the last-resort version has no dots or @");
   const upd = M.updatedByMya({ name: "Ana", date: "2026-10-22", startTime: "14:00", service: "Gel-X" });
