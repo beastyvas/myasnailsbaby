@@ -1,18 +1,14 @@
 import { absoluteUrl } from "@/utils/seo";
 
-/** Kept out of search: the dashboard and its login, the API surface, and the
- *  post-checkout / booking-management pages, which are useless to a searcher
- *  and can expose a booking's details in a crawled URL. */
-const DISALLOW = [
-  "/api/",
-  "/dashboard",
-  "/login",
-  "/logout",
-  "/Payment",
-  "/success",
-  "/reschedule",
-  "/cancel-appointment",
-];
+/** Blocked from crawling: only the API, which has nothing to show.
+ *
+ *  The private pages (dashboard, login, checkout, success, reschedule) are
+ *  deliberately NOT listed here. They carry a noindex tag and an
+ *  X-Robots-Tag header (next.config.js), and Google can only obey those if
+ *  it's allowed to fetch the page. Blocking them here is what got /login
+ *  shown as a "Dashboard Login" sitelink under her name: Google saw a link
+ *  to it, wasn't allowed in to read "don't index me", and listed it anyway. */
+const DISALLOW = ["/api/"];
 
 function buildRobots() {
   return [

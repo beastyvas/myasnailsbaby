@@ -1002,16 +1002,18 @@ export default function Home({ gallery = [], today = "" }) {
             <Link href="/privacy" className="hover:text-stone-700 transition">Privacy Policy</Link>
             <span>·</span>
             <Link href="/reschedule" className="hover:text-stone-700 transition">Reschedule Appointment</Link>
-            <span>·</span>
             {/* Cancelling online is off: Mya would rather clients text her so
                 she can handle the deposit case by case. Rescheduling stays. */}
             {CLIENT_CANCEL_ENABLED && (
               <>
-                <Link href="/cancel-appointment" className="hover:text-stone-700 transition">Cancel Appointment</Link>
                 <span>·</span>
+                <Link href="/cancel-appointment" className="hover:text-stone-700 transition">Cancel Appointment</Link>
               </>
             )}
-            <Link href="/login" className="hover:text-stone-700 transition">Dashboard Login</Link>
+            {/* No "Dashboard Login" link here. A link on the homepage is how
+                Google found /login and showed it as a sitelink under her name
+                in search. Mya gets to her dashboard from her bookmark:
+                myasnailsbaby.com/login */}
           </div>
         </footer>
 

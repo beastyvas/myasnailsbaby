@@ -114,11 +114,15 @@ for (const page of PUBLIC_PAGES) {
     ok(`${path} is not disallowed in robots`, !new RegExp(`"${path}"`).test(robots));
   }
 
-  // Transactional pages stay out of the index — they're useless as a landing
-  // page and a crawled URL can carry a booking's details.
-  for (const p of ["/success", "/reschedule", "/cancel-appointment", "/dashboard"]) {
-    ok(`${p} stays out of search`, robots.includes(`"${p}"`));
+  // Private pages stay out of the index — by noindex, which Google can only
+  // obey if robots.txt lets it fetch the page. Blocking /login in robots.txt
+  // is exactly how it ended up as a "Dashboard Login" sitelink.
+  const config = read("next.config.js");
+  for (const p of ["/login", "/logout", "/success", "/reschedule", "/cancel-appointment", "/dashboard", "/Payment"]) {
+    ok(`${p} sends X-Robots-Tag noindex`, config.includes(`'${p}'`) && /X-Robots-Tag', value: 'noindex/.test(config));
+    ok(`${p} is not blocked in robots, so the noindex is readable`, !robots.includes(`"${p}"`));
   }
+  ok("the homepage doesn't link to the login page", !/href="\/login"/.test(read("pages/index.js")));
 
   const idx = read("pages/index.js");
   ok("the homepage is not noindex", !/<Seo[^>]*noindex/.test(idx.slice(0, idx.indexOf("</Seo>") + 1)));
