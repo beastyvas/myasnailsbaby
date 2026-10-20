@@ -11,6 +11,11 @@
  *  flips on MOVE_DATE as well. Those pages regenerate at least hourly, so
  *  the switch lands within an hour of midnight with no deploy.
  *
+ *  THE SUITE NUMBER (`unit`) IS PRIVATE. It goes out in exactly two places:
+ *  the booking confirmation text and the reminder texts — to someone who has
+ *  paid a deposit for a time slot. Everything else (pages, structured data,
+ *  emails, the success page, other texts) gets the street without it.
+ *
  *  Browser-safe and dependency-free: the success page imports it too.
  */
 
@@ -19,7 +24,8 @@ export const MOVE_DATE = "2026-10-21";
 
 export const OLD_STUDIO = {
   name: null,
-  street: "2080 E. Flamingo Rd. Suite #106, Room 4",
+  street: "2080 E. Flamingo Rd.",
+  unit: "Suite #106, Room 4",
   city: "Las Vegas",
   region: "NV",
   postalCode: "89119",
@@ -34,7 +40,8 @@ export const OLD_STUDIO = {
 
 export const NEW_STUDIO = {
   name: "Glamour Gains Studio Suites",
-  street: "178 N Pecos Rd. Suite 1",
+  street: "178 N Pecos Rd.",
+  unit: "Suite 1",
   city: "Henderson",
   region: "NV",
   postalCode: "89074",
@@ -53,21 +60,26 @@ export function studioFor(date) {
   return date && String(date) >= MOVE_DATE ? NEW_STUDIO : OLD_STUDIO;
 }
 
-/** The address as display lines: building name (if any), street, city. */
-export function studioLines(date) {
+/** The address as display lines: building name (if any), street, city.
+ *  No suite number unless `withUnit` — see the note at the top. */
+export function studioLines(date, { withUnit = false } = {}) {
   const s = studioFor(date);
-  return [s.name, s.street, s.cityLine].filter(Boolean);
+  const street = withUnit ? `${s.street} ${s.unit}` : s.street;
+  return [s.name, street, s.cityLine].filter(Boolean);
 }
 
-/** Street plus city line, e.g. for a page's contact block. */
+/** Street plus city line, for a public page's contact block. No suite. */
 export function studioPostal(studio) {
   return `${studio.street}, ${studio.cityLine}`;
 }
 
 /** One line, for texts. Abbreviation dots dropped ("Rd." → "Rd") — Textbelt's
- *  link filter is touchy, and a text with no dots in the address can't trip it. */
-export function studioAddressFor(date) {
-  return studioLines(date).join(", ").replace(/\b([A-Za-z]{1,3})\.(?=\s)/g, "$1");
+ *  link filter is touchy, and a text with no dots in the address can't trip it.
+ *  `withUnit` only for the confirmation and reminder texts. */
+export function studioAddressFor(date, { withUnit = false } = {}) {
+  return studioLines(date, { withUnit })
+    .join(", ")
+    .replace(/\b([A-Za-z]{1,3})\.(?=\s|,|$)/g, "$1");
 }
 
 /** A keyless Google Maps embed for a studio. */

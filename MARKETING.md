@@ -70,7 +70,7 @@ and mismatches quietly cost you ranking.
 | Business name | `Mya's Nails Baby` |
 | Category (primary) | **Nail salon** |
 | Categories (secondary) | Nail technician, Beauty salon |
-| Address | Through Oct 20, 2026: `2080 E. Flamingo Rd. Suite #106, Room 4, Las Vegas, NV 89119`<br>**From Oct 21, 2026:** `178 N Pecos Rd. Suite 1, Henderson, NV 89074` |
+| Address | Through Oct 20, 2026: `2080 E. Flamingo Rd., Las Vegas, NV 89119`<br>**From Oct 21, 2026:** `178 N Pecos Rd., Henderson, NV 89074`<br>No suite number anywhere public — leave address line 2 empty. Clients get the suite in their confirmation and reminder texts. |
 | Phone | `(702) 981-8428` |
 | Website | `https://www.myasnailsbaby.com` |
 | Booking link | `https://www.myasnailsbaby.com/#booking` |

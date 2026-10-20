@@ -33,7 +33,7 @@ export function bookingConfirmation({ name, date, startTime }) {
   return (
     `Hey love! Your appointment with Mya is confirmed for ${prettyDate(date)} ` +
     `at ${to12h(startTime)} 💅\n` +
-    `📍 ${studioAddressFor(date)}\n` +
+    `📍 ${studioAddressFor(date, { withUnit: true })}\n` +
     `DM ${IG} if you need anything!\n` +
     `Reply STOP to unsubscribe.`
   );
@@ -44,7 +44,7 @@ export function reminder24h({ name, date, startTime }) {
   return (
     `Hi ${firstName(name)}! Reminder from ${BRAND} — your appointment is tomorrow, ` +
     `${prettyDate(date)} at ${to12h(startTime)}.\n` +
-    `📍 ${studioAddressFor(date)}\n` +
+    `📍 ${studioAddressFor(date, { withUnit: true })}\n` +
     `Please arrive on time. Deposits are non-refundable and no extra guests please.\n` +
     `DM ${IG} if anything changes!`
   );
@@ -54,7 +54,7 @@ export function reminder24h({ name, date, startTime }) {
 export function reminderDayOf({ name, date, startTime }) {
   return (
     `See you today at ${to12h(startTime)}, ${firstName(name)}! 💅\n` +
-    `📍 ${studioAddressFor(date)}\n` +
+    `📍 ${studioAddressFor(date, { withUnit: true })}\n` +
     `— ${BRAND}`
   );
 }

@@ -42,8 +42,30 @@ ok(F.GROWTH_ENABLED === false, "rebooking nudge is off");
   ok(!/https?:|\w\.\w{2,}|Rd\./.test(upd), "the update text has no links and no abbreviation dots");
 }
 
-// The public site and Google's copy of the address flip on move day too.
 const S = await load("utils/seo.js");
+
+// The suite number goes out only in the confirmation and reminder texts.
+{
+  const d = "2026-10-25", t = "10:00";
+  const SUITE = /Suite 1\b|Suite #106|Room 4/;
+  ok(SUITE.test(M.bookingConfirmation({ name: "A", date: d, startTime: t })), "confirmation text has the suite");
+  ok(SUITE.test(M.reminder24h({ name: "A", date: d, startTime: t })), "day-before reminder has the suite");
+  ok(SUITE.test(M.reminderDayOf({ name: "A", date: d, startTime: t })), "day-of reminder has the suite");
+  ok(SUITE.test(M.reminder24h({ name: "A", date: "2026-10-15", startTime: t })), "old studio's suite too, before the move");
+  ok(!SUITE.test(M.updatedByMya({ name: "A", date: d, startTime: t })), "edit text has no suite");
+  ok(!SUITE.test(M.rescheduledByClient({ name: "A", oldDate: d, oldTime: t, newDate: d, newTime: t })), "reschedule text has no suite");
+  ok(!SUITE.test(L.studioAddressFor(d)) && !SUITE.test(L.studioLines(d).join()), "addresses default to no suite");
+  for (const day of ["2026-10-20", "2026-10-21"]) {
+    ok(!SUITE.test(JSON.stringify(S.salonJsonLd(day)) + JSON.stringify(S.faqJsonLd(day))), `structured data has no suite (${day})`);
+  }
+  const { read: R } = await import("./helpers/repo.mjs");
+  for (const f of ["pages/index.js", "pages/terms.jsx", "pages/privacy.jsx", "pages/services.jsx", "pages/success.js",
+                   "pages/api/confirm-payment.js", "pages/api/reschedule-booking.js", "MARKETING.md"]) {
+    ok(!/withUnit|Suite #106|Suite 1\b/.test(R(f)), `${f} never shows the suite`);
+  }
+}
+
+// The public site and Google's copy of the address flip on move day too.
 const before2 = S.salonJsonLd("2026-10-20"), after2 = S.salonJsonLd("2026-10-21");
 ok(before2.address.streetAddress.includes("Flamingo") && before2.geo, "structured data says Flamingo, with its pin, until the move");
 ok(after2.address.streetAddress.includes("Pecos") && after2.address.addressLocality === "Henderson" && after2.address.postalCode === "89074", "structured data says Pecos, Henderson 89074 from move day");
