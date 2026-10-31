@@ -33,6 +33,8 @@ that file — nothing else needs to change.
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only. Bypasses RLS for the webhook and campaign routes. Never expose this to the browser. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Deposits and no-show fees |
 | `RESEND_API_KEY` | Confirmation and cancellation emails |
+| `GOOGLE_PLACES_API_KEY` | Server-only. A Google Cloud key with **Places API (New)** enabled. Shows her Google rating and reviews on the homepage. Without it the reviews section is simply hidden. |
+| `GOOGLE_PLACE_ID` | Her Business Profile's place id (starts `ChIJ`). Find it with Google's Place ID Finder. Needed alongside the key above. |
 
 ## Database migrations
 

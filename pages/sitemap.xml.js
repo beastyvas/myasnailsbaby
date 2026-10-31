@@ -1,4 +1,5 @@
 import { absoluteUrl } from "@/utils/seo";
+import { SERVICE_PAGES, servicePath } from "@/utils/servicePages";
 
 /** Only pages worth landing on. The booking utilities (/reschedule,
  *  /cancel-appointment, /success) are transactional — they're marked
@@ -9,6 +10,10 @@ const PAGES = [
   // rank for "gel-x price las vegas" and the like, since every figure used
   // to live inside a <select> where no crawler could see it.
   { path: "/services", changefreq: "weekly", priority: "0.9" },
+  // One page per service — the ones that can rank for "gel-x las vegas",
+  // "acrylic nails henderson" and so on. Read from the same list the pages
+  // are built from, so a new service page can't be left out of the map.
+  ...SERVICE_PAGES.map((p) => ({ path: servicePath(p), changefreq: "monthly", priority: "0.8" })),
   { path: "/privacy", changefreq: "yearly", priority: "0.3" },
   { path: "/terms", changefreq: "yearly", priority: "0.3" },
 ];

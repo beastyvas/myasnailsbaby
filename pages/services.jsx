@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Seo from "@/components/Seo";
 import Logo from "@/components/Logo";
+import { SERVICE_PAGES, servicePath } from "@/utils/servicePages";
 import { studioFor, studioPostal } from "@/utils/location";
 import { vegasParts } from "@/utils/time";
 import { salonJsonLd, servicesJsonLd } from "@/utils/seo";
@@ -80,7 +81,7 @@ export default function Services({ today = "" }) {
       <Seo
         path="/services"
         title="Nail Prices & Services"
-        description="Starting prices at Mya's Nails Baby in Las Vegas — Gel-X from $60, acrylic from $65, hard gel, structure gel, gel manicures, pedicures and custom nail art. Estimates; final price confirmed at your appointment. $20 deposit books your time."
+        description="Starting prices at Mya's Nails Baby, Las Vegas & Henderson — Gel-X from $60, acrylic from $65, hard gel, structure gel, gel manicures, pedicures and custom nail art. Estimates; final price confirmed at your appointment. $20 deposit books your time."
         jsonLd={[servicesJsonLd(), salonJsonLd(today)]}
       />
 
@@ -220,6 +221,21 @@ export default function Services({ today = "" }) {
             </Link>
           </div>
         </div>
+
+        {/* Each service has its own page with more detail — linked from here
+            because this is where someone comparing prices already is. */}
+        <nav className="mt-10" aria-label="Services">
+          <p className="text-xs uppercase tracking-widest text-stone-500 mb-3">More about each service</p>
+          <ul className="flex flex-wrap gap-2">
+            {SERVICE_PAGES.map((p) => (
+              <li key={p.slug}>
+                <Link href={servicePath(p)} className="inline-block bg-white border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-4 py-2 text-sm transition">
+                  {p.short}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
         <p className="text-center text-stone-400 text-xs mt-8">
           <Link href="/" className="hover:text-stone-600 transition">← Back to home</Link>

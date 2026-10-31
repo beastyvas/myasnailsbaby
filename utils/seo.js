@@ -61,6 +61,12 @@ export const SERVICES = [
   "Gel Pedicure",
 ];
 
+export const AREAS_SERVED = ["Henderson", "Las Vegas"].map((name) => ({
+  "@type": "City",
+  name,
+  address: { "@type": "PostalAddress", addressRegion: "NV", addressCountry: "US" },
+}));
+
 export function siteUrl() {
   const raw =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -128,11 +134,12 @@ export function salonJsonLd(today) {
     ...(ADDRESS.latitude != null
       ? { geo: { "@type": "GeoCoordinates", latitude: ADDRESS.latitude, longitude: ADDRESS.longitude } }
       : {}),
-    areaServed: {
-      "@type": "City",
-      name: "Las Vegas",
-      address: { "@type": "PostalAddress", addressRegion: "NV" },
-    },
+    // The studio is in Henderson and most clients come from across the
+    // valley. Listing both is the truth, and it's what lets the profile
+    // match "nail tech henderson" as well as "nail tech las vegas".
+    areaServed: AREAS_SERVED,
+    founder: { "@type": "Person", name: "Mya", jobTitle: "Nail Artist", sameAs: [CONTACT.instagram] },
+    hasMap: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(studioFor(today).mapQuery)}`,
     openingHoursSpecification: OPENING_HOURS.map(({ days, opens, closes }) => ({
       "@type": "OpeningHoursSpecification",
       dayOfWeek: days,
@@ -265,5 +272,68 @@ export function faqJsonLd(today) {
       name: question,
       acceptedAnswer: { "@type": "Answer", text: answer },
     })),
+  };
+}
+
+/** FAQPage from a list of [question, answer] pairs. Google only shows FAQ
+ *  rich results for a few kinds of site now, but the markup still tells it
+ *  plainly which questions the page answers. */
+export function faqJsonLdFrom(qa) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: qa.map(([question, answer]) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: { "@type": "Answer", text: answer },
+    })),
+  };
+}
+
+/** Home > Services > this page, so results show a breadcrumb trail instead
+ *  of a bare URL. */
+export function breadcrumbJsonLd(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map(([name, path], i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name,
+      item: absoluteUrl(path),
+    })),
+  };
+}
+
+/**
+ * One service page's Service entity, tied to the salon by @id so Google
+ * reads it as "this business offers this", not a free-floating service.
+ * Prices are minimums for the same reason as servicesJsonLd.
+ */
+export function serviceJsonLd({ name, description, path, minCents }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${absoluteUrl(path)}#service`,
+    name,
+    serviceType: name,
+    description,
+    url: absoluteUrl(path),
+    provider: { "@id": `${siteUrl()}/#salon` },
+    areaServed: AREAS_SERVED,
+    ...(minCents != null
+      ? {
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "USD",
+            priceSpecification: {
+              "@type": "PriceSpecification",
+              minPrice: (minCents / 100).toFixed(2),
+              priceCurrency: "USD",
+            },
+            url: absoluteUrl(path),
+          },
+        }
+      : {}),
   };
 }

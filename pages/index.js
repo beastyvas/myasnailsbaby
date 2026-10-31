@@ -19,11 +19,46 @@ import { ART_LEVELS, BOOKABLE_SERVICES, PEDICURES, PEDI_FRENCH_CENTS, SERVICES, 
 import { CLIENT_CANCEL_ENABLED, PUBLIC_GALLERY_ENABLED } from "@/utils/features";
 import { MOVE_DATE, NEW_STUDIO, OLD_STUDIO, mapEmbedUrl, studioFor } from "@/utils/location";
 import Logo from "@/components/Logo";
+import { SERVICE_PAGES, servicePath } from "@/utils/servicePages";
 import NailShape, { LENGTH_STEPS } from "@/components/NailShape";
 import { getGoogleReviews } from "@/utils/reviews";
 
 const Calendar = dynamic(() => import("react-calendar"), { ssr: false });
 const getStripe = () => loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
+/**
+ * Her bio, photo and promo, read on the server.
+ *
+ * These used to load in the browser after the page arrived, so the HTML a
+ * crawler (or a link preview) got had the placeholder bio, and her real
+ * photo flickered in over the fallback. Same anon key and query the
+ * browser used, so the table's RLS still applies. Null on any failure — the
+ * browser then fetches them itself, as before.
+ */
+async function loadSettings() {
+  try {
+    // A plain server client, not the cookie-based browser one.
+    const { createClient } = await import("@supabase/supabase-js");
+    const anon = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { auth: { persistSession: false } }
+    );
+    const { data, error } = await anon
+      .from("settings")
+      .select("bio, profile_picture_url, promo_text, promo_enabled")
+      .single();
+    if (error || !data) return null;
+    return {
+      bio: data.bio || "",
+      profilePic: data.profile_picture_url || null,
+      promoText: data.promo_text || "",
+      promoEnabled: !!data.promo_enabled,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Mya's portfolio, fetched on the server.
@@ -51,10 +86,11 @@ export async function getServerSideProps() {
 
   // Her Google rating and reviews. Null when the key isn't set or Google is
   // down, and then the section isn't drawn — see utils/reviews.js.
-  const reviews = await getGoogleReviews();
+  // Both at once — neither should wait on the other.
+  const [reviews, settings] = await Promise.all([getGoogleReviews(), loadSettings()]);
 
   // Off by Mya's choice — don't pay for a query whose result nothing renders.
-  if (!PUBLIC_GALLERY_ENABLED) return { props: { gallery: [], today, reviews } };
+  if (!PUBLIC_GALLERY_ENABLED) return { props: { gallery: [], today, reviews, settings } };
 
   try {
     const { createClient } = await import("@supabase/supabase-js");
@@ -70,16 +106,16 @@ export async function getServerSideProps() {
 
     if (error) {
       console.error("Homepage: couldn't load the gallery:", error.message);
-      return { props: { gallery: [], today, reviews } };
+      return { props: { gallery: [], today, reviews, settings } };
     }
-    return { props: { gallery: data || [], today, reviews } };
+    return { props: { gallery: data || [], today, reviews, settings } };
   } catch (err) {
     console.error("Homepage: gallery fetch threw:", err?.message || err);
-    return { props: { gallery: [], today, reviews } };
+    return { props: { gallery: [], today, reviews, settings } };
   }
 }
 
-export default function Home({ gallery = [], today = "", reviews = null }) {
+export default function Home({ gallery = [], today = "", reviews = null, settings = null }) {
   const formRef = useRef();
   const [selectedDate, setSelectedDate] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,10 +123,10 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
   const [pedicure, setPedicure] = useState("no");
   const [duration, setDuration] = useState(0);
   const [soakoff, setSoakoff] = useState("");
-  const [bioText, setBioText] = useState("");
-  const [profilePicUrl, setProfilePicUrl] = useState(null);
-  const [promoText, setPromoText] = useState("");
-  const [promoEnabled, setPromoEnabled] = useState(false);
+  const [bioText, setBioText] = useState(settings?.bio || "");
+  const [profilePicUrl, setProfilePicUrl] = useState(settings?.profilePic || null);
+  const [promoText, setPromoText] = useState(settings?.promoText || "");
+  const [promoEnabled, setPromoEnabled] = useState(!!settings?.promoEnabled);
   const [timeOptions, setTimeOptions] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [time, setTime] = useState("");
@@ -122,6 +158,19 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
     return bookingIdRef.current;
   };
 
+  // The service pages link here as /?service=Gel-X#booking, so someone who
+  // tapped Book on the Gel-X page lands with Gel-X already picked. Only
+  // values that exist in the price list are accepted.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const svc = q.get("service");
+    if (svc && SERVICES[svc] && !SERVICES[svc].legacy) {
+      setBookingNails("yes");
+      setService(svc);
+    }
+    if (q.get("pedicure") === "yes") setPedicure("yes");
+  }, []);
+
   useEffect(() => {
     let d = 0;
     if (bookingNails === "yes") d += 2;
@@ -130,6 +179,8 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
   }, [bookingNails, pedicure]);
 
   useEffect(() => {
+    // Already rendered from the server; only fetch if that failed.
+    if (settings) return;
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from("settings")
@@ -341,7 +392,7 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
         path="/"
         bareTitle
         title="Mya's Nails Baby | Nail Artist in Las Vegas — Gel-X, Acrylic & Nail Art"
-        description="Custom nail sets by Mya in Las Vegas. Gel-X, acrylic, hard gel, structure gel and hand-painted nail art, plus gel pedicures. Book online with a $20 deposit."
+        description="Custom nail sets by Mya, a Las Vegas nail artist with a private studio in Henderson. Gel-X, acrylic, hard gel, builder gel and hand-painted nail art, plus gel pedicures. Book online with a $20 deposit."
         jsonLd={[salonJsonLd(today), faqJsonLd(today)]}
       />
       <Toaster position="bottom-center" />
@@ -402,8 +453,11 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
                 <img
                   src={profilePicUrl
                     ? `https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicUrl}`
-                    : "/images/mya.png"}
+                    : "/images/mya.webp"}
                   alt="Mya - Las Vegas Nail Artist"
+                  width={208}
+                  height={208}
+                  fetchpriority="high"
                   className="w-44 h-44 sm:w-52 sm:h-52 object-cover block"
                   style={{ borderRadius: "50%" }}
                 />
@@ -1002,6 +1056,25 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
         </section>
 
         </div>
+
+        {/* ── SERVICES ──
+            A door into each service page. For people it's a quick "what
+            does she do"; for Google it's the link that tells it those pages
+            matter, from the page with the most authority on the site. */}
+        <section id="services" className="py-14 border-b border-stone-200 text-center">
+          <h3 className="text-5xl text-stone-900 mb-12 section-title-accent" style={scriptHeading}>What I Do</h3>
+          <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 text-left">
+            {SERVICE_PAGES.map((p) => (
+              <li key={p.slug}>
+                <Link href={servicePath(p)} className="block h-full bg-white border border-stone-200 p-6 policy-card group">
+                  <span className="block font-semibold text-stone-900 text-sm uppercase tracking-wide">{p.short}</span>
+                  <span className="block mt-2 text-sm text-stone-600 leading-relaxed">{p.intro[0].split(". ")[0]}.</span>
+                  <span className="block mt-4 text-sm text-rose-800 group-hover:text-rose-900 underline underline-offset-2">Prices &amp; details</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         {/* ── LOCATION ── */}
         <section className="py-14 border-b border-stone-200">
