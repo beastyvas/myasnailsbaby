@@ -495,8 +495,14 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
             so anything she uploads meanwhile appears here if it's flipped on. */}
         {PUBLIC_GALLERY_ENABLED && <NailGallery items={gallery} />}
 
+        {/* Policies then booking on wider screens, as it always was. On a
+            phone the four policy cards are a long scroll before the form,
+            so the form comes first there; the deposit and no-show terms
+            are still agreed to in step 3 before anyone pays. */}
+        <div className="flex flex-col">
+
         {/* ── BOOKING POLICIES ── */}
-        <section id="policies" className="py-14 border-b border-stone-200">
+        <section id="policies" className="py-14 border-b border-stone-200 order-2 sm:order-1">
           <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Booking Policies</h3>
           <div className="grid sm:grid-cols-2 gap-6 mb-10">
             {[
@@ -575,7 +581,7 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
         </section>
 
         {/* ── BOOKING FORM ── */}
-        <section id="booking" className="py-14 border-b border-stone-200">
+        <section id="booking" className="py-14 border-b border-stone-200 order-1 sm:order-2">
           <div className="max-w-2xl mx-auto">
             <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Book an Appointment</h3>
 
@@ -995,6 +1001,8 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
           </div>
         </section>
 
+        </div>
+
         {/* ── LOCATION ── */}
         <section className="py-14 border-b border-stone-200">
           <h3 className="text-5xl text-stone-900 text-center mb-6 section-title-accent" style={scriptHeading}>Location</h3>
@@ -1029,7 +1037,7 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
 
         {/* ── TAG ME ── */}
         <section className="py-14 text-center border-b border-stone-200">
-          <p className="text-stone-500 text-sm uppercase tracking-widest mb-2">Thank you for booking with me</p>
+          <p className="text-stone-500 text-sm uppercase tracking-widest mb-2">Love your set?</p>
           <h3 className="text-5xl text-stone-900 mb-3" style={scriptHeading}>Tag me in your nailfies!</h3>
           <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
             className="inline-block border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-6 py-2 text-sm font-medium transition mt-2">
