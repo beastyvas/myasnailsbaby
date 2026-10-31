@@ -341,7 +341,17 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
   const inputCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 placeholder-stone-400 bg-white";
   const selectCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 bg-white";
   const sectionHeading = { fontFamily: "Georgia, serif" };
-  const scriptHeading = { fontFamily: "'Great Vibes', cursive", color: "#1c1917" };
+  // Her script, finished in rose gold like a chrome set: the same gradient
+  // as the ring around her photo, clipped to the letters. Padding keeps the
+  // swashes, which reach outside the letter box, inside the painted area.
+  const scriptHeading = {
+    fontFamily: "'Great Vibes', cursive",
+    backgroundImage: "linear-gradient(100deg, #7f1d35 0%, #9f1239 30%, #b45468 44%, #cf8c96 50%, #b45468 56%, #9f1239 70%, #7f1d35 100%)",
+    WebkitBackgroundClip: "text",
+    backgroundClip: "text",
+    color: "transparent",
+    padding: "0.06em 0.22em 0.12em",
+  };
   const stepLabel = "text-xs font-semibold text-stone-500 uppercase tracking-wider";
 
   // Picking a service sets the appointment length, as the old dropdown did.
@@ -436,8 +446,12 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
       <div className="max-w-4xl mx-auto px-6">
 
         {/* ── HERO ── */}
-        <section className="py-16 text-center border-b border-stone-200">
-          <div className="max-w-2xl mx-auto">
+        <section className="band band-blush hero-band relative overflow-hidden py-20 sm:py-24 text-center">
+          {/* Her monogram, huge and faint, behind everything — the first
+              screen should feel like her studio, not a blank page. */}
+          <img src="/logo.png" alt="" aria-hidden="true"
+            className="pointer-events-none select-none absolute left-1/2 top-10 sm:top-6 -translate-x-1/2 w-[20rem] sm:w-[34rem] max-w-none opacity-[0.05]" />
+          <div className="max-w-2xl mx-auto relative">
             {/* Rose-gold gradient ring frame */}
             <div
               className="mx-auto mb-8 hero-ring"
@@ -455,10 +469,10 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
                     ? `https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicUrl}`
                     : "/images/mya.webp"}
                   alt="Mya - Las Vegas Nail Artist"
-                  width={208}
-                  height={208}
+                  width={240}
+                  height={240}
                   fetchpriority="high"
-                  className="w-44 h-44 sm:w-52 sm:h-52 object-cover block"
+                  className="w-48 h-48 sm:w-60 sm:h-60 object-cover block"
                   style={{ borderRadius: "50%" }}
                 />
               </div>
@@ -468,7 +482,7 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
                 "las vegas nail tech" is actually typing. Same script face and
                 placement, so it reads as it always did; slightly smaller at
                 the mobile breakpoint because the line is longer now. */}
-            <h1 className="text-5xl sm:text-7xl text-stone-900 mb-4" style={scriptHeading}>
+            <h1 className="text-5xl sm:text-7xl mb-4 hero-sheen" style={scriptHeading}>
               Your Las Vegas Nail Artist
             </h1>
             <p className="text-lg text-stone-600 mb-8 leading-relaxed">
@@ -482,7 +496,7 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
                 href="https://instagram.com/myasnailsbaby"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-8 py-3 font-medium text-sm tracking-wide transition"
+                className="inline-flex items-center bg-white/60 border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-8 py-3 font-medium text-sm tracking-wide transition"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 1.5h8.5A5.25 5.25 0 0 1 21.5 8.75v6.5A5.25 5.25 0 0 1 16.25 20.5h-8.5A5.25 5.25 0 0 1 2.5 15.25v-6.5A5.25 5.25 0 0 1 7.75 3.5zM12 7.25A4.75 4.75 0 1 0 16.75 12 4.75 4.75 0 0 0 12 7.25zM12 8.75a3.25 3.25 0 1 1-3.25 3.25A3.25 3.25 0 0 1 12 8.75zm5.75-.5a1.25 1.25 0 1 1-1.25-1.25 1.25 1.25 0 0 1 1.25 1.25z"/>
@@ -491,11 +505,11 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
               </a>
             </div>
             {/* The three things people DM to ask before booking. */}
-            <ul className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-stone-500">
+            <ul className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-stone-500">
               <li>Services from {formatPrice(Math.min(...BOOKABLE_SERVICES.map((s) => s.flat ?? s.lengths[0])))}</li>
-              <li aria-hidden="true" className="w-1 h-1 rounded-full bg-[#c9848c]" />
+              <li aria-hidden="true" className="hidden sm:block w-1 h-1 rounded-full bg-[#c9848c]" />
               <li>$20 deposit to book</li>
-              <li aria-hidden="true" className="w-1 h-1 rounded-full bg-[#c9848c]" />
+              <li aria-hidden="true" className="hidden sm:block w-1 h-1 rounded-full bg-[#c9848c]" />
               <li>By appointment only</li>
             </ul>
           </div>
@@ -506,7 +520,7 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
             configured and has reviews. Shown to people, never as structured
             data — see utils/reviews.js and tests/seo.test.mjs. */}
         {reviews && (
-          <section id="reviews" className="py-14 border-b border-stone-200 text-center">
+          <section id="reviews" className="band band-white py-16 text-center">
             <h3 className="text-5xl text-stone-900 mb-10 section-title-accent" style={scriptHeading}>Kind Words</h3>
             <div className="flex flex-col items-center gap-2 mb-10">
               <div className="flex items-center gap-3">
@@ -556,7 +570,7 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
         <div className="flex flex-col">
 
         {/* ── BOOKING POLICIES ── */}
-        <section id="policies" className="py-14 border-b border-stone-200 order-2 sm:order-1">
+        <section id="policies" className="band band-stone py-16 order-2 sm:order-1">
           <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Booking Policies</h3>
           <div className="grid sm:grid-cols-2 gap-6 mb-10">
             {[
@@ -602,7 +616,7 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
                 body: "Your $20 deposit is non-refundable. You can reschedule online any time; to cancel, message Mya directly — at least 48 hours ahead so the slot can be filled.",
               },
             ].map(({ icon, title, body }) => (
-              <div key={title} className="bg-white border border-stone-200 p-6 policy-card card-lift">
+              <div key={title} className="bg-white/70 border border-stone-200/80 p-5">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-9 h-9 bg-stone-100 flex items-center justify-center flex-shrink-0">
                     {icon}
@@ -615,7 +629,7 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
           </div>
 
           {/* Before Your Appointment */}
-          <div className="bg-white border-l-4 border-rose-800 shadow-lg p-8" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 1.5px 6px rgba(159,18,57,0.08)" }}>
+          <div className="bg-white/70 border border-stone-200/80 border-l-4 border-l-rose-800 p-7">
             <p className="text-xs font-semibold uppercase tracking-widest text-rose-800 mb-1">Please Read</p>
             <h4 className="text-2xl font-bold text-stone-900 mb-6" style={{ fontFamily: "Georgia, serif" }}>Before Your Appointment</h4>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -635,7 +649,7 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
         </section>
 
         {/* ── BOOKING FORM ── */}
-        <section id="booking" className="py-14 border-b border-stone-200 order-1 sm:order-2">
+        <section id="booking" className="band band-blush py-16 order-1 sm:order-2">
           <div className="max-w-2xl mx-auto">
             <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Book an Appointment</h3>
 
@@ -1061,7 +1075,7 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
             A door into each service page. For people it's a quick "what
             does she do"; for Google it's the link that tells it those pages
             matter, from the page with the most authority on the site. */}
-        <section id="services" className="py-14 border-b border-stone-200 text-center">
+        <section id="services" className="band band-white py-16 text-center">
           <h3 className="text-5xl text-stone-900 mb-12 section-title-accent" style={scriptHeading}>What I Do</h3>
           <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 text-left">
             {SERVICE_PAGES.map((p) => (
@@ -1077,7 +1091,7 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
         </section>
 
         {/* ── LOCATION ── */}
-        <section className="py-14 border-b border-stone-200">
+        <section className="band band-stone py-16">
           <h3 className="text-5xl text-stone-900 text-center mb-6 section-title-accent" style={scriptHeading}>Location</h3>
           {(() => {
             // Until move day it shows where she is now and says where she's
@@ -1108,18 +1122,8 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
           })()}
         </section>
 
-        {/* ── TAG ME ── */}
-        <section className="py-14 text-center border-b border-stone-200">
-          <p className="text-stone-500 text-sm uppercase tracking-widest mb-2">Love your set?</p>
-          <h3 className="text-5xl text-stone-900 mb-3" style={scriptHeading}>Tag me in your nailfies!</h3>
-          <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
-            className="inline-block border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-6 py-2 text-sm font-medium transition mt-2">
-            @myasnailsbaby
-          </a>
-        </section>
-
         {/* ── CONTACT DETAILS ── */}
-        <section id="contact" className="py-14 border-b border-stone-200">
+        <section id="contact" className="band band-white py-16">
           <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Contact Details</h3>
           <div className="grid sm:grid-cols-3 gap-6">
             {/* Hours */}
@@ -1170,19 +1174,28 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
         </section>
 
         {/* ── FOOTER ── */}
-        <footer className="py-8 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-stone-400">
-            <Link href="/terms" className="hover:text-stone-700 transition">Terms of Service</Link>
+        {/* The page ends on her colour, not a grey line: white monogram,
+            the nailfies sign-off, then the small print. */}
+        <footer className="band band-maroon pt-16 pb-10 text-center text-white">
+          <Logo white className="h-16 w-auto mx-auto mb-6 opacity-90" />
+          <p className="text-rose-200/90 text-xs uppercase tracking-widest mb-2">Love your set?</p>
+          <p className="text-5xl mb-5" style={{ fontFamily: "'Great Vibes', cursive" }}>Tag me in your nailfies!</p>
+          <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
+            className="inline-block border border-white/50 hover:border-white hover:bg-white hover:text-rose-900 px-6 py-2 text-sm font-medium transition">
+            @myasnailsbaby
+          </a>
+          <div className="mt-12 pt-6 border-t border-white/15 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-white/60">
+            <Link href="/terms" className="hover:text-white transition">Terms of Service</Link>
             <span>·</span>
-            <Link href="/privacy" className="hover:text-stone-700 transition">Privacy Policy</Link>
+            <Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link>
             <span>·</span>
-            <Link href="/reschedule" className="hover:text-stone-700 transition">Reschedule Appointment</Link>
+            <Link href="/reschedule" className="hover:text-white transition">Reschedule Appointment</Link>
             {/* Cancelling online is off: Mya would rather clients text her so
                 she can handle the deposit case by case. Rescheduling stays. */}
             {CLIENT_CANCEL_ENABLED && (
               <>
                 <span>·</span>
-                <Link href="/cancel-appointment" className="hover:text-stone-700 transition">Cancel Appointment</Link>
+                <Link href="/cancel-appointment" className="hover:text-white transition">Cancel Appointment</Link>
               </>
             )}
             {/* No "Dashboard Login" link here. A link on the homepage is how
@@ -1220,6 +1233,35 @@ export default function Home({ gallery = [], today = "", reviews = null, setting
           background: linear-gradient(90deg, transparent 0%, #c9848c 30%, #e8b4b8 50%, #c9848c 70%, transparent 100%);
           margin: 0;
           opacity: 0.6;
+        }
+
+        /* Full-width colour bands without leaving the centred column: the
+           band paints its own background out to the screen edges with a
+           huge box-shadow, and clip-path trims it vertically so it never
+           bleeds into the next section or causes sideways scroll. */
+        .band {
+          background: var(--band);
+          box-shadow: 0 0 0 100vmax var(--band);
+          clip-path: inset(0 -100vmax);
+        }
+        .band-blush { --band: #fcf4f4; }
+        .band-white { --band: #ffffff; }
+        .band-stone { --band: #fafaf9; }
+        .band-maroon { --band: #7f1d35; }
+        .hero-band {
+          background-image: radial-gradient(60% 55% at 50% 30%, rgba(237,195,199,0.45), transparent 70%);
+          background-color: var(--band);
+        }
+
+        /* One moment of motion: the rose-gold catches the light once as
+           the page opens. Reduced-motion users get the finished state. */
+        .hero-sheen {
+          background-size: 220% 100% !important;
+          animation: sheen 2.6s cubic-bezier(0.25, 0.6, 0.2, 1) 0.2s both;
+        }
+        @keyframes sheen {
+          from { background-position: 100% 0; }
+          to { background-position: 50% 0; }
         }
 
         /* Soft blush glow behind her photo */
