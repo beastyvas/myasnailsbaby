@@ -23,14 +23,6 @@
      (Loading the old config instead would also revive `bg-myaPink`
      — #ffe4f0 — and paint every page pale pink.) */
   --font-outfit: "Outfit", ui-sans-serif, system-ui, sans-serif;
-
-  /* Headings. Already loaded in _document.js; the script face is kept for
-     the logo and the nailfies sign-off only, where it's a signature rather
-     than a heading style. */
-  --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
-
-  /* A nude polish — selected choices and the price estimate. */
-  --color-nude: #f6ebe7;
 }
 
 :root {

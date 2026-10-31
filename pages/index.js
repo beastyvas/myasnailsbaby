@@ -289,10 +289,19 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
 
   const inputCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 placeholder-stone-400 bg-white";
   const selectCls = "w-full px-4 py-3 border border-stone-300 focus:border-stone-900 focus:outline-none focus:ring-0 transition text-stone-900 bg-white";
-  const fieldLabel = "block text-sm font-medium text-stone-900 mb-2";
+  const sectionHeading = { fontFamily: "Georgia, serif" };
+  const scriptHeading = { fontFamily: "'Great Vibes', cursive", color: "#1c1917" };
+  const stepLabel = "text-xs font-semibold text-stone-500 uppercase tracking-wider";
+
+  // Picking a service sets the appointment length, as the old dropdown did.
+  const setServiceAndDuration = (v) => {
+    setService(v);
+    if (!isLengthPriced(v)) setNailLength("");
+    setDuration(v ? 2 + (pedicure === "yes" ? 1 : 0) : pedicure === "yes" ? 1 : 0);
+  };
 
   // ── stepped booking form ───────────────────────────────────────────
-  const STEPS = ["Service", "Date", "Your details"];
+  const STEPS = ["Service", "Date", "Details"];
 
   const nailsChosen = bookingNails === "yes";
   const pedChosen = pedicure === "yes";
@@ -326,18 +335,6 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
     soakoff && soakoff !== "none" ? (soakoff === "foreign" ? "Foreign soak-off" : "Soak-off") : null,
   ].filter(Boolean).join(" · ");
 
-  // Toggling one service shouldn't cost the duration the other one added —
-  // same arithmetic the old select's onChange did, in one place.
-  const setServiceAndDuration = (v) => {
-    setService(v);
-    if (!isLengthPriced(v)) setNailLength("");
-    setDuration(v ? 2 + (pedicure === "yes" ? 1 : 0) : pedicure === "yes" ? 1 : 0);
-  };
-
-  const gelX = SERVICES["Gel-X"].lengths;
-  const studio = studioFor(today);
-  const moving = studio === OLD_STUDIO;
-
   return (
     <main className={`min-h-screen bg-stone-50${promoEnabled && promoText ? " pb-12" : ""}`}>
       <Seo
@@ -360,339 +357,431 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
       )}
 
       {/* Sticky Header */}
-      <header className="bg-white/90 backdrop-blur border-b border-stone-200 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
-          {/* A wordmark, not a heading — the page's one <h1> is in the hero. */}
+      <header className="bg-white border-b border-stone-200 sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          {/* A wordmark, not a heading. This used to be the page's <h1>,
+              which spent the single strongest on-page signal there is on a
+              word nobody searches for — and left the real heading below it
+              as an <h2> under a logo. */}
           <span className="block">
-            <Logo className="h-12 w-auto" />
+            <Logo className="h-14 w-auto" />
           </span>
-          <nav className="hidden sm:flex items-center gap-7 text-sm">
-            {/* A real <Link> to /services, not an anchor — people want the
-                prices before they decide to book, and it's the page's only
-                internal link to it. */}
-            <Link href="/services" className="text-stone-600 hover:text-rose-800">Prices</Link>
-            <a href="#reviews" className={`text-stone-600 hover:text-rose-800${reviews ? "" : " hidden"}`}>Reviews</a>
-            <a href="#policies" className="text-stone-600 hover:text-rose-800">Policies</a>
-            <a href="#contact" className="text-stone-600 hover:text-rose-800">Visit</a>
+          <nav className="hidden sm:flex items-center space-x-6 text-sm">
+            {/* A real <Link> to /services, not an anchor. Without an internal
+                link the page is reachable only via the sitemap, which is a
+                far weaker signal — and people want the prices before they
+                decide to book anyway. */}
+            <Link href="/services" className="text-stone-600 hover:text-stone-900 transition nav-slide">Prices</Link>
+            <a href="#contact" className="text-stone-600 hover:text-stone-900 transition nav-slide">Contact</a>
+            <a href="#policies" className="text-stone-600 hover:text-stone-900 transition nav-slide">Policies</a>
+            <a href="#booking" className="text-stone-600 hover:text-stone-900 transition nav-slide">Book</a>
           </nav>
-          <a href="#booking" className="bg-rose-800 hover:bg-rose-900 text-white px-5 py-2.5 text-sm font-medium active:scale-95">
-            Book now
+          <a href="#booking" className="bg-rose-800 hover:bg-rose-900 text-white px-5 py-2 text-sm font-medium transition btn-shimmer active:scale-95">
+            BOOK NOW
           </a>
         </div>
       </header>
 
-      {/* ── HERO ──
-          No photos of her work (her call), so the hero is the thing every
-          client asks first: how long, and what does that cost. */}
-      <section className="max-w-5xl mx-auto px-6 pt-14 pb-16 sm:pt-20 sm:pb-24">
-        <div className="grid md:grid-cols-[1.15fr_1fr] gap-12 md:gap-10 items-end">
-          <div>
-            <div className="flex items-center gap-3 mb-8">
-              <img
-                src={profilePicUrl
-                  ? `https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicUrl}`
-                  : "/images/mya.png"}
-                alt="Mya - Las Vegas Nail Artist"
-                className="w-14 h-14 rounded-full object-cover ring-2 ring-white shadow"
-              />
-              <p className="text-sm text-stone-600 leading-snug">
-                Hi, I&apos;m Mya.<br />
-                <span className="text-stone-500">Private studio, by appointment only</span>
-              </p>
+      <div className="max-w-4xl mx-auto px-6">
+
+        {/* ── HERO ── */}
+        <section className="py-16 text-center border-b border-stone-200">
+          <div className="max-w-2xl mx-auto">
+            {/* Rose-gold gradient ring frame */}
+            <div
+              className="mx-auto mb-8 hero-ring"
+              style={{
+                width: "fit-content",
+                background: "linear-gradient(135deg, #9f1239 0%, #c9848c 35%, #e8b4b8 50%, #c9848c 65%, #9f1239 100%)",
+                padding: "3px",
+                borderRadius: "50%",
+                boxShadow: "0 8px 32px rgba(159,18,57,0.20), 0 2px 8px rgba(201,132,140,0.30)",
+              }}
+            >
+              <div style={{ background: "#fff", borderRadius: "50%", padding: "3px" }}>
+                <img
+                  src={profilePicUrl
+                    ? `https://ywpyfrothdaademzkpnl.supabase.co/storage/v1/object/public/gallery/${profilePicUrl}`
+                    : "/images/mya.png"}
+                  alt="Mya - Las Vegas Nail Artist"
+                  className="w-44 h-44 sm:w-52 sm:h-52 object-cover block"
+                  style={{ borderRadius: "50%" }}
+                />
+              </div>
             </div>
-            {/* The page's one <h1>: what she does and where, which is what
-                someone searching "las vegas nail tech" is typing. */}
-            <h1 className="font-display text-[2.75rem] leading-[1.02] sm:text-7xl sm:leading-[0.98] font-semibold text-stone-900 tracking-tight">
-              Custom nail sets in Las Vegas, made for your hands.
+            {/* The page's one <h1>. "Your Nail Artist" said nothing about
+                what she does or where — the two things somebody searching
+                "las vegas nail tech" is actually typing. Same script face and
+                placement, so it reads as it always did; slightly smaller at
+                the mobile breakpoint because the line is longer now. */}
+            <h1 className="text-5xl sm:text-7xl text-stone-900 mb-4" style={scriptHeading}>
+              Your Las Vegas Nail Artist
             </h1>
-            <p className="mt-6 text-lg text-stone-600 leading-relaxed max-w-md">
-              {bioText || "Gel-X, acrylic, hard gel and hand-painted art. Book online with a $20 deposit that comes off your total."}
+            <p className="text-lg text-stone-600 mb-8 leading-relaxed">
+              {bioText || "Las Vegas based nail artist specializing in custom designs"}
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
-              <a href="#booking" className="bg-rose-800 hover:bg-rose-900 text-white px-8 py-3.5 font-medium active:scale-95">
-                Book an appointment
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <a href="#booking" className="bg-rose-800 hover:bg-rose-900 text-white px-10 py-3 font-medium transition text-sm tracking-wide btn-shimmer active:scale-95">
+                BOOK AN APPOINTMENT
               </a>
               <a
                 href="https://instagram.com/myasnailsbaby"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-1 sm:px-4 py-3.5 text-stone-700 hover:text-rose-800"
+                className="inline-flex items-center border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-8 py-3 font-medium text-sm tracking-wide transition"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 1.5h8.5A5.25 5.25 0 0 1 21.5 8.75v6.5A5.25 5.25 0 0 1 16.25 20.5h-8.5A5.25 5.25 0 0 1 2.5 15.25v-6.5A5.25 5.25 0 0 1 7.75 3.5zM12 7.25A4.75 4.75 0 1 0 16.75 12 4.75 4.75 0 0 0 12 7.25zM12 8.75a3.25 3.25 0 1 1-3.25 3.25A3.25 3.25 0 0 1 12 8.75zm5.75-.5a1.25 1.25 0 1 1-1.25-1.25 1.25 1.25 0 0 1 1.25 1.25z"/>
                 </svg>
                 @myasnailsbaby
               </a>
             </div>
+            {/* The three things people DM to ask before booking. */}
+            <ul className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-stone-500">
+              <li>Services from {formatPrice(Math.min(...BOOKABLE_SERVICES.map((s) => s.flat ?? s.lengths[0])))}</li>
+              <li aria-hidden="true" className="w-1 h-1 rounded-full bg-[#c9848c]" />
+              <li>$20 deposit to book</li>
+              <li aria-hidden="true" className="w-1 h-1 rounded-full bg-[#c9848c]" />
+              <li>By appointment only</li>
+            </ul>
           </div>
+        </section>
 
-          {/* The length ladder. Prices read from utils/pricing.js, so this
-              can't show a stale figure after she changes her list. */}
-          <figure className="md:pl-8 md:border-l border-stone-200">
-            <div className="flex items-end justify-between gap-2 max-w-sm" role="list" aria-label="Gel-X prices by length">
-              {LENGTH_STEPS.map((l, i) => (
-                <div key={l.value} role="listitem" className="flex flex-col items-center gap-3 nail-rise" style={{ animationDelay: `${i * 90}ms` }}>
-                  <NailShape h={l.h * 1.25} w={34} />
-                  <div className="text-center">
-                    <p className="text-xs text-stone-500">{l.label}</p>
-                    <p className="font-display text-xl font-semibold text-stone-900">{formatPrice(gelX[i])}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <figcaption className="mt-6 text-sm text-stone-500 max-w-sm">
-              Gel-X by length. Art and removal are added on top.{" "}
-              <Link href="/services" className="text-rose-800 underline underline-offset-2 hover:text-rose-900">See every price</Link>
-            </figcaption>
-          </figure>
-        </div>
-      </section>
-
-      {/* ── HER WORK ──
-          Off: she doesn't want a gallery on the site. See
-          PUBLIC_GALLERY_ENABLED in utils/features.js for what that costs
-          and how to bring it back. */}
-      <div className="max-w-4xl mx-auto px-6">{PUBLIC_GALLERY_ENABLED && <NailGallery items={gallery} />}</div>
-
-      {/* ── REVIEWS ──
-          Straight from her Google Business Profile, only when it's
-          configured and has reviews. Shown to people, never as structured
-          data — see utils/reviews.js and tests/seo.test.mjs. */}
-      {reviews && (
-        <section id="reviews" className="bg-white border-y border-stone-200">
-          <div className="max-w-5xl mx-auto px-6 py-14 grid md:grid-cols-[14rem_1fr] gap-10">
-            <div>
-              <p className="font-display text-7xl font-semibold text-stone-900 leading-none">{reviews.rating.toFixed(1)}</p>
-              <Stars rating={reviews.rating} className="mt-3" />
-              <p className="mt-3 text-sm text-stone-600">
+        {/* ── REVIEWS ──
+            Straight from her Google Business Profile, only when it's
+            configured and has reviews. Shown to people, never as structured
+            data — see utils/reviews.js and tests/seo.test.mjs. */}
+        {reviews && (
+          <section id="reviews" className="py-14 border-b border-stone-200 text-center">
+            <h3 className="text-5xl text-stone-900 mb-10 section-title-accent" style={scriptHeading}>Kind Words</h3>
+            <div className="flex flex-col items-center gap-2 mb-10">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-semibold text-stone-900">{reviews.rating.toFixed(1)}</span>
+                <Stars rating={reviews.rating} />
+              </div>
+              <p className="text-sm text-stone-500">
                 {reviews.count} {reviews.count === 1 ? "review" : "reviews"} on Google
+                {reviews.url && (
+                  <> · <a href={reviews.url} target="_blank" rel="noopener noreferrer" className="text-rose-800 underline hover:text-rose-900">Read them all</a></>
+                )}
               </p>
-              {reviews.url && (
-                <a href={reviews.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block text-sm text-rose-800 underline underline-offset-2 hover:text-rose-900">
-                  Read them all on Google
-                </a>
-              )}
             </div>
             {reviews.reviews.length > 0 && (
-              <ul className="flex md:grid md:grid-cols-2 gap-5 overflow-x-auto snap-x snap-mandatory -mx-6 px-6 md:mx-0 md:px-0 pb-2">
-                {reviews.reviews.slice(0, 4).map((r, i) => (
-                  <li key={i} className="snap-start shrink-0 w-[82%] sm:w-[60%] md:w-auto bg-stone-50 border-l-2 border-rose-200 p-5">
-                    <Stars rating={r.rating} small />
-                    <p className="mt-3 text-[15px] text-stone-800 leading-relaxed line-clamp-6 whitespace-pre-line">{r.text}</p>
-                    <p className="mt-4 text-sm text-stone-500">
-                      {r.authorUrl
-                        ? <a href={r.authorUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-stone-900 hover:text-rose-800">{r.author}</a>
-                        : <span className="font-medium text-stone-900">{r.author}</span>}
-                      {r.when && <>, {r.when}</>}
-                    </p>
+              <ul className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6 overflow-x-auto snap-x snap-mandatory -mx-6 px-6 sm:mx-0 sm:px-0 pb-2 text-left">
+                {reviews.reviews.slice(0, 3).map((r, i) => (
+                  <li key={i} className="snap-start shrink-0 w-[85%] sm:w-auto bg-white border border-stone-200 p-6 policy-card flex flex-col">
+                    <span className="text-5xl leading-none text-[#c9848c] h-6" style={{ fontFamily: "Georgia, serif" }} aria-hidden="true">&ldquo;</span>
+                    <p className="mt-2 text-sm text-stone-700 leading-relaxed line-clamp-6 whitespace-pre-line flex-1">{r.text}</p>
+                    <div className="mt-5 pt-4 border-t border-stone-100 flex items-center justify-between gap-3">
+                      <p className="text-sm">
+                        {r.authorUrl
+                          ? <a href={r.authorUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-stone-900 hover:text-rose-800">{r.author}</a>
+                          : <span className="font-semibold text-stone-900">{r.author}</span>}
+                        {r.when && <span className="block text-xs text-stone-400">{r.when}</span>}
+                      </p>
+                      <Stars rating={r.rating} small />
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
+          </section>
+        )}
+
+        {/* ── HER WORK ──
+            Off: she doesn't want a gallery on the site. See
+            PUBLIC_GALLERY_ENABLED in utils/features.js for what that costs
+            and how to bring it back. Her dashboard Gallery tab still works,
+            so anything she uploads meanwhile appears here if it's flipped on. */}
+        {PUBLIC_GALLERY_ENABLED && <NailGallery items={gallery} />}
+
+        {/* ── BOOKING POLICIES ── */}
+        <section id="policies" className="py-14 border-b border-stone-200">
+          <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Booking Policies</h3>
+          <div className="grid sm:grid-cols-2 gap-6 mb-10">
+            {[
+              {
+                icon: (
+                  <svg className="w-5 h-5 text-stone-700" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                  </svg>
+                ),
+                title: "Appointments",
+                body: "All appointments require a deposit to secure your spot and must be booked at least 24 hours in advance.",
+              },
+              {
+                icon: (
+                  <svg className="w-5 h-5 text-stone-700" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                ),
+                title: "Deposit",
+                body: "A non-refundable $20 deposit is required at the time of booking to secure your appointment.",
+              },
+              {
+                icon: (
+                  <svg className="w-5 h-5 text-stone-700" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                  </svg>
+                ),
+                title: "Late Arrivals",
+                body: "Arriving more than 5 minutes late may result in a shortened service or need to reschedule. $10 late fee applies.",
+              },
+              {
+                icon: (
+                  <svg className="w-5 h-5 text-stone-700" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+                  </svg>
+                ),
+                title: "Cancellation",
+                // "avoid a cancellation fee" was vague and implied a refund
+                // existed at 48 hours. It doesn't — the deposit is never
+                // refunded. Saying it plainly, together with the part that
+                // makes it fair, avoids the conversation happening at the
+                // chair instead.
+                body: "Your $20 deposit is non-refundable. You can reschedule online any time; to cancel, message Mya directly — at least 48 hours ahead so the slot can be filled.",
+              },
+            ].map(({ icon, title, body }) => (
+              <div key={title} className="bg-white border border-stone-200 p-6 policy-card card-lift">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 bg-stone-100 flex items-center justify-center flex-shrink-0">
+                    {icon}
+                  </div>
+                  <h4 className="font-semibold text-stone-900 text-sm uppercase tracking-wide">{title}</h4>
+                </div>
+                <p className="text-sm text-stone-700 leading-relaxed">{body}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Before Your Appointment */}
+          <div className="bg-white border-l-4 border-rose-800 shadow-lg p-8" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.10), 0 1.5px 6px rgba(159,18,57,0.08)" }}>
+            <p className="text-xs font-semibold uppercase tracking-widest text-rose-800 mb-1">Please Read</p>
+            <h4 className="text-2xl font-bold text-stone-900 mb-6" style={{ fontFamily: "Georgia, serif" }}>Before Your Appointment</h4>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[
+                "Avoid picking or cutting cuticles",
+                "Avoid removing or picking at old product",
+                "Avoid lotions, oils, and hand creams",
+                "Avoid soaking nails in water at least 2 hrs before",
+              ].map((tip) => (
+                <div key={tip} className="flex items-start gap-3 text-sm text-stone-700">
+                  <span className="w-5 h-5 rounded-full bg-rose-800 text-white flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">✕</span>
+                  <span>{tip}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
-      )}
 
-      {/* ── BOOKING ── */}
-      <section id="booking" className="max-w-5xl mx-auto px-6 py-16 sm:py-20">
-        <div className="max-w-xl mb-10">
-          <h2 className="font-display text-5xl font-semibold text-stone-900 tracking-tight">Book an appointment</h2>
-          <p className="mt-3 text-stone-600">Pick your set, then a time. A $20 deposit holds it and comes off your total.</p>
-        </div>
+        {/* ── BOOKING FORM ── */}
+        <section id="booking" className="py-14 border-b border-stone-200">
+          <div className="max-w-2xl mx-auto">
+            <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Book an Appointment</h3>
 
-        <div className="grid lg:grid-cols-[1fr_18rem] gap-10 items-start">
-          {/* Three steps rather than one long scroll. Every field stays
-              mounted — hidden steps are display:none, not unmounted — so
-              FormData still sees the whole form on submit and handleSubmit
-              needs no changes at all. */}
-          <form
-            ref={formRef}
-            onSubmit={handleSubmit}
-            onKeyDown={(e) => {
-              // Enter on step 1 or 2 would submit a form whose later
-              // required fields are still empty, which the browser rejects
-              // with an unhelpful "not focusable" error. Advance instead.
-              if (e.key === "Enter" && step < 3 && e.target.tagName !== "TEXTAREA") {
-                e.preventDefault();
-                if (canAdvance) setStep(step + 1);
-              }
-            }}
-            className="bg-white border border-stone-200 p-6 sm:p-8 space-y-8"
-          >
-            {/* ── progress ─────────────────────────────────────────── */}
-            <ol className="flex items-center gap-2" aria-label="Booking progress">
-              {STEPS.map((label, i) => {
-                const n = i + 1;
-                const done = step > n;
-                const current = step === n;
-                return (
-                  <li key={label} className="flex items-center gap-2 flex-1 last:flex-none">
-                    <button
-                      type="button"
-                      onClick={() => { if (n < step) setStep(n); }}
-                      disabled={n >= step}
-                      aria-current={current ? "step" : undefined}
-                      className="flex items-center gap-2 disabled:cursor-default"
-                    >
-                      <span
-                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
-                          current ? "bg-rose-800 text-white" : done ? "bg-rose-100 text-rose-800" : "bg-stone-100 text-stone-400"
-                        }`}
+            {/* Three steps rather than one long scroll. Every field stays
+                mounted — hidden steps are display:none, not unmounted — so
+                FormData still sees the whole form on submit and handleSubmit
+                needs no changes at all. */}
+            <form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              onKeyDown={(e) => {
+                // Enter on step 1 or 2 would submit a form whose later
+                // required fields are still empty, which the browser rejects
+                // with an unhelpful "not focusable" error. Advance instead.
+                if (e.key === "Enter" && step < 3 && e.target.tagName !== "TEXTAREA") {
+                  e.preventDefault();
+                  if (canAdvance) setStep(step + 1);
+                }
+              }}
+              className="bg-white border border-stone-200 p-6 sm:p-8 space-y-8 rg-top"
+            >
+
+              {/* ── progress ─────────────────────────────────────────── */}
+              <ol className="flex items-center gap-2" aria-label="Booking progress">
+                {STEPS.map((label, i) => {
+                  const n = i + 1;
+                  const done = step > n;
+                  const current = step === n;
+                  return (
+                    <li key={label} className="flex items-center gap-2 flex-1 last:flex-none">
+                      <button
+                        type="button"
+                        onClick={() => { if (n < step) setStep(n); }}
+                        disabled={n >= step}
+                        aria-current={current ? "step" : undefined}
+                        className={`flex items-center gap-2 text-left ${n < step ? "cursor-pointer" : "cursor-default"}`}
                       >
-                        {done ? "✓" : n}
-                      </span>
-                      <span className={`text-sm hidden sm:inline ${current ? "text-stone-900 font-medium" : "text-stone-400"}`}>
-                        {label}
-                      </span>
-                    </button>
-                    {n < STEPS.length && <span className="flex-1 h-px bg-stone-200" />}
-                  </li>
-                );
-              })}
-            </ol>
+                        <span
+                          className={`w-7 h-7 flex items-center justify-center text-xs font-semibold flex-shrink-0 transition ${
+                            current
+                              ? "bg-rose-800 text-white"
+                              : done
+                                ? "bg-rose-100 text-rose-800 border border-rose-200"
+                                : "bg-stone-100 text-stone-400 border border-stone-200"
+                          }`}
+                        >
+                          {done ? "✓" : n}
+                        </span>
+                        <span className={`text-xs uppercase tracking-wider hidden sm:inline ${current ? "text-stone-900 font-semibold" : "text-stone-400"}`}>
+                          {label}
+                        </span>
+                      </button>
+                      {n < STEPS.length && <span className="flex-1 h-px bg-stone-200" />}
+                    </li>
+                  );
+                })}
+              </ol>
 
-            {/* ── step 1 · services ────────────────────────────────── */}
-            <div className={step === 1 ? "space-y-8" : "hidden"}>
-              {/* Nails and pedicure are independent: either, or both. These
-                  hidden inputs are what FormData reads. */}
-              <input type="hidden" name="bookingNails" value={bookingNails} />
-              <input type="hidden" name="pedicure" value={pedicure} />
-              <fieldset>
-                <legend className={fieldLabel}>What are you booking?</legend>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { key: "nails", label: "Nails", sub: "Sets and manicures", on: nailsChosen,
-                      toggle: () => { const v = nailsChosen ? "no" : "yes"; setBookingNails(v); if (v === "no") { setService(""); setSoakoff(""); setNailLength(""); } } },
-                    { key: "pedi", label: "Pedicure", sub: "Gel or acrylic", on: pedChosen,
-                      toggle: () => setPedicure(pedChosen ? "no" : "yes") },
-                  ].map((t) => (
-                    <button
-                      key={t.key}
-                      type="button"
-                      aria-pressed={t.on}
-                      onClick={t.toggle}
-                      className={`text-left p-4 border ${t.on ? "border-rose-800 bg-nude" : "border-stone-300 hover:border-stone-500 bg-white"}`}
-                    >
-                      <span className="flex items-center justify-between">
-                        <span className="font-medium text-stone-900">{t.label}</span>
-                        <span className={`w-5 h-5 border flex items-center justify-center text-xs ${t.on ? "bg-rose-800 border-rose-800 text-white" : "border-stone-300"}`}>{t.on ? "✓" : ""}</span>
-                      </span>
-                      <span className="block text-sm text-stone-500 mt-0.5">{t.sub}</span>
-                    </button>
-                  ))}
-                </div>
-                {!nailsChosen && !pedChosen && (
-                  <p className="text-sm text-stone-500 mt-3">Pick nails, a pedicure, or both.</p>
+              {/* ── step 1 · services ────────────────────────────────── */}
+              <div className={step === 1 ? "space-y-7" : "hidden"}>
+                {/* Nails and pedicure are independent: either, or both. The
+                    hidden inputs are what FormData reads on submit. */}
+                <input type="hidden" name="bookingNails" value={bookingNails} />
+                <input type="hidden" name="pedicure" value={pedicure} />
+                <fieldset className="space-y-3">
+                  <legend className={stepLabel}>What are you booking?</legend>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { key: "nails", label: "Nails", sub: "Sets & manicures", on: nailsChosen,
+                        toggle: () => { const v = nailsChosen ? "no" : "yes"; setBookingNails(v); if (v === "no") { setService(""); setSoakoff(""); setNailLength(""); } } },
+                      { key: "pedi", label: "Pedicure", sub: "Gel or acrylic", on: pedChosen,
+                        toggle: () => setPedicure(pedChosen ? "no" : "yes") },
+                    ].map((t) => (
+                      <button
+                        key={t.key}
+                        type="button"
+                        aria-pressed={t.on}
+                        onClick={t.toggle}
+                        className={`choice-tile text-left p-4 border ${t.on ? "is-on" : ""}`}
+                      >
+                        <span className="flex items-center justify-between">
+                          <span className="font-semibold text-stone-900">{t.label}</span>
+                          <span className={`w-5 h-5 border flex items-center justify-center text-[11px] ${t.on ? "bg-rose-800 border-rose-800 text-white" : "border-stone-300"}`}>{t.on ? "✓" : ""}</span>
+                        </span>
+                        <span className="block text-sm text-stone-500 mt-0.5">{t.sub}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {!nailsChosen && !pedChosen && (
+                    <p className="text-sm text-stone-500">Pick nails, a pedicure, or both.</p>
+                  )}
+                </fieldset>
+
+                {nailsChosen && (
+                  <div className="space-y-7">
+                    <fieldset className="space-y-3">
+                      <legend className={stepLabel}>Service</legend>
+                      {/* Order and prices both come from utils/pricing.js, so
+                          the menu can't drift from the price list. */}
+                      <div className="grid sm:grid-cols-2 gap-2">
+                        {BOOKABLE_SERVICES.map((s) => (
+                          <Choice key={s.value} name="service" value={s.value} checked={service === s.value}
+                            onChange={() => setServiceAndDuration(s.value)} required>
+                            <span className="text-stone-900">{s.label}</span>
+                            <span className="text-sm text-stone-500 whitespace-nowrap">
+                              {s.flat != null ? formatPrice(s.flat) : `from ${formatPrice(s.lengths[0])}`}
+                            </span>
+                          </Choice>
+                        ))}
+                      </div>
+                    </fieldset>
+
+                    {/* A manicure has no length and isn't priced by one —
+                        showing the field there only invites a wrong answer. */}
+                    <fieldset className={isLengthPriced(service) ? "space-y-3" : "hidden"}>
+                      <legend className={stepLabel}>Length</legend>
+                      <div className="grid grid-cols-5 gap-2">
+                        {LENGTH_STEPS.map((l, i) => {
+                          const on = nailLength === l.value;
+                          return (
+                            <label key={l.value} className={`choice-tile cursor-pointer flex flex-col items-center justify-end gap-1.5 pt-3 pb-2.5 border ${on ? "is-on" : ""}`}>
+                              <input type="radio" name="Length" value={l.value} checked={on}
+                                onChange={() => setNailLength(l.value)} required={isLengthPriced(service)} className="sr-only" />
+                              <NailShape h={l.h * 0.55} w={18} muted={!on} />
+                              <span className="text-xs text-stone-700 mt-1">{l.label}</span>
+                              <span className="text-xs font-semibold text-stone-900">
+                                {isLengthPriced(service) ? formatPrice(SERVICES[service].lengths[i]) : ""}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+
+                    <fieldset className="space-y-3">
+                      <legend className={stepLabel}>Nail art</legend>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(ART_LEVELS).map(([v, cents]) => (
+                          <Chip key={v} name="artLevel" value={v} checked={artLevel === v} onChange={() => setArtLevel(v)}>
+                            {v === "N/A" ? "None" : `${v} +${formatPrice(cents)}`}
+                          </Chip>
+                        ))}
+                      </div>
+                      <p className="text-xs text-stone-500">Mya confirms the level from your inspo before she starts.</p>
+                    </fieldset>
+
+                    <fieldset className="space-y-3">
+                      <legend className={stepLabel}>Removal</legend>
+                      <div className="flex flex-wrap gap-2">
+                        <Chip name="soakoff" value="none" checked={soakoff === "none"} onChange={() => setSoakoff("none")} required>No soak-off</Chip>
+                        <Chip name="soakoff" value="soak-off" checked={soakoff === "soak-off"} onChange={() => setSoakoff("soak-off")}>Soak-off +$10</Chip>
+                        <Chip name="soakoff" value="foreign" checked={soakoff === "foreign"} onChange={() => setSoakoff("foreign")}>Another salon&apos;s set +$20</Chip>
+                      </div>
+                    </fieldset>
+                  </div>
                 )}
-              </fieldset>
 
-              {nailsChosen && (
-                <div className="space-y-8">
-                  <fieldset>
-                    <legend className={fieldLabel}>Service</legend>
-                    {/* Order and prices both come from utils/pricing.js, so
-                        the menu can't drift from the price list. */}
-                    <div className="grid sm:grid-cols-2 gap-2">
-                      {BOOKABLE_SERVICES.map((s) => (
-                        <Choice key={s.value} name="service" value={s.value} checked={service === s.value}
-                          onChange={() => setServiceAndDuration(s.value)} required>
-                          <span className="font-medium text-stone-900">{s.label}</span>
-                          <span className="text-sm text-stone-500">
-                            {s.flat != null ? formatPrice(s.flat) : `from ${formatPrice(s.lengths[0])}`}
-                          </span>
+                {pedChosen && (
+                  <fieldset className="space-y-3">
+                    <legend className={stepLabel}>Pedicure</legend>
+                    <div className="grid sm:grid-cols-3 gap-2">
+                      {[
+                        ["Gel pedicure", "Gel pedicure"],
+                        ["Gel pedicure + Acrylic big toes", "Gel + acrylic big toes"],
+                        ["Acrylic Pedicure", "Acrylic pedicure"],
+                      ].map(([v, label]) => (
+                        <Choice key={v} name="pedicureType" value={v} checked={pedicureType === v} onChange={() => setPedicureType(v)}>
+                          <span className="text-stone-900">{label}</span>
+                          <span className="text-sm text-stone-500">{formatPrice(PEDICURES[v])}</span>
                         </Choice>
                       ))}
                     </div>
+                    {/* Saved on the booking as pedi_french and shown on Mya's
+                        dashboard, so she knows before they sit down. */}
+                    <label className="flex items-start gap-3 cursor-pointer pt-1">
+                      <input type="checkbox" name="pediFrench" checked={pediFrench}
+                        onChange={(e) => setPediFrench(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
+                      <span className="text-sm text-stone-700 leading-relaxed">
+                        Add <strong>french tips</strong> <span className="text-stone-500">(+{formatPrice(PEDI_FRENCH_CENTS)})</span>
+                      </span>
+                    </label>
                   </fieldset>
+                )}
 
-                  {/* A manicure has no length and isn't priced by one —
-                      showing the field there only invites a wrong answer. */}
-                  <fieldset className={isLengthPriced(service) ? "" : "hidden"}>
-                    <legend className={fieldLabel}>Length</legend>
-                    <div className="grid grid-cols-5 gap-2">
-                      {LENGTH_STEPS.map((l, i) => {
-                        const on = nailLength === l.value;
-                        return (
-                          <label key={l.value} className={`relative cursor-pointer flex flex-col items-center justify-end gap-2 pt-3 pb-2.5 border ${on ? "border-rose-800 bg-nude" : "border-stone-200 hover:border-stone-400"} has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-rose-300`}>
-                            <input type="radio" name="Length" value={l.value} checked={on}
-                              onChange={() => setNailLength(l.value)} required={isLengthPriced(service)} className="sr-only" />
-                            <NailShape h={l.h * 0.55} w={18} muted={!on} />
-                            <span className="text-xs text-stone-700">{l.label}</span>
-                            <span className="text-xs font-medium text-stone-900">
-                              {isLengthPriced(service) ? formatPrice(SERVICES[service].lengths[i]) : ""}
-                            </span>
-                          </label>
-                        );
-                      })}
+                {showPrice && (
+                  <div className="estimate px-5 py-4" aria-live="polite">
+                    <div className="flex items-baseline justify-between gap-4">
+                      <span className="text-xs font-semibold text-stone-600 uppercase tracking-wider">
+                        Estimated total
+                      </span>
+                      <span className="text-2xl font-bold text-rose-800">
+                        {priceQuote.isFrom ? "from " : ""}{formatPrice(priceQuote.total)}
+                      </span>
                     </div>
-                  </fieldset>
-
-                  <fieldset>
-                    <legend className={fieldLabel}>Nail art <span className="block font-normal text-stone-500 text-xs mt-0.5">Mya confirms the level from your inspo before she starts.</span></legend>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(ART_LEVELS).map(([v, cents]) => (
-                        <Chip key={v} name="artLevel" value={v} checked={artLevel === v} onChange={() => setArtLevel(v)}>
-                          {v === "N/A" ? "None" : `${v} +${formatPrice(cents)}`}
-                        </Chip>
-                      ))}
-                    </div>
-                  </fieldset>
-
-                  <fieldset>
-                    <legend className={fieldLabel}>Coming in with a set on?</legend>
-                    <div className="flex flex-wrap gap-2">
-                      <Chip name="soakoff" value="none" checked={soakoff === "none"} onChange={() => setSoakoff("none")} required>No, bare nails</Chip>
-                      <Chip name="soakoff" value="soak-off" checked={soakoff === "soak-off"} onChange={() => setSoakoff("soak-off")}>Mya&apos;s set +$10</Chip>
-                      <Chip name="soakoff" value="foreign" checked={soakoff === "foreign"} onChange={() => setSoakoff("foreign")}>Another salon&apos;s +$20</Chip>
-                    </div>
-                  </fieldset>
-                </div>
-              )}
-
-              {pedChosen && (
-                <fieldset>
-                  <legend className={fieldLabel}>Pedicure</legend>
-                  <div className="grid sm:grid-cols-3 gap-2">
-                    {["Gel pedicure", "Gel pedicure + Acrylic big toes", "Acrylic Pedicure"].map((v) => (
-                      <Choice key={v} name="pedicureType" value={v} checked={pedicureType === v} onChange={() => setPedicureType(v)}>
-                        <span className="font-medium text-stone-900">{v.replace("Gel pedicure + Acrylic big toes", "Gel + acrylic big toes").replace("Acrylic Pedicure", "Acrylic pedicure")}</span>
-                        <span className="text-sm text-stone-500">{formatPrice(PEDICURES[v])}</span>
-                      </Choice>
-                    ))}
+                    <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
+                      $20 due now to book, {formatPrice(priceQuote.balanceCents)} at your appointment
+                    </p>
                   </div>
-                  {/* Saved on the booking as pedi_french and shown on Mya's
-                      dashboard, so she knows before they sit down. */}
-                  <label className="flex items-start gap-3 cursor-pointer mt-4">
-                    <input type="checkbox" name="pediFrench" checked={pediFrench}
-                      onChange={(e) => setPediFrench(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
-                    <span className="text-sm text-stone-700 leading-relaxed">
-                      Add french tips <span className="text-stone-500">(+{formatPrice(PEDI_FRENCH_CENTS)})</span>
-                    </span>
-                  </label>
-                </fieldset>
-              )}
+                )}
+              </div>
 
-              {showPrice && (
-                <div className="bg-nude px-5 py-4" aria-live="polite">
-                  <div className="flex items-baseline justify-between gap-4">
-                    <span className="text-sm text-stone-700">Estimated total</span>
-                    <span className="font-display text-3xl font-semibold text-rose-900">
-                      {priceQuote.isFrom ? "from " : ""}{formatPrice(priceQuote.total)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
-                    $20 due now to book, {formatPrice(priceQuote.balanceCents)} at your appointment
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* ── step 2 · date & time ─────────────────────────────── */}
-            <div className={step === 2 ? "space-y-6" : "hidden"}>
-              <div>
-                <p className={fieldLabel}>Day</p>
-                <div className="calendar-wrapper">
+              {/* ── step 2 · date & time ─────────────────────────────── */}
+              <div className={step === 2 ? "space-y-6" : "hidden"}>
+                <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200 pb-2">Date &amp; Time</h4>
+                <div className="calendar-wrapper bg-white border border-stone-200 p-4">
                   <Calendar
                     value={selectedDate ? new Date(selectedDate + "T00:00:00") : null}
                     onChange={(date) => {
@@ -715,306 +804,304 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
                   />
                 </div>
                 <input type="hidden" name="date" value={selectedDate || ""} />
+                <fieldset className="space-y-3">
+                  <legend className={stepLabel}>{selectedDate ? `Open times, ${prettyDate(selectedDate)}` : "Time"}</legend>
+                  {!selectedDate && <p className="text-sm text-stone-500">Pick a day to see open times.</p>}
+                  {selectedDate && timeOptions.length === 0 && (
+                    <p className="text-sm text-stone-500">No openings left that day — try another date.</p>
+                  )}
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {timeOptions.map((t) => (
+                      <Chip key={t} name="start_time" value={t} checked={time === t} onChange={() => setTime(t)} required block>
+                        {formatTo12Hour(t)}
+                      </Chip>
+                    ))}
+                  </div>
+                </fieldset>
               </div>
 
-              <fieldset>
-                <legend className={fieldLabel}>
-                  {selectedDate ? `Times on ${prettyDate(selectedDate)}` : "Time"}
-                </legend>
-                {!selectedDate && <p className="text-sm text-stone-500">Pick a day to see open times.</p>}
-                {selectedDate && timeOptions.length === 0 && (
-                  <p className="text-sm text-stone-500">No openings left that day. Try another date.</p>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {timeOptions.map((t) => (
-                    <Chip key={t} name="start_time" value={t} checked={time === t} onChange={() => setTime(t)} required>
-                      {formatTo12Hour(t)}
-                    </Chip>
-                  ))}
-                </div>
-              </fieldset>
-            </div>
+              {/* ── step 3 · your details ────────────────────────────── */}
+              <div className={step === 3 ? "space-y-8" : "hidden"}>
 
-            {/* ── step 3 · your details ────────────────────────────── */}
-            <div className={step === 3 ? "space-y-8" : "hidden"}>
-
-              {/* What they're about to pay for. Last chance to catch a
-                  wrong date before Stripe takes the deposit. */}
-              <div className="bg-nude p-5">
-                <p className="font-display text-xl font-semibold text-stone-900 mb-3">Your appointment</p>
-                <dl className="space-y-1.5 text-sm">
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-stone-600">Service</dt>
-                    <dd className="text-stone-900 font-medium text-right">{summaryService || "—"}</dd>
-                  </div>
-                  {bookingNails === "yes" && (
+                {/* What they're about to pay for. Last chance to catch a
+                    wrong date before Stripe takes the deposit. */}
+                <div className="bg-stone-50 border border-stone-200 p-5">
+                  <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Your Appointment</p>
+                  <dl className="space-y-1.5 text-sm">
                     <div className="flex justify-between gap-4">
-                      <dt className="text-stone-600">Details</dt>
-                      <dd className="text-stone-900 text-right">{summaryDetails || "—"}</dd>
+                      <dt className="text-stone-500">Service</dt>
+                      <dd className="text-stone-900 font-medium text-right">{summaryService || "—"}</dd>
+                    </div>
+                    {bookingNails === "yes" && (
+                      <div className="flex justify-between gap-4">
+                        <dt className="text-stone-500">Details</dt>
+                        <dd className="text-stone-900 text-right">{summaryDetails || "—"}</dd>
+                      </div>
+                    )}
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-stone-500">When</dt>
+                      <dd className="text-stone-900 font-medium text-right">
+                        {selectedDate && time ? `${prettyDate(selectedDate)} at ${formatTo12Hour(time)}` : "—"}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  {showPrice && (
+                    <div className="mt-4 pt-4 border-t border-stone-200">
+                      <dl className="space-y-1.5 text-sm">
+                        {priceQuote.lines.map((line, i) => (
+                          <div key={i} className="flex justify-between gap-4">
+                            <dt className="text-stone-500">{line.label}</dt>
+                            <dd className="text-stone-900">{formatPrice(line.cents)}</dd>
+                          </div>
+                        ))}
+                        <div className="flex justify-between gap-4 pt-2 mt-2 border-t border-stone-200">
+                          <dt className="text-stone-900 font-semibold">Estimated total</dt>
+                          <dd className="text-stone-900 font-semibold">
+                            {priceQuote.isFrom ? "from " : ""}{formatPrice(priceQuote.total)}
+                          </dd>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-stone-500">Deposit today</dt>
+                          <dd className="text-rose-800 font-semibold">{formatPrice(priceQuote.depositCents)}</dd>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <dt className="text-stone-500">Balance at your appointment</dt>
+                          <dd className="text-stone-900">{formatPrice(priceQuote.balanceCents)}</dd>
+                        </div>
+                      </dl>
+                      <p className="text-xs text-stone-500 mt-3 leading-relaxed">
+                        An estimate — your final price is confirmed at your appointment.
+                        {priceQuote.isFrom && " Very long or highly detailed sets can run a little over."}
+                      </p>
                     </div>
                   )}
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-stone-600">When</dt>
-                    <dd className="text-stone-900 font-medium text-right">
-                      {selectedDate && time ? `${prettyDate(selectedDate)} at ${formatTo12Hour(time)}` : "—"}
-                    </dd>
-                  </div>
-                </dl>
 
-                {showPrice && (
-                  <div className="mt-4 pt-4 border-t border-rose-200/60">
-                    <dl className="space-y-1.5 text-sm">
-                      {priceQuote.lines.map((line, i) => (
-                        <div key={i} className="flex justify-between gap-4">
-                          <dt className="text-stone-600">{line.label}</dt>
-                          <dd className="text-stone-900">{formatPrice(line.cents)}</dd>
-                        </div>
-                      ))}
-                      <div className="flex justify-between gap-4 pt-2 mt-2 border-t border-rose-200/60">
-                        <dt className="text-stone-900 font-semibold">Estimated total</dt>
-                        <dd className="text-stone-900 font-semibold">
-                          {priceQuote.isFrom ? "from " : ""}{formatPrice(priceQuote.total)}
-                        </dd>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-stone-600">Deposit today</dt>
-                        <dd className="text-rose-800 font-semibold">{formatPrice(priceQuote.depositCents)}</dd>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <dt className="text-stone-600">Balance at your appointment</dt>
-                        <dd className="text-stone-900">{formatPrice(priceQuote.balanceCents)}</dd>
-                      </div>
-                    </dl>
-                    <p className="text-xs text-stone-600 mt-3 leading-relaxed">
-                      An estimate — your final price is confirmed at your appointment.
-                      {priceQuote.isFrom && " Very long or highly detailed sets can run a little over."}
-                    </p>
-                  </div>
-                )}
-
-                {!showPrice && (
-                  <div className="flex justify-between gap-4 pt-2 mt-2 border-t border-rose-200/60 text-sm">
-                    <span className="text-stone-600">Due now</span>
-                    <span className="text-rose-800 font-semibold">$20 deposit</span>
-                  </div>
-                )}
-                <button type="button" onClick={() => setStep(1)}
-                  className="mt-3 text-sm text-rose-800 hover:text-rose-900 underline underline-offset-2">
-                  Change something
-                </button>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="name" className={fieldLabel}>Full name</label>
-                  <input id="name" type="text" name="name" required autoComplete="name" className={inputCls} />
+                  {!showPrice && (
+                    <div className="flex justify-between gap-4 pt-2 mt-2 border-t border-stone-200 text-sm">
+                      <span className="text-stone-500">Due now</span>
+                      <span className="text-rose-800 font-semibold">$20 deposit</span>
+                    </div>
+                  )}
+                  <button type="button" onClick={() => setStep(1)}
+                    className="mt-3 text-xs text-rose-800 hover:text-rose-900 underline">
+                    Change something
+                  </button>
                 </div>
-                <div>
-                  <label htmlFor="instagram" className={fieldLabel}>Instagram</label>
-                  <input id="instagram" type="text" name="instagram" placeholder="@yourhandle" required className={inputCls} />
-                </div>
-                <div>
-                  <label htmlFor="phone" className={fieldLabel}>Phone</label>
-                  <input id="phone" type="tel" name="phone" placeholder="7021234567" required
+
+                <div className="space-y-4">
+                  <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200 pb-2">Personal Information</h4>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="name" className="sr-only">Full name</label>
+                      <input id="name" type="text" name="name" placeholder="Full Name" required autoComplete="name" className={inputCls} />
+                    </div>
+                    <div>
+                      <label htmlFor="instagram" className="sr-only">Instagram handle</label>
+                      <input id="instagram" type="text" name="instagram" placeholder="Instagram Handle" required className={inputCls} />
+                    </div>
+                  </div>
+                  <label htmlFor="phone" className="sr-only">Phone number</label>
+                  <input id="phone" type="tel" name="phone" placeholder="Phone Number (e.g. 7021234567)" required
                     pattern="\d{10}" inputMode="numeric" autoComplete="tel" title="Enter 10-digit phone number" className={inputCls} />
+                  <label htmlFor="email" className="sr-only">Email address</label>
+                  <input id="email" type="email" name="email" placeholder="Email Address (for confirmation)" required autoComplete="email" className={inputCls} />
                 </div>
-                <div>
-                  <label htmlFor="email" className={fieldLabel}>Email</label>
-                  <input id="email" type="email" name="email" required autoComplete="email" className={inputCls} />
-                </div>
-                <div>
-                  <label htmlFor="returning" className={fieldLabel}>Been to Mya before?</label>
+
+                <div className="space-y-4">
+                  <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider border-b border-stone-200 pb-2">Additional Information</h4>
+                  <label htmlFor="returning" className="sr-only">Returning client?</label>
                   <select id="returning" name="returning" required onChange={(e) => setIsReturning(e.target.value === "yes")} className={selectCls}>
-                    <option value="">Choose</option>
+                    <option value="">Returning client?</option>
                     <option value="yes">Yes</option>
-                    <option value="no">No, first time</option>
+                    <option value="no">No</option>
                   </select>
+                  {!isReturning && (
+                    <>
+                      <label htmlFor="referral" className="sr-only">Who referred you?</label>
+                      <input id="referral" type="text" name="referral" required placeholder="Who referred you?" className={inputCls} />
+                    </>
+                  )}
+                  <label htmlFor="notes" className="sr-only">Design ideas or special requests</label>
+                  <textarea id="notes" name="notes" placeholder="Design ideas or special requests" rows="4"
+                    className={`${inputCls} resize-none`} />
+
+                  {/* Attached to the notes rather than given its own step —
+                      a picture is how most people describe a set, so it
+                      belongs with the words, not somewhere else. */}
+                  <InspoUploader
+                    /* The getter, not the value — the uuid is minted on the
+                       first upload, so nothing is generated during server
+                       rendering. */
+                    bookingId={bookingIdOnce}
+                    paths={inspoPaths}
+                    onChange={setInspoPaths}
+                    label="Inspo photos (optional)"
+                    hint="Screenshots or saved pics of the look you want — Mya sees these with your booking."
+                  />
                 </div>
-                {!isReturning && (
-                  <div>
-                    <label htmlFor="referral" className={fieldLabel}>Who referred you?</label>
-                    <input id="referral" type="text" name="referral" required placeholder="A friend, Instagram, Google…" className={inputCls} />
-                  </div>
+
+                <div className="space-y-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="confirmSMS" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
+                    <span className="text-sm text-stone-700 leading-relaxed">
+                      I agree to receive automated appointment-related text messages from Mya&apos;s Nails Baby (confirmations, reminders, updates) at the phone number provided. Message frequency varies. Message and data rates may apply. Reply STOP to opt out, HELP for help. I agree to the{" "}
+                      <Link href="/terms" className="text-rose-800 underline hover:text-rose-900">Terms of Service</Link> and{" "}
+                      <Link href="/privacy" className="text-rose-800 underline hover:text-rose-900">Privacy Policy</Link>.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="confirmPolicy" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
+                    <span className="text-sm text-stone-700">I understand a <strong>$20 deposit</strong> is required to confirm my booking, and I authorize Mya&apos;s Nails Baby to save my card on file and charge a <strong>$25 no-show fee</strong> if I miss my appointment without notice.</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* ── navigation ───────────────────────────────────────── */}
+              <div className="flex items-center gap-3 pt-2">
+                {step > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setStep(step - 1)}
+                    className="border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-5 py-4 font-medium text-sm transition"
+                  >
+                    Back
+                  </button>
+                )}
+                {step < 3 ? (
+                  <button
+                    type="button"
+                    onClick={() => canAdvance && setStep(step + 1)}
+                    disabled={!canAdvance}
+                    className={`flex-1 py-4 font-medium text-sm tracking-wide transition active:scale-95 ${
+                      canAdvance ? "bg-rose-800 hover:bg-rose-900 text-white btn-shimmer" : "bg-stone-200 text-stone-400 cursor-not-allowed"
+                    }`}
+                  >
+                    {step === 1 ? "CHOOSE A DATE" : "ADD YOUR DETAILS"}
+                  </button>
+                ) : (
+                  <button type="submit" disabled={isSubmitting}
+                    className={`flex-1 py-4 font-medium text-sm tracking-wide transition active:scale-95 ${isSubmitting ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white btn-shimmer"}`}>
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+                        Processing...
+                      </span>
+                    ) : "CONFIRM BOOKING"}
+                  </button>
                 )}
               </div>
+            </form>
+          </div>
+        </section>
 
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="notes" className={fieldLabel}>Design ideas (optional)</label>
-                  <textarea id="notes" name="notes" placeholder="Shape, colors, the vibe you're going for" rows="4"
-                    className={`${inputCls} resize-none`} />
+        {/* ── LOCATION ── */}
+        <section className="py-14 border-b border-stone-200">
+          <h3 className="text-5xl text-stone-900 text-center mb-6 section-title-accent" style={scriptHeading}>Location</h3>
+          {(() => {
+            // Until move day it shows where she is now and says where she's
+            // going; from MOVE_DATE on, only the new suite.
+            const studio = studioFor(today);
+            const moving = studio === OLD_STUDIO;
+            return (
+              <>
+                <p className="text-center text-stone-600 text-sm mb-2">
+                  {[studio.name, studio.street, studio.cityLine].filter(Boolean).join(" · ")}
+                </p>
+                {moving && (
+                  <p className="text-center text-rose-800 text-sm font-medium mb-2">
+                    Moving {prettyDate(MOVE_DATE)}: {NEW_STUDIO.name}, {NEW_STUDIO.street}, {NEW_STUDIO.cityLine}.
+                    Appointments from then on are at the new suite.
+                  </p>
+                )}
+                <div className="mb-6" />
+                <div className="border border-stone-200 overflow-hidden">
+                  <iframe
+                    title="Location"
+                    src={mapEmbedUrl(studio)}
+                    width="100%" height="360" style={{ border: 0 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+                  />
                 </div>
+              </>
+            );
+          })()}
+        </section>
 
-                {/* Attached to the notes rather than given its own step —
-                    a picture is how most people describe a set, so it
-                    belongs with the words, not somewhere else. */}
-                <InspoUploader
-                  /* The getter, not the value — the uuid is minted on the
-                     first upload, so nothing is generated during server
-                     rendering. */
-                  bookingId={bookingIdOnce}
-                  paths={inspoPaths}
-                  onChange={setInspoPaths}
-                  label="Inspo photos (optional)"
-                  hint="Screenshots or saved pics of the look you want — Mya sees these with your booking."
-                />
+        {/* ── TAG ME ── */}
+        <section className="py-14 text-center border-b border-stone-200">
+          <p className="text-stone-500 text-sm uppercase tracking-widest mb-2">Thank you for booking with me</p>
+          <h3 className="text-5xl text-stone-900 mb-3" style={scriptHeading}>Tag me in your nailfies!</h3>
+          <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer"
+            className="inline-block border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-6 py-2 text-sm font-medium transition mt-2">
+            @myasnailsbaby
+          </a>
+        </section>
+
+        {/* ── CONTACT DETAILS ── */}
+        <section id="contact" className="py-14 border-b border-stone-200">
+          <h3 className="text-5xl text-stone-900 text-center mb-12 section-title-accent" style={scriptHeading}>Contact Details</h3>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {/* Hours */}
+            <div className="bg-white border border-stone-200 p-6 card-lift">
+              <div className="flex items-center gap-2 mb-4">
+                <svg className="w-4 h-4 text-rose-800 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Hours</p>
               </div>
-
-              <div className="space-y-4">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" name="confirmSMS" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
-                  <span className="text-sm text-stone-700 leading-relaxed">
-                    I agree to receive automated appointment-related text messages from Mya&apos;s Nails Baby (confirmations, reminders, updates) at the phone number provided. Message frequency varies. Message and data rates may apply. Reply STOP to opt out, HELP for help. I agree to the{" "}
-                    <Link href="/terms" className="text-rose-800 underline hover:text-rose-900">Terms of Service</Link> and{" "}
-                    <Link href="/privacy" className="text-rose-800 underline hover:text-rose-900">Privacy Policy</Link>.
-                  </span>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" name="confirmPolicy" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
-                  <span className="text-sm text-stone-700">I understand a <strong>$20 deposit</strong> is required to confirm my booking, and I authorize Mya&apos;s Nails Baby to save my card on file and charge a <strong>$25 no-show fee</strong> if I miss my appointment without notice.</span>
-                </label>
+              <div className="space-y-1.5 text-sm text-stone-700">
+                <p><span className="font-semibold text-stone-900">Mon – Tue</span> · 10:00AM – 8:00PM</p>
+                <p><span className="font-semibold text-stone-900">Fri</span> · 8:00AM – 6:00PM</p>
+                <p><span className="font-semibold text-stone-900">Sat</span> · 8:00AM – 4:00PM</p>
+                <p className="text-rose-800 font-medium pt-1">Sun / Wed / Thu — Closed</p>
               </div>
             </div>
-
-            {/* ── navigation ───────────────────────────────────────── */}
-            <div className="flex items-center gap-3 pt-2">
-              {step > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setStep(step - 1)}
-                  className="border border-stone-300 text-stone-700 hover:border-stone-900 hover:text-stone-900 px-5 py-4 font-medium text-sm"
-                >
-                  Back
-                </button>
-              )}
-              {step < 3 ? (
-                <button
-                  type="button"
-                  onClick={() => canAdvance && setStep(step + 1)}
-                  disabled={!canAdvance}
-                  className={`flex-1 py-4 font-medium active:scale-[0.98] ${
-                    canAdvance ? "bg-rose-800 hover:bg-rose-900 text-white" : "bg-stone-200 text-stone-400 cursor-not-allowed"
-                  }`}
-                >
-                  {step === 1 ? "Choose a date" : "Add your details"}
-                </button>
-              ) : (
-                <button type="submit" disabled={isSubmitting}
-                  className={`flex-1 py-4 font-medium active:scale-[0.98] ${isSubmitting ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-rose-800 hover:bg-rose-900 text-white"}`}>
-                  {isSubmitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
-                      Booking…
-                    </span>
-                  ) : "Pay $20 deposit and book"}
-                </button>
-              )}
+            {/* Contact */}
+            <div className="bg-white border border-stone-200 p-6 card-lift">
+              <div className="flex items-center gap-2 mb-4">
+                <svg className="w-4 h-4 text-rose-800 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path d="M2.25 6.338c0-1.01.993-1.761 1.965-1.455l11.197 3.527a1.5 1.5 0 0 1 0 2.855L4.215 14.792C3.243 15.098 2.25 14.347 2.25 13.338V6.338z"/><path d="M2.25 12h19.5"/>
+                </svg>
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Contact</p>
+              </div>
+              <div className="space-y-3 text-sm">
+                <a href="tel:7029818428" className="flex items-center gap-2.5 text-stone-700 hover:text-rose-800 transition contact-icon group">
+                  <svg className="w-3.5 h-3.5 text-stone-400 group-hover:text-rose-800 transition flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.338c0 10.43 8.476 18.9 18.9 18.9.945 0 1.85-.693 1.85-1.64V16.81a1.5 1.5 0 0 0-1.195-1.47l-4.434-.883a1.5 1.5 0 0 0-1.537.677l-.93 1.544a.375.375 0 0 1-.437.163 13.526 13.526 0 0 1-7.516-7.516.375.375 0 0 1 .164-.437l1.544-.93a1.5 1.5 0 0 0 .678-1.537l-.883-4.434A1.5 1.5 0 0 0 7.63 2.25H3.977c-.946 0-1.728.846-1.728 1.838v2.25z"/>
+                  </svg>
+                  (702) 981-8428
+                </a>
+                <a href="mailto:myasnailsbaby@gmail.com" className="flex items-center gap-2.5 text-stone-700 hover:text-rose-800 transition contact-icon group">
+                  <svg className="w-3.5 h-3.5 text-stone-400 group-hover:text-rose-800 transition flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+                  </svg>
+                  myasnailsbaby@gmail.com
+                </a>
+                <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-stone-700 hover:text-rose-800 transition contact-icon group">
+                  <svg className="w-3.5 h-3.5 text-stone-400 group-hover:text-rose-800 transition flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M7.75 2C4.574 2 2 4.574 2 7.75v8.5C2 19.426 4.574 22 7.75 22h8.5C19.426 22 22 19.426 22 16.25v-8.5C22 4.574 19.426 2 16.25 2h-8.5zm0 1.5h8.5A5.25 5.25 0 0 1 21.5 8.75v6.5A5.25 5.25 0 0 1 16.25 20.5h-8.5A5.25 5.25 0 0 1 2.5 15.25v-6.5A5.25 5.25 0 0 1 7.75 3.5zM12 7.25A4.75 4.75 0 1 0 16.75 12 4.75 4.75 0 0 0 12 7.25zM12 8.75a3.25 3.25 0 1 1-3.25 3.25A3.25 3.25 0 0 1 12 8.75zm5.75-.5a1.25 1.25 0 1 1-1.25-1.25 1.25 1.25 0 0 1 1.25 1.25z"/>
+                  </svg>
+                  @myasnailsbaby
+                </a>
+              </div>
             </div>
-          </form>
-
-          {/* ── POLICIES ──
-              Beside the form rather than in front of it: people read rules
-              at the moment they commit, not before they've picked a set. */}
-          <aside id="policies" className="lg:sticky lg:top-24 space-y-8 text-sm">
-            <div>
-              <h2 className="font-display text-2xl font-semibold text-stone-900 mb-4">Good to know</h2>
-              <dl className="divide-y divide-stone-200 border-y border-stone-200">
-                {[
-                  // "avoid a cancellation fee" was vague and implied a refund
-                  // existed at 48 hours. It doesn't — the deposit is never
-                  // refunded. Saying it plainly avoids the conversation
-                  // happening at the chair instead.
-                  ["Deposit", "$20, non-refundable, and it comes off your total."],
-                  ["Booking ahead", "At least 24 hours before your appointment."],
-                  ["Running late", "Over 5 minutes may shorten your service or mean rescheduling. $10 late fee."],
-                  ["Changing plans", "Reschedule online any time. To cancel, message Mya directly — at least 48 hours ahead so the slot can be filled."],
-                ].map(([t, d]) => (
-                  <div key={t} className="py-3">
-                    <dt className="font-medium text-stone-900">{t}</dt>
-                    <dd className="text-stone-600 mt-0.5 leading-relaxed">{d}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-            <div>
-              <h2 className="font-display text-2xl font-semibold text-stone-900 mb-3">Before you come in</h2>
-              <ul className="space-y-2 text-stone-700">
-                {[
-                  "Don't pick or cut your cuticles",
-                  "Don't pick at or remove old product",
-                  "Skip lotions, oils and hand cream that day",
-                  "Keep nails out of water for 2 hours before",
-                ].map((tip) => (
-                  <li key={tip} className="flex gap-2.5">
-                    <span className="mt-[7px] w-1.5 h-1.5 rounded-full bg-rose-800 flex-shrink-0" />
-                    <span>{tip}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      {/* ── VISIT ── */}
-      <section id="contact" className="bg-white border-t border-stone-200">
-        <div className="max-w-5xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-10">
-          <div>
-            <h2 className="font-display text-5xl font-semibold text-stone-900 tracking-tight mb-6">Visit</h2>
-            {/* Until move day it shows where she is now and says where she's
-                going; from MOVE_DATE on, only the new suite. */}
-            <address className="not-italic text-stone-700 leading-relaxed">
-              {studio.name && <span className="block font-medium text-stone-900">{studio.name}</span>}
-              {studio.street}<br />{studio.cityLine}
-            </address>
-            {moving && (
-              <p className="mt-3 text-sm text-rose-800 font-medium">
-                Moving {prettyDate(MOVE_DATE)}: {NEW_STUDIO.name}, {NEW_STUDIO.street}, {NEW_STUDIO.cityLine}.
-                Appointments from then on are at the new suite.
-              </p>
-            )}
-
-            <dl className="mt-8 grid grid-cols-[6rem_1fr] gap-y-1.5 text-sm">
-              <dt className="text-stone-500">Mon – Tue</dt><dd className="text-stone-900">10:00AM – 8:00PM</dd>
-              <dt className="text-stone-500">Fri</dt><dd className="text-stone-900">8:00AM – 6:00PM</dd>
-              <dt className="text-stone-500">Sat</dt><dd className="text-stone-900">8:00AM – 4:00PM</dd>
-              <dt className="text-stone-500">Sun, Wed, Thu</dt><dd className="text-stone-500">Closed</dd>
-            </dl>
-
-            <ul className="mt-8 space-y-2 text-sm">
-              <li><a href="tel:7029818428" className="text-stone-900 hover:text-rose-800 underline underline-offset-4 decoration-stone-300">(702) 981-8428</a></li>
-              <li><a href="mailto:myasnailsbaby@gmail.com" className="text-stone-900 hover:text-rose-800 underline underline-offset-4 decoration-stone-300">myasnailsbaby@gmail.com</a></li>
-              <li><a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-stone-900 hover:text-rose-800 underline underline-offset-4 decoration-stone-300">@myasnailsbaby</a></li>
-            </ul>
           </div>
-          <div className="border border-stone-200 overflow-hidden min-h-[320px] bg-stone-100">
-            <iframe
-              title="Map to the studio"
-              src={mapEmbedUrl(studio)}
-              width="100%" height="100%" style={{ border: 0, minHeight: 320 }} allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-            />
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-stone-200">
-        <div className="max-w-5xl mx-auto px-6 py-12 flex flex-col sm:flex-row sm:items-end justify-between gap-8">
-          <div>
-            <p className="text-4xl text-stone-900" style={{ fontFamily: "'Great Vibes', cursive" }}>Tag me in your nailfies!</p>
-            <a href="https://instagram.com/myasnailsbaby" target="_blank" rel="noopener noreferrer" className="text-sm text-rose-800 hover:text-rose-900">
-              @myasnailsbaby
-            </a>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-stone-500">
-            <Link href="/terms" className="hover:text-stone-900">Terms of Service</Link>
-            <Link href="/privacy" className="hover:text-stone-900">Privacy Policy</Link>
-            <Link href="/reschedule" className="hover:text-stone-900">Reschedule Appointment</Link>
+        {/* ── FOOTER ── */}
+        <footer className="py-8 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-stone-400">
+            <Link href="/terms" className="hover:text-stone-700 transition">Terms of Service</Link>
+            <span>·</span>
+            <Link href="/privacy" className="hover:text-stone-700 transition">Privacy Policy</Link>
+            <span>·</span>
+            <Link href="/reschedule" className="hover:text-stone-700 transition">Reschedule Appointment</Link>
             {/* Cancelling online is off: Mya would rather clients text her so
                 she can handle the deposit case by case. Rescheduling stays. */}
             {CLIENT_CANCEL_ENABLED && (
               <>
-                <Link href="/cancel-appointment" className="hover:text-stone-900">Cancel Appointment</Link>
+                <span>·</span>
+                <Link href="/cancel-appointment" className="hover:text-stone-700 transition">Cancel Appointment</Link>
               </>
             )}
             {/* No "Dashboard Login" link here. A link on the homepage is how
@@ -1022,73 +1109,222 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
                 in search. Mya gets to her dashboard from her bookmark:
                 myasnailsbaby.com/login */}
           </div>
-        </div>
-      </footer>
+        </footer>
 
+      </div>
+
+      {/* Calendar Styles */}
       <style jsx global>{`
-        /* The hero ladder grows in once, left to right. The only motion on
-           the page that isn't a response to a tap. */
-        .nail-rise {
-          animation: nailRise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-          transform-origin: bottom;
+        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+
+        /* Rose-gold accent line under section headings */
+        .section-title-accent {
+          position: relative;
+          display: inline-block;
         }
-        @keyframes nailRise {
-          from { opacity: 0; transform: translateY(14px) scaleY(0.9); }
-          to { opacity: 1; transform: none; }
+        .section-title-accent::after {
+          content: '';
+          position: absolute;
+          bottom: -10px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 72px;
+          height: 1.5px;
+          background: linear-gradient(90deg, transparent, #9f1239, #c9848c, #e8b4b8, #c9848c, #9f1239, transparent);
         }
 
+        /* Standalone rose-gold divider line */
+        .rg-divider {
+          height: 1px;
+          background: linear-gradient(90deg, transparent 0%, #c9848c 30%, #e8b4b8 50%, #c9848c 70%, transparent 100%);
+          margin: 0;
+          opacity: 0.6;
+        }
+
+        /* Soft blush glow behind her photo */
+        .hero-ring {
+          position: relative;
+        }
+        .hero-ring::before {
+          content: '';
+          position: absolute;
+          inset: -40px;
+          border-radius: 50%;
+          background: radial-gradient(closest-side, rgba(232,180,184,0.35), transparent);
+          z-index: -1;
+        }
+
+        /* The rose-gold line from the policy cards, kept on for the form */
+        .rg-top {
+          position: relative;
+        }
+        .rg-top::before {
+          content: '';
+          position: absolute;
+          top: -1px;
+          left: -1px;
+          right: -1px;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #9f1239, #c9848c, #e8b4b8, #c9848c, #9f1239, transparent);
+        }
+
+        /* Tappable booking choices */
+        .choice-tile {
+          border-color: #e7e5e4;
+          background: #fff;
+        }
+        .choice-tile:hover {
+          border-color: #c9848c;
+        }
+        .choice-tile.is-on {
+          border-color: #9f1239;
+          background: #fdf2f4;
+          box-shadow: inset 0 0 0 1px #9f1239;
+        }
+        .choice-tile:has(:focus-visible),
+        .choice-chip:has(:focus-visible) {
+          box-shadow: 0 0 0 2px #fff, 0 0 0 4px #c9848c;
+        }
+        .estimate {
+          background: #fdf2f4;
+          border: 1px solid #f5d0d6;
+        }
+
+        /* Card hover lift */
+        .card-lift {
+          transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .card-lift:hover {
+          box-shadow: 0 8px 28px rgba(0,0,0,0.10), 0 2px 6px rgba(185,104,121,0.08);
+          transform: translateY(-3px);
+        }
+
+        /* Policy card — rose-gold lift + gradient top accent on hover */
+        .policy-card {
+          position: relative;
+          transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+          overflow: hidden;
+        }
+        .policy-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #9f1239, #c9848c, #e8b4b8, #c9848c, #9f1239, transparent);
+          opacity: 0;
+          transition: opacity 0.25s ease;
+        }
+        .policy-card:hover::before {
+          opacity: 1;
+        }
+        .policy-card:hover {
+          border-color: #c9848c;
+          box-shadow: 0 10px 32px rgba(201,132,140,0.22), 0 2px 8px rgba(159,18,57,0.10);
+          transform: translateY(-5px);
+        }
+
+        /* Button shimmer on hover */
+        .btn-shimmer {
+          position: relative;
+          overflow: hidden;
+        }
+        .btn-shimmer::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 60%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+          transition: left 0.4s ease;
+        }
+        .btn-shimmer:hover::after {
+          left: 150%;
+        }
+
+        /* Nav link underline slide */
+        .nav-slide {
+          position: relative;
+        }
+        .nav-slide::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 0;
+          height: 1px;
+          background: #c9848c;
+          transition: width 0.2s ease;
+        }
+        .nav-slide:hover::after {
+          width: 100%;
+        }
+
+        /* Icon hover in contact cards */
+        .contact-icon {
+          transition: color 0.2s ease;
+        }
+        .contact-icon:hover {
+          color: #9f1239 !important;
+        }
         .calendar-wrapper .react-calendar {
           border: none !important;
           font-family: inherit;
           width: 100%;
         }
         .calendar-wrapper .react-calendar__tile {
-          border: 1px solid #fff !important;
-          background: #fff !important;
-          padding: 12px 0 !important;
-          font-size: 14px;
-          color: #a8a29e;
+          border: 1px solid #e7e5e4 !important;
+          background: white !important;
+          padding: 12px !important;
+          transition: all 0.15s !important;
+          font-size: 13px;
+          color: #57534e;
         }
         .calendar-wrapper .react-calendar__tile:hover:enabled {
-          background: #f6ebe7 !important;
+          background: #fafaf9 !important;
+          border-color: #78716c !important;
         }
         .calendar-wrapper .react-calendar__tile--now {
-          text-decoration: underline;
-          text-underline-offset: 4px;
+          background: #fafaf9 !important;
+          font-weight: 600 !important;
         }
         .calendar-wrapper .available-date-clean {
-          background: #fff !important;
+          background: white !important;
           color: #1c1917 !important;
-          font-weight: 600 !important;
-          box-shadow: inset 0 0 0 1px #d6d3d1;
+          font-weight: 700 !important;
+          border-color: #78716c !important;
         }
         .calendar-wrapper .selected-date-clean {
           background: #9f1239 !important;
           color: white !important;
-          font-weight: 600 !important;
+          font-weight: 700 !important;
+          border-color: #9f1239 !important;
         }
         .calendar-wrapper .react-calendar__tile:disabled {
-          background: #fff !important;
+          background: #fafaf9 !important;
           color: #d6d3d1 !important;
+          border-color: #f5f5f4 !important;
           cursor: default !important;
         }
         .calendar-wrapper .react-calendar__navigation {
-          margin-bottom: 8px !important;
+          background: transparent !important;
+          margin-bottom: 10px !important;
         }
         .calendar-wrapper .react-calendar__navigation button {
           color: #1c1917 !important;
           font-weight: 600 !important;
-          font-size: 15px;
-          background: transparent !important;
+          font-size: 14px;
         }
-        .calendar-wrapper .react-calendar__navigation button:disabled {
-          color: #d6d3d1 !important;
+        .calendar-wrapper .react-calendar__navigation button:hover {
+          background: #fafaf9 !important;
         }
         .calendar-wrapper .react-calendar__month-view__weekdays {
-          font-weight: 500 !important;
+          font-weight: 600 !important;
           color: #78716c !important;
-          font-size: 12px;
-          text-transform: none;
+          font-size: 11px;
+          text-transform: uppercase;
         }
         .calendar-wrapper .react-calendar__month-view__weekdays__weekday abbr {
           text-decoration: none !important;
@@ -1098,41 +1334,42 @@ export default function Home({ gallery = [], today = "", reviews = null }) {
   );
 }
 
-/** A big tappable option: a service, a pedicure. Real radio underneath. */
+/** A tappable option: a service, a pedicure. Real radio underneath. */
 function Choice({ name, value, checked, onChange, required, children }) {
   return (
-    <label className={`cursor-pointer flex items-center justify-between gap-3 px-4 py-3.5 border ${checked ? "border-rose-800 bg-nude" : "border-stone-200 hover:border-stone-400"} has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-rose-300`}>
+    <label className={`choice-tile cursor-pointer flex items-center justify-between gap-3 px-4 py-3.5 border text-sm ${checked ? "is-on" : ""}`}>
       <input type="radio" name={name} value={value} checked={checked} onChange={onChange} required={required} className="sr-only" />
       {children}
     </label>
   );
 }
 
-/** A small pill option: art level, removal, a time. Real radio underneath. */
-function Chip({ name, value, checked, onChange, required, children }) {
+/** A small option: art level, removal, a time. Real radio underneath. */
+function Chip({ name, value, checked, onChange, required, block = false, children }) {
   return (
-    <label className={`cursor-pointer px-4 py-2 text-sm rounded-full border ${checked ? "border-rose-800 bg-rose-800 text-white" : "border-stone-300 text-stone-700 hover:border-stone-500 bg-white"} has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-rose-300 has-[:focus-visible]:ring-offset-1`}>
+    <label className={`choice-chip cursor-pointer px-4 py-2.5 text-sm border ${block ? "text-center" : ""} ${checked ? "bg-rose-800 border-rose-800 text-white" : "bg-white border-stone-300 text-stone-700 hover:border-[#c9848c]"}`}>
       <input type="radio" name={name} value={value} checked={checked} onChange={onChange} required={required} className="sr-only" />
       {children}
     </label>
   );
 }
 
-function Stars({ rating, small = false, className = "" }) {
+function Stars({ rating, small = false }) {
   const size = small ? "w-3.5 h-3.5" : "w-5 h-5";
   return (
-    <span className={`flex gap-0.5 ${className}`} role="img" aria-label={`${rating} out of 5 stars`}>
+    <span className="inline-flex gap-0.5" role="img" aria-label={`${rating} out of 5 stars`}>
       {[0, 1, 2, 3, 4].map((i) => {
-        const fill = Math.max(0, Math.min(1, rating - i));
+        const pct = Math.round(Math.max(0, Math.min(1, rating - i)) * 100);
+        const id = `star-${pct}`;
         return (
           <svg key={i} viewBox="0 0 20 20" className={size} aria-hidden="true">
             <defs>
-              <linearGradient id={`star-${i}-${Math.round(fill * 100)}`}>
-                <stop offset={fill} stopColor="#9f1239" />
-                <stop offset={fill} stopColor="#e7e5e4" />
+              <linearGradient id={id}>
+                <stop offset={`${pct}%`} stopColor="#9f1239" />
+                <stop offset={`${pct}%`} stopColor="#e7e5e4" />
               </linearGradient>
             </defs>
-            <path fill={`url(#star-${i}-${Math.round(fill * 100)})`} d="M10 1.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.5 7.7l5.9-.9z" />
+            <path fill={`url(#${id})`} d="M10 1.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.5 7.7l5.9-.9z" />
           </svg>
         );
       })}

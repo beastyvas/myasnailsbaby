@@ -30,6 +30,7 @@ import {
  * down twice.
  */
 
+const sectionHeading = { fontFamily: "Georgia, serif" };
 
 const lengthPriced = BOOKABLE_SERVICES.filter((s) => s.lengths);
 const flatPriced = BOOKABLE_SERVICES.filter((s) => s.flat != null);
@@ -58,7 +59,7 @@ function Row({ label, value, note }) {
 function Section({ title, children, intro }) {
   return (
     <section>
-      <h2 className="font-display text-2xl font-semibold text-stone-900 mb-1">{title}</h2>
+      <h2 className="text-xl font-bold text-stone-900 mb-1" style={sectionHeading}>{title}</h2>
       {intro && <p className="text-stone-500 text-sm mb-3">{intro}</p>}
       <div className={intro ? "" : "mt-3"}>{children}</div>
     </section>
@@ -92,7 +93,7 @@ export default function Services({ today = "" }) {
 
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-10">
-          <h1 className="font-display text-5xl font-semibold tracking-tight text-stone-900 mb-3">Nail Prices &amp; Services</h1>
+          <h1 className="text-4xl font-bold text-stone-900 mb-2" style={sectionHeading}>Nail Prices &amp; Services</h1>
           <p className="text-stone-600 leading-relaxed max-w-2xl">
             Custom sets by Mya in a private suite on {studio.area}. By
             appointment only. A {formatPrice(DEPOSIT_CENTS)} deposit books your
