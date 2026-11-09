@@ -19,6 +19,9 @@ const PUBLIC_PAGES = [
   "pages/services.jsx",
   "pages/privacy.jsx",
   "pages/terms.jsx",
+  "pages/henderson.jsx",
+  "pages/guides/index.jsx",
+  "pages/guides/[slug].jsx",
 ];
 
 /**
@@ -109,7 +112,7 @@ for (const page of PUBLIC_PAGES) {
   const sitemap = read("pages/sitemap.xml.js");
   const robots = read("pages/robots.txt.js");
 
-  for (const path of ["/", "/services"]) {
+  for (const path of ["/", "/services", "/henderson"]) {
     ok(`${path} is in the sitemap`, sitemap.includes(`path: "${path}"`));
     ok(`${path} is not disallowed in robots`, !new RegExp(`"${path}"`).test(robots));
   }

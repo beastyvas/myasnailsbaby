@@ -1,4 +1,5 @@
 import { absoluteUrl } from "@/utils/seo";
+import { allGuides } from "@/utils/guides";
 
 /** Only pages worth landing on. The booking utilities (/reschedule,
  *  /cancel-appointment, /success) are transactional — they're marked
@@ -9,16 +10,30 @@ const PAGES = [
   // rank for "gel-x price las vegas" and the like, since every figure used
   // to live inside a <select> where no crawler could see it.
   { path: "/services", changefreq: "weekly", priority: "0.9" },
+  // The studio moved to Henderson on 2026-10-21; this is the page for
+  // "nail tech henderson" and friends.
+  { path: "/henderson", changefreq: "monthly", priority: "0.8" },
   { path: "/privacy", changefreq: "yearly", priority: "0.3" },
   { path: "/terms", changefreq: "yearly", priority: "0.3" },
 ];
 
+/** Guides (content/guides/*.md) — the index only once there's something in
+ *  it, and each guide with its own date so Google can tell what's new. */
+function guidePages() {
+  const guides = allGuides();
+  if (!guides.length) return [];
+  return [
+    { path: "/guides", changefreq: "weekly", priority: "0.6", lastmod: guides[0].updated },
+    ...guides.map((g) => ({ path: `/guides/${g.slug}`, changefreq: "monthly", priority: "0.6", lastmod: g.updated })),
+  ];
+}
+
 function buildSitemap() {
-  const lastmod = new Date().toISOString().split("T")[0];
-  const urls = PAGES.map(
-    ({ path, changefreq, priority }) => `  <url>
+  const today = new Date().toISOString().split("T")[0];
+  const urls = [...PAGES, ...guidePages()].map(
+    ({ path, changefreq, priority, lastmod }) => `  <url>
     <loc>${absoluteUrl(path)}</loc>
-    <lastmod>${lastmod}</lastmod>
+    <lastmod>${lastmod || today}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
   </url>`

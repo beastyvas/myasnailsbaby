@@ -128,11 +128,13 @@ export function salonJsonLd(today) {
     ...(ADDRESS.latitude != null
       ? { geo: { "@type": "GeoCoordinates", latitude: ADDRESS.latitude, longitude: ADDRESS.longitude } }
       : {}),
-    areaServed: {
+    // The studio's own city first (Henderson since the move), then Las
+    // Vegas, where most of her clients have always come from.
+    areaServed: [...new Set([ADDRESS.city, "Las Vegas"])].map((name) => ({
       "@type": "City",
-      name: "Las Vegas",
+      name,
       address: { "@type": "PostalAddress", addressRegion: "NV" },
-    },
+    })),
     openingHoursSpecification: OPENING_HOURS.map(({ days, opens, closes }) => ({
       "@type": "OpeningHoursSpecification",
       dayOfWeek: days,
