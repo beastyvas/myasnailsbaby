@@ -4,7 +4,7 @@ The guide writer takes the first unchecked topic. Audience: people in
 Henderson and the southeast Las Vegas valley choosing their next set. Add new
 topics at the bottom. Only services on her menu, nothing medical, no prices.
 
-- [ ] How long does Gel-X last? (and what makes it pop off early)
+- [x] How long does Gel-X last? (and what makes it pop off early) → /guides/how-long-does-gel-x-last (2026-11-09)
 - [ ] Gel-X vs acrylic vs structure gel: which set is right for you
 - [ ] What is structure gel (builder gel) and who it suits
 - [ ] Hard gel vs acrylic: the real differences
