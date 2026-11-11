@@ -5,7 +5,7 @@ Henderson and the southeast Las Vegas valley choosing their next set. Add new
 topics at the bottom. Only services on her menu, nothing medical, no prices.
 
 - [x] How long does Gel-X last? (and what makes it pop off early) → /guides/how-long-does-gel-x-last (2026-11-09)
-- [ ] Gel-X vs acrylic vs structure gel: which set is right for you
+- [x] Gel-X vs acrylic vs structure gel: which set is right for you → /guides/gel-x-vs-acrylic-vs-structure-gel (2026-11-11)
 - [ ] What is structure gel (builder gel) and who it suits
 - [ ] Hard gel vs acrylic: the real differences
 - [ ] How to make your nails last in the Henderson heat and dry air
