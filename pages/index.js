@@ -328,8 +328,8 @@ export default function Home({ gallery = [], today = "" }) {
       <Seo
         path="/"
         bareTitle
-        title="Mya's Nails Baby | Nail Artist in Las Vegas — Gel-X, Acrylic & Nail Art"
-        description="Custom nail sets by Mya in Las Vegas. Gel-X, acrylic, hard gel, structure gel and hand-painted nail art, plus gel pedicures. Book online with a $20 deposit."
+        title="Nail Artist in Henderson & Las Vegas | Mya's Nails Baby"
+        description="Nail artist in Henderson, NV, serving the Las Vegas valley. Gel-X, acrylic, structure gel and hand-painted nail art, plus gel pedicures. Book online."
         jsonLd={[salonJsonLd(today), faqJsonLd(today)]}
       />
       <Toaster position="bottom-center" />

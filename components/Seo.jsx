@@ -49,7 +49,7 @@ export default function Seo({
       <meta property="og:image" content={ogImageUrl()} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
-      <meta property="og:image:alt" content={`${SITE_NAME} — custom nail sets in Las Vegas`} />
+      <meta property="og:image:alt" content={`${SITE_NAME} — custom nail sets in Henderson & Las Vegas`} />
 
       {/* Twitter / iMessage cards */}
       <meta name="twitter:card" content="summary_large_image" />

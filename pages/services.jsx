@@ -80,7 +80,7 @@ export default function Services({ today = "" }) {
       <Seo
         path="/services"
         title="Nail Prices & Services"
-        description="Starting prices at Mya's Nails Baby in Las Vegas — Gel-X from $60, acrylic from $65, hard gel, structure gel, gel manicures, pedicures and custom nail art. Estimates; final price confirmed at your appointment. $20 deposit books your time."
+        description="Starting prices at Mya's Nails Baby in Henderson, NV — Gel-X from $60, acrylic from $65, structure gel, manicures, pedicures and nail art. $20 deposit books your time."
         jsonLd={[servicesJsonLd(), salonJsonLd(today)]}
       />
 

@@ -38,7 +38,7 @@ export default function NailGallery({ items = [], heading = "Recent Sets" }) {
    *  plain and true rather than a keyword list — a stuffed alt attribute is a
    *  spam signal, and it's read aloud to anyone using a screen reader. */
   const altFor = (item) =>
-    item.caption?.trim() ? item.caption.trim() : "Custom nail set by Mya in Las Vegas";
+    item.caption?.trim() ? item.caption.trim() : "Custom nail set by Mya in Henderson, NV";
 
   return (
     <section id="gallery" className="py-14 border-b border-stone-200">

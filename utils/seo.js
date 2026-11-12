@@ -9,7 +9,7 @@ import { BOOKABLE_SERVICES, PEDICURES } from "./pricing.js";
 import { studioFor } from "./location.js";
 
 export const SITE_NAME = "Mya's Nails Baby";
-export const SITE_TAGLINE = "Nail Artist in Las Vegas";
+export const SITE_TAGLINE = "Nail Artist in Henderson & Las Vegas";
 export const DEPOSIT_DOLLARS = 20;
 
 export const CONTACT = {
@@ -107,7 +107,7 @@ export function salonJsonLd(today) {
     "@id": `${siteUrl()}/#salon`,
     name: SITE_NAME,
     description:
-      "Custom nail sets by Mya in Las Vegas — Gel-X, acrylic, hard gel, structure gel and hand-painted nail art, plus gel pedicures. By appointment.",
+      "Nail artist in Henderson, NV, serving the Las Vegas valley. Custom sets by Mya — Gel-X, acrylic, hard gel, structure gel and hand-painted nail art, plus gel pedicures. By appointment.",
     url: siteUrl(),
     image: ogImageUrl(),
     telephone: CONTACT.phone,
