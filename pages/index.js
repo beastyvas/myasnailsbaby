@@ -997,12 +997,9 @@ export default function Home({ gallery = [], today = "" }) {
         {/* ── FOOTER ── */}
         <footer className="py-8 text-center">
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-stone-400">
-            {/* Crawlable links to the Henderson page and the guides — the
-                homepage is the page Google trusts most, so what it links to
-                gets found and weighted. */}
+            {/* A crawlable link to the Henderson page — the homepage is the
+                page Google trusts most, so what it links to gets found. */}
             <Link href="/henderson" className="hover:text-stone-700 transition">Henderson Nail Studio</Link>
-            <span>·</span>
-            <Link href="/guides" className="hover:text-stone-700 transition">Nail Guides</Link>
             <span>·</span>
             <Link href="/terms" className="hover:text-stone-700 transition">Terms of Service</Link>
             <span>·</span>

@@ -1,5 +1,4 @@
 import { absoluteUrl } from "@/utils/seo";
-import { allGuides } from "@/utils/guides";
 
 /** Only pages worth landing on. The booking utilities (/reschedule,
  *  /cancel-appointment, /success) are transactional — they're marked
@@ -17,20 +16,9 @@ const PAGES = [
   { path: "/terms", changefreq: "yearly", priority: "0.3" },
 ];
 
-/** Guides (content/guides/*.md) — the index only once there's something in
- *  it, and each guide with its own date so Google can tell what's new. */
-function guidePages() {
-  const guides = allGuides();
-  if (!guides.length) return [];
-  return [
-    { path: "/guides", changefreq: "weekly", priority: "0.6", lastmod: guides[0].updated },
-    ...guides.map((g) => ({ path: `/guides/${g.slug}`, changefreq: "monthly", priority: "0.6", lastmod: g.updated })),
-  ];
-}
-
 function buildSitemap() {
   const today = new Date().toISOString().split("T")[0];
-  const urls = [...PAGES, ...guidePages()].map(
+  const urls = PAGES.map(
     ({ path, changefreq, priority, lastmod }) => `  <url>
     <loc>${absoluteUrl(path)}</loc>
     <lastmod>${lastmod || today}</lastmod>

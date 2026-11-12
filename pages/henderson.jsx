@@ -12,7 +12,7 @@ import { CONTACT, DEPOSIT_DOLLARS, OPENING_HOURS, SERVICES, absoluteUrl, salonJs
  * Henderson on MOVE_DATE. The homepage still speaks to all of Las Vegas —
  * that's where most of her existing clients found her — so this is the page
  * that answers "nail tech henderson" / "nails near me" for someone in
- * Henderson, and the page the SEO guides link to when they mention the area.
+ * Henderson.
  *
  * EVERYTHING HERE IS A FACT FROM THE CODEBASE: the address and building from
  * utils/location.js, hours, services and contact details from utils/seo.js.
@@ -24,14 +24,8 @@ import { CONTACT, DEPOSIT_DOLLARS, OPENING_HOURS, SERVICES, absoluteUrl, salonJs
 const sectionHeading = { fontFamily: "Georgia, serif" };
 
 export async function getStaticProps() {
-  const { allGuides } = await import("@/utils/guides");
   return {
-    props: {
-      today: vegasParts().date,
-      guides: allGuides()
-        .slice(0, 3)
-        .map((g) => ({ slug: g.slug, h1: g.h1, description: g.description })),
-    },
+    props: { today: vegasParts().date },
     revalidate: 3600,
   };
 }
@@ -48,7 +42,7 @@ const moveLabel = (() => {
   return new Date(Date.UTC(y, mo - 1, d)).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 })();
 
-export default function Henderson({ today = "", guides = [] }) {
+export default function Henderson({ today = "" }) {
   const studio = studioFor(today);
   const crumbs = {
     "@context": "https://schema.org",
@@ -152,22 +146,6 @@ export default function Henderson({ today = "", guides = [] }) {
           </Link>
         </div>
 
-        {guides.length > 0 && (
-          <section className="mt-14">
-            <h2 className="text-xl font-bold text-stone-900" style={sectionHeading}>Nail guides</h2>
-            <ul className="mt-4 space-y-3">
-              {guides.map((g) => (
-                <li key={g.slug}>
-                  <Link href={`/guides/${g.slug}`} className="block bg-white border border-stone-200 p-4 hover:border-rose-800 transition">
-                    <span className="text-lg text-stone-900" style={sectionHeading}>{g.h1}</span>
-                    <p className="text-stone-500 text-sm mt-1">{g.description}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-sm"><Link href="/guides" className="text-rose-800 underline underline-offset-4">All guides</Link></p>
-          </section>
-        )}
       </div>
     </main>
   );

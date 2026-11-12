@@ -20,8 +20,6 @@ const PUBLIC_PAGES = [
   "pages/privacy.jsx",
   "pages/terms.jsx",
   "pages/henderson.jsx",
-  "pages/guides/index.jsx",
-  "pages/guides/[slug].jsx",
 ];
 
 /**

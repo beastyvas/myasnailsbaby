@@ -3,9 +3,9 @@
 //   npm run build:seo
 //   npm run seo:check
 //
-// The scheduled SEO routine publishes guides without a person reading them
-// first, so this is the safety net: any FAIL means do not publish. Warnings
-// are printed for the monthly health report.
+// Any FAIL means something Google would see is broken. (It also still holds
+// the content rules for content/guides/*.md, in case guides ever come back;
+// with no guides folder that part is skipped.)
 //
 // It runs the real built site (`next start`, with placeholder keys — no
 // secrets needed, nothing real is touched), crawls everything in sitemap.xml
