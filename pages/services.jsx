@@ -117,8 +117,25 @@ export default function Services({ today = "" }) {
             title="Full Sets"
             intro="From, by length. The set itself — art and removal are added below."
           >
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[34rem]">
+            {/* Phones: one short list per service. A five-column table
+                doesn't fit a phone screen — it scrolled sideways and showed
+                only a "$" at the edge, which read as a broken price list. */}
+            <div className="sm:hidden space-y-6">
+              {lengthPriced.map((s) => (
+                <div key={s.value}>
+                  <h3 className="font-semibold text-stone-900">{s.label}</h3>
+                  {s.lengths.map((cents, i) => (
+                    <Row
+                      key={i}
+                      label={LENGTH_OPTIONS[i]}
+                      value={`${formatPrice(cents)}${s.openEnded && i === s.lengths.length - 1 ? "+" : ""}`}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className="hidden sm:block">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wider text-stone-500">
                     <th className="pb-2 font-semibold">Service</th>
@@ -152,9 +169,6 @@ export default function Services({ today = "" }) {
             ))}
           </Section>
 
-          {/* The most subjective thing on the page. Where a design lands
-              between Level 1 and Level 4 is Mya's call, not a lookup — so
-              saying so here is what stops it being a surprise at the chair. */}
           <Section
             title="Nail Art"
             intro="Added on top of your set. Mya decides the level from your design."
@@ -164,12 +178,6 @@ export default function Services({ today = "" }) {
               .map(([name, cents]) => (
                 <Row key={name} label={name} value={`from +${formatPrice(cents)}`} />
               ))}
-            <p className="text-stone-500 text-sm leading-relaxed mt-3">
-              Levels aren't a fixed menu — a simple French is a world away from
-              hand-painted detail on all ten nails. Send your inspo when you book
-              and Mya will tell you which level it is before she starts, so the
-              price is agreed up front.
-            </p>
           </Section>
 
           <Section title="Removal" intro="Only if you're coming in with something on.">

@@ -37,11 +37,6 @@ const formatTime = (t) => {
   return m ? `${hr}:${String(m).padStart(2, "0")}${suffix}` : `${hr}${suffix}`;
 };
 
-const moveLabel = (() => {
-  const [y, mo, d] = MOVE_DATE.split("-").map(Number);
-  return new Date(Date.UTC(y, mo - 1, d)).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
-})();
-
 export default function Henderson({ today = "" }) {
   const studio = studioFor(today);
   const crumbs = {
@@ -128,16 +123,6 @@ export default function Henderson({ today = "" }) {
             <p className="text-stone-500 text-sm mt-2">By appointment. Open slots are on the booking calendar.</p>
           </section>
 
-          <section>
-            <h2 className="text-xl font-bold text-stone-900 mb-3" style={sectionHeading}>Moved from Las Vegas?</h2>
-            <p className="text-stone-700 leading-relaxed">
-              Yes — before {moveLabel} I was on E. Flamingo Rd in Las Vegas. Same Mya, same menu, same
-              online booking; only the address changed. Questions? Text{" "}
-              <a href={`sms:${CONTACT.phone}`} className="text-rose-800 underline underline-offset-4">{CONTACT.phoneDisplay}</a>{" "}
-              or DM{" "}
-              <a href={CONTACT.instagram} target="_blank" rel="noopener noreferrer" className="text-rose-800 underline underline-offset-4">@myasnailsbaby</a>.
-            </p>
-          </section>
         </div>
 
         <div className="mt-10 text-center">
