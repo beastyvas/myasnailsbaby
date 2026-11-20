@@ -201,7 +201,7 @@ export default function SuccessPage() {
             <div className="space-y-3 text-sm text-stone-700">
               {[
                 ["Deposit", "Non-refundable $20 deposit required. Applied toward your total service."],
-                ["Cancellation", "Cancel 48+ hours ahead: deposit credited to next visit. Late/no-show: 50% of service charged."],
+                ["Cancellation", "Cancel 48+ hours ahead: deposit credited to next visit. No-show: 50% of the remaining service charged."],
                 ["Late Arrivals", "5-minute grace period. After that: $10 late fee. Service may be shortened."],
                 ["Nail Repairs", "Free within 5 days. After 5 days: $10 per nail."],
                 ["No Guests", "Only clients receiving services are permitted."],

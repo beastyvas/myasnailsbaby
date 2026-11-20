@@ -858,7 +858,7 @@ export default function Home({ gallery = [], today = "" }) {
                   </label>
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" name="confirmPolicy" required className="mt-1 w-4 h-4 border-stone-300 accent-rose-800 flex-shrink-0" />
-                    <span className="text-sm text-stone-700">I understand a <strong>$20 deposit</strong> is required to confirm my booking, and I authorize Mya&apos;s Nails Baby to save my card on file and charge a <strong>$25 no-show fee</strong> if I miss my appointment without notice.</span>
+                    <span className="text-sm text-stone-700">I understand a <strong>$20 deposit</strong> is required to confirm my booking, and I authorize Mya&apos;s Nails Baby to save my card on file and charge a <strong>no-show fee of 50% of the remaining service</strong> (the service price minus the deposit) if I miss my appointment without notice.</span>
                   </label>
                 </div>
               </div>

@@ -96,7 +96,7 @@ export default async function handler(req, res) {
             product_data: {
               name: "Nail Deposit",
               description:
-                "$20 deposit to confirm your appointment. Refundable if cancelled 48+ hours in advance. By completing this payment you authorize a $25 no-show fee to be charged to this card if you miss your appointment without notice.",
+                "$20 deposit to confirm your appointment. Refundable if cancelled 48+ hours in advance. By completing this payment you authorize a no-show fee of 50% of the remaining service (the service price minus this deposit) to be charged to this card if you miss your appointment without notice.",
             },
             unit_amount: 2000,
           },

@@ -4,10 +4,7 @@ import { isAdmin } from "@/utils/requireAdmin";
 import { sendSmsOnce } from "@/utils/smsOnce";
 import * as M from "@/utils/messages";
 import { prettyDate, to12h } from "@/utils/time";
-
-/** Forfeited when someone doesn't turn up, per the policy they agree to at
- *  booking. Matches the $25 quoted on the site and in the dashboard prompt. */
-const NO_SHOW_FEE_CENTS = 2500;
+import { noShowFee } from "@/utils/noShow";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const supabase = createClient(
@@ -19,17 +16,21 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   // This route charges a saved card. It previously ran with no auth at all,
-  // so anyone who could guess a booking id could bill a client $25.
+  // so anyone who could guess a booking id could bill a client.
   if (!(await isAdmin(req, res))) {
     return res.status(401).json({ error: "Unauthorized — must be logged in" });
   }
 
-  const { booking_id } = req.body ?? {};
+  const { booking_id, service_cents } = req.body ?? {};
   if (!booking_id) return res.status(400).json({ error: "Missing booking_id" });
 
   const { data: booking, error } = await supabase
     .from("bookings")
-    .select("id, name, phone, email, date, start_time, stripe_customer_id, stripe_payment_method_id, no_show_charged")
+    // "*" on purpose: the fee reads created_at and discount_percent, and a
+    // named column that a database happens not to have would fail the whole
+    // lookup (no booking → no charge). A missing created_at falls back to the
+    // old $25, the safe direction.
+    .select("*")
     .eq("id", booking_id)
     .single();
 
@@ -38,6 +39,15 @@ export default async function handler(req, res) {
   if (!booking.stripe_customer_id || !booking.stripe_payment_method_id) {
     return res.status(422).json({ error: "No card on file for this booking" });
   }
+
+  // 50% of the remaining service (or the flat $25 a pre-change booking
+  // agreed to) — worked out here, never taken from the browser as an amount.
+  const fee = noShowFee(booking, service_cents);
+  if (fee.cents == null) {
+    return res.status(422).json({ error: "This booking has no price saved — enter the service price to work out the fee", needs_service_price: true });
+  }
+  if (fee.cents < 50) return res.status(422).json({ error: "Nothing left to charge — the deposit already covers the service" });
+  const NO_SHOW_FEE_CENTS = fee.cents;
 
   try {
     const paymentIntent = await stripe.paymentIntents.create({
@@ -76,7 +86,7 @@ export default async function handler(req, res) {
       })
     );
 
-    return res.status(200).json({ success: true, payment_intent_id: paymentIntent.id });
+    return res.status(200).json({ success: true, payment_intent_id: paymentIntent.id, fee_cents: NO_SHOW_FEE_CENTS });
   } catch (err) {
     console.error("No-show charge failed:", err.message);
     return res.status(500).json({ error: err.message });

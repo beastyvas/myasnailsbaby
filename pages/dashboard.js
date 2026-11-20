@@ -7,6 +7,7 @@ import "react-calendar/dist/Calendar.css";
 import { InspoStrip, InspoUploader } from "@/components/InspoPhotos";
 import { DEFAULT_PERCENT, MAX_PERCENT, MIN_PERCENT, clampPercent } from "@/utils/reactivation";
 import { bookingCharge, shortAgo, summarizeClient } from "@/utils/clientSummary";
+import { feeLabel, noShowFee } from "@/utils/noShow";
 import { normalizePhone } from "@/utils/sms";
 import { BOOKABLE_SERVICES, DEPOSIT_CENTS, formatPrice, serviceLabel } from "@/utils/pricing";
 import { EXTRA_TEXTS_ENABLED, GROWTH_ENABLED } from "@/utils/features";
@@ -712,20 +713,35 @@ export default function Dashboard() {
   }
 
   const handleChargeNoShow = async (booking) => {
-    if (!confirm(`Charge ${booking.name} a $25 no-show fee? This will immediately charge their card on file.`)) return;
+    // Same calculation the server charges with: 50% of the service after the
+    // $20 deposit — or the flat $25 for anyone who booked under the old terms.
+    let serviceCents = null;
+    let fee = noShowFee(booking);
+    if (fee.cents == null) {
+      const typed = prompt(`No price is saved on ${booking.name}'s booking. What was the full service price? (e.g. 70)`);
+      if (typed == null) return;
+      const dollars = Number(String(typed).replace(/[^0-9.]/g, ""));
+      if (!Number.isFinite(dollars) || dollars <= 0) { alert("That isn't a price — nothing was charged."); return; }
+      serviceCents = Math.round(dollars * 100);
+      fee = noShowFee(booking, serviceCents);
+    }
+    if (!fee.cents) { alert("Nothing left to charge — the deposit already covers the service."); return; }
+    const why = fee.basis === "old-flat" ? " (they booked under the old $25 policy)" : " (50% of the service after the deposit)";
+    if (!confirm(`Charge ${booking.name} a ${feeLabel(fee.cents)} no-show fee${why}? This will immediately charge their card on file.`)) return;
     setChargingNoShow((prev) => new Set([...prev, booking.id]));
     try {
       const res = await fetch("/api/charge-noshow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ booking_id: booking.id }),
+        body: JSON.stringify({ booking_id: booking.id, service_cents: serviceCents }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Charge failed");
-      const patch = { no_show_charged: true, no_show_fee_amount: 2500 };
+      const charged = data.fee_cents ?? fee.cents;
+      const patch = { no_show_charged: true, no_show_fee_amount: charged };
       setBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, ...patch } : b));
       setAllBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, ...patch } : b));
-      alert(`$25 no-show fee charged to ${booking.name}'s card.`);
+      alert(`${feeLabel(charged)} no-show fee charged to ${booking.name}'s card.`);
     } catch (err) {
       alert(`Charge failed: ${err.message}`);
     } finally {
@@ -1638,7 +1654,7 @@ export default function Dashboard() {
                                   );
                                 })()}
                                 {b.no_show_charged && (
-                                  <span className="text-xs font-semibold px-2 py-0.5 border bg-rose-50 text-rose-800 border-rose-200">No-show $25</span>
+                                  <span className="text-xs font-semibold px-2 py-0.5 border bg-rose-50 text-rose-800 border-rose-200">No-show {feeLabel(b.no_show_fee_amount ?? 2500)}</span>
                                 )}
                               </div>
                             </div>
@@ -1673,7 +1689,7 @@ export default function Dashboard() {
                                     : "border-amber-300 text-amber-700 hover:bg-amber-50"
                                 }`}
                               >
-                                {chargingNoShow.has(b.id) ? "Charging…" : "Charge $25 No-Show Fee"}
+                                {chargingNoShow.has(b.id) ? "Charging…" : "Charge No-Show Fee"}
                               </button>
                             )}
                           </div>

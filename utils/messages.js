@@ -19,6 +19,7 @@
 import { prettyDate, to12h } from "./time.js";
 import { studioAddressFor } from "./location.js";
 import { serviceLabel } from "./pricing.js";
+import { feeLabel } from "./noShow.js";
 export const BRAND = "Mya's Nails Baby";
 export const IG = "@myasnailsbaby";
 
@@ -112,7 +113,7 @@ export function noShowFee({ name, date, startTime, feeCents }) {
   return (
     `Hi ${firstName(name)}, this is ${BRAND}. We missed you at your ` +
     `${prettyDate(date)} appointment at ${to12h(startTime)}, so the ` +
-    `$${feeCents / 100} no-show fee you agreed to at booking has been charged to your card.\n` +
+    `${feeLabel(feeCents)} no-show fee you agreed to at booking has been charged to your card.\n` +
     `If something came up, please DM ${IG} — I'd rather sort it out than lose you.`
   );
 }
